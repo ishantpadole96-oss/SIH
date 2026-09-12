@@ -13,6 +13,7 @@ router.get('/', (req, res) => {
   try {
     const {
       search,
+      district,
       facility_type,
       service,
       emergency_only,
@@ -38,11 +39,17 @@ router.get('/', (req, res) => {
 
     const params = [];
 
+    // Filter by district
+    if (district && district !== 'All') {
+      query += ` AND v.district = ?`;
+      params.push(district);
+    }
+
     // Filter by search keyword
     if (search) {
-      query += ` AND (f.facility_name LIKE ? OR f.address LIKE ? OR v.village_name LIKE ?)`;
+      query += ` AND (f.facility_name LIKE ? OR f.address LIKE ? OR v.village_name LIKE ? OR v.district LIKE ?)`;
       const term = `%${search}%`;
-      params.push(term, term, term);
+      params.push(term, term, term, term);
     }
 
     // Filter by facility type

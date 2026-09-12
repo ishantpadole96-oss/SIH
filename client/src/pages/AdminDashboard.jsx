@@ -93,13 +93,13 @@ export function AdminDashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(239, 68, 68, 0.15)', color: '#F87171', padding: '0.3rem 0.85rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-            <Building2 size={14} /> DISTRICT HEALTH ADMINISTRATION
+            <Building2 size={14} /> MAHARASHTRA PUBLIC HEALTH ADMINISTRATION
           </div>
           <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
             Rural Healthcare Monitoring &amp; GIS Command Console
           </h1>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
-            Supervised by <b>{user?.name || 'District Officer Sharma'}</b> • Pune Rural Division (8 Villages, 6 Facilities)
+            Supervised by <b>{user?.name || 'Director of Public Health'}</b> • Maharashtra State Public Health Directorate ({gisData?.villages?.length || 137} Villages, {gisData?.facilities?.length || 95} Healthcare Facilities across 36 Districts)
           </p>
         </div>
 
@@ -217,7 +217,7 @@ export function AdminDashboard() {
                     Rural Healthcare Coverage &amp; Accessibility GIS
                   </h2>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    Visual geo-spatial mapping of 8 villages color-coded by Accessibility Index (🟢 &gt;70, 🟡 45-70, 🔴 &lt;45) and 6 public healthcare facilities.
+                    Visual geo-spatial mapping of {gisData?.villages?.length || 137} villages color-coded by Accessibility Index (🟢 &gt;70, 🟡 45-70, 🔴 &lt;45) and {gisData?.facilities?.length || 95} public healthcare facilities across all 36 districts of Maharashtra.
                   </p>
                 </div>
               </div>

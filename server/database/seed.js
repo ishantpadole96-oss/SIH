@@ -1,8 +1,10 @@
 const bcrypt = require('bcryptjs');
 const db = require('./db');
+const { maharashtraVillages, maharashtraFacilities } = require('./maharashtraData');
+const { refreshAllVillageScores } = require('../services/accessibilityScore');
 
 async function seed() {
-  console.log('🌱 Starting RuralCare massive database seeding...');
+  console.log('🌱 Starting RuralCare massive database seeding for all 36 Districts of Maharashtra...');
 
   // Enable foreign keys
   db.exec('PRAGMA foreign_keys = ON;');
@@ -34,41 +36,22 @@ async function seed() {
 
   db.transaction(() => {
     // ----------------------------------------------------
-    // 1. VILLAGES (16 authentic rural locations in Maharashtra)
+    // 1. VILLAGES (137 authentic locations covering all 36 districts)
     // ----------------------------------------------------
-    const villages = [
-      { id: 1, name: 'Shivapur', district: 'Pune', state: 'Maharashtra', population: 3450, lat: 18.2851, lng: 73.8824, accessibility: 42.5 },
-      { id: 2, name: 'Khed', district: 'Pune', state: 'Maharashtra', population: 8900, lat: 18.3204, lng: 73.9102, accessibility: 79.5 },
-      { id: 3, name: 'Manchar', district: 'Pune', state: 'Maharashtra', population: 14800, lat: 18.3550, lng: 73.9450, accessibility: 88.0 },
-      { id: 4, name: 'Velhe', district: 'Pune', state: 'Maharashtra', population: 2150, lat: 18.2201, lng: 73.7905, accessibility: 28.5 },
-      { id: 5, name: 'Bhor', district: 'Pune', state: 'Maharashtra', population: 19200, lat: 18.1502, lng: 73.8504, accessibility: 91.5 },
-      { id: 6, name: 'Saswad', district: 'Pune', state: 'Maharashtra', population: 12500, lat: 18.3450, lng: 74.0300, accessibility: 71.0 },
-      { id: 7, name: 'Jejuri', district: 'Pune', state: 'Maharashtra', population: 10200, lat: 18.2750, lng: 74.1550, accessibility: 66.5 },
-      { id: 8, name: 'Ghoti Khurd', district: 'Pune', state: 'Maharashtra', population: 1480, lat: 18.2050, lng: 73.7300, accessibility: 22.0 },
-      { id: 9, name: 'Narayangaon', district: 'Pune', state: 'Maharashtra', population: 16500, lat: 19.1200, lng: 73.9800, accessibility: 82.5 },
-      { id: 10, name: 'Junnar', district: 'Pune', state: 'Maharashtra', population: 24500, lat: 19.2080, lng: 73.8760, accessibility: 85.0 },
-      { id: 11, name: 'Rajgurunagar', district: 'Pune', state: 'Maharashtra', population: 21000, lat: 18.8550, lng: 73.8820, accessibility: 86.5 },
-      { id: 12, name: 'Alandi Rural', district: 'Pune', state: 'Maharashtra', population: 9800, lat: 18.6750, lng: 73.8980, accessibility: 74.0 },
-      { id: 13, name: 'Shirur', district: 'Pune', state: 'Maharashtra', population: 28000, lat: 18.8250, lng: 74.3750, accessibility: 89.0 },
-      { id: 14, name: 'Baramati Rural', district: 'Pune', state: 'Maharashtra', population: 32000, lat: 18.1550, lng: 74.5800, accessibility: 93.0 },
-      { id: 15, name: 'Daund Rural', district: 'Pune', state: 'Maharashtra', population: 18500, lat: 18.4650, lng: 74.5850, accessibility: 76.5 },
-      { id: 16, name: 'Purandar Gram', district: 'Pune', state: 'Maharashtra', population: 3800, lat: 18.2800, lng: 73.9800, accessibility: 49.0 }
-    ];
-
     const villageStmt = db.db.prepare(`
       INSERT INTO villages (village_id, village_name, district, state, population, latitude, longitude, accessibility_score)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const v of villages) {
+    for (const v of maharashtraVillages) {
       villageStmt.run(v.id, v.name, v.district, v.state, v.population, v.lat, v.lng, v.accessibility);
     }
-    console.log(`✓ Seeded ${villages.length} Villages`);
+    console.log(`✓ Seeded ${maharashtraVillages.length} Villages across all 36 Districts of Maharashtra`);
 
     // ----------------------------------------------------
-    // 2. USERS (Demo accounts & Medical Staff & Citizens)
+    // 2. USERS (Demo accounts, state medical officers & citizens)
     // ----------------------------------------------------
-    const users = [
-      // Demo accounts
+    const baseUsers = [
+      // Core Demo accounts
       { id: 1, name: 'Ramesh Patil', age: 48, gender: 'Male', phone: '9876543210', email: 'ramesh@ruralcare.in', vid: 1, role: 'citizen' },
       { id: 2, name: 'Sunita Jadhav', age: 27, gender: 'Female', phone: '9876543211', email: 'sunita@ruralcare.in', vid: 1, role: 'citizen' },
       { id: 3, name: 'Mangal Bhosale', age: 31, gender: 'Female', phone: '9876543212', email: 'mangal@ruralcare.in', vid: 4, role: 'citizen' },
@@ -83,48 +66,47 @@ async function seed() {
       { id: 12, name: 'Dr. Sunil Gaikwad', age: 53, gender: 'Male', phone: '9876543235', email: 'sunil.gaikwad@ruralcare.in', vid: 2, role: 'doctor' },
       { id: 13, name: 'Dr. Smita Kamble', age: 32, gender: 'Female', phone: '9876543236', email: 'smita.cho@ruralcare.in', vid: 1, role: 'doctor' },
       { id: 14, name: 'Dr. Meenakshi Pawar', age: 41, gender: 'Female', phone: '9876543237', email: 'meenakshi@ruralcare.in', vid: 6, role: 'doctor' },
-      { id: 15, name: 'Dr. Prakash Bhosale', age: 47, gender: 'Male', phone: '9876543238', email: 'prakash.bhosale@ruralcare.in', vid: 14, role: 'doctor' },
-      { id: 16, name: 'Dr. Swati Kadam', age: 37, gender: 'Female', phone: '9876543239', email: 'swati.kadam@ruralcare.in', vid: 10, role: 'doctor' }
+      { id: 15, name: 'Dr. Prakash Bhosale', age: 47, gender: 'Male', phone: '9876543238', email: 'prakash.bhosale@ruralcare.in', vid: 11, role: 'doctor' },
+      { id: 16, name: 'Dr. Swati Kadam', age: 37, gender: 'Female', phone: '9876543239', email: 'swati.kadam@ruralcare.in', vid: 10, role: 'doctor' },
+
+      // Additional Regional Doctors for District Hospitals across Maharashtra
+      { id: 17, name: 'Dr. Nitin Kulkarni', age: 46, gender: 'Male', phone: '9876543250', email: 'nitin.ahmednagar@ruralcare.in', vid: 13, role: 'doctor' },
+      { id: 18, name: 'Dr. Vandana Rathod', age: 42, gender: 'Female', phone: '9876543251', email: 'vandana.akola@ruralcare.in', vid: 17, role: 'doctor' },
+      { id: 19, name: 'Dr. Mohan Meshram', age: 50, gender: 'Male', phone: '9876543252', email: 'mohan.amravati@ruralcare.in', vid: 20, role: 'doctor' },
+      { id: 20, name: 'Dr. Farooq Qureshi', age: 48, gender: 'Male', phone: '9876543253', email: 'farooq.aurangabad@ruralcare.in', vid: 24, role: 'doctor' },
+      { id: 21, name: 'Dr. Ashwini Sonawane', age: 36, gender: 'Female', phone: '9876543254', email: 'ashwini.beed@ruralcare.in', vid: 29, role: 'doctor' },
+      { id: 22, name: 'Dr. Tanaji Salunkhe', age: 45, gender: 'Male', phone: '9876543255', email: 'tanaji.kolhapur@ruralcare.in', vid: 65, role: 'doctor' },
+      { id: 23, name: 'Dr. Pratibha Dongre', age: 43, gender: 'Female', phone: '9876543256', email: 'pratibha.nagpur@ruralcare.in', vid: 74, role: 'doctor' },
+      { id: 24, name: 'Dr. Devendra Madavi', age: 40, gender: 'Male', phone: '9876543257', email: 'devendra.gadchiroli@ruralcare.in', vid: 46, role: 'doctor' },
+      { id: 25, name: 'Dr. Surekha Valvi', age: 35, gender: 'Female', phone: '9876543258', email: 'surekha.nandurbar@ruralcare.in', vid: 81, role: 'doctor' },
+      { id: 26, name: 'Dr. Hemant Bagul', age: 51, gender: 'Male', phone: '9876543259', email: 'hemant.nashik@ruralcare.in', vid: 85, role: 'doctor' },
+      { id: 27, name: 'Dr. Jayashree Tare', age: 39, gender: 'Female', phone: '9876543260', email: 'jayashree.palghar@ruralcare.in', vid: 93, role: 'doctor' },
+      { id: 28, name: 'Dr. Santosh Mane', age: 47, gender: 'Male', phone: '9876543261', email: 'santosh.solapur@ruralcare.in', vid: 121, role: 'doctor' }
     ];
 
     const userStmt = db.db.prepare(`
       INSERT INTO users (user_id, name, age, gender, phone, email, village_id, role, password_hash)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const u of users) {
+    for (const u of baseUsers) {
       userStmt.run(u.id, u.name, u.age, u.gender, u.phone, u.email, u.vid, u.role, demoPasswordHash);
     }
-    console.log(`✓ Seeded ${users.length} Users`);
+    console.log(`✓ Seeded ${baseUsers.length} Users & Medical Staff`);
 
     // ----------------------------------------------------
-    // 3. HEALTHCARE FACILITIES (12 Facilities across all 5 Tiers)
+    // 3. HEALTHCARE FACILITIES (95 facilities across all 36 districts)
     // ----------------------------------------------------
-    const facilities = [
-      { id: 1, name: 'Shivapur Health Sub-Centre', type: 'Sub-Centre', address: 'Near Gram Panchayat, Shivapur', vid: 1, lat: 18.2860, lng: 73.8830, contact: '020-2438901', hours: '08:00 AM - 04:00 PM', status: 'Open', emer: 0, tot: 4, avail: 3 },
-      { id: 2, name: 'Velhe Health Sub-Centre', type: 'Sub-Centre', address: 'Bajar Peth, Velhe Tehsil', vid: 4, lat: 18.2210, lng: 73.7915, contact: '02130-22109', hours: '08:00 AM - 04:00 PM', status: 'Open', emer: 0, tot: 3, avail: 1 },
-      { id: 3, name: 'Ghoti Tribal Sub-Centre', type: 'Sub-Centre', address: 'Ghoti Khurd Foothills', vid: 8, lat: 18.2060, lng: 73.7310, contact: '02130-22580', hours: '09:00 AM - 03:00 PM', status: 'Open', emer: 0, tot: 2, avail: 2 },
-      { id: 4, name: 'Khed Primary Health Centre', type: 'PHC', address: 'Station Road, Khed Gram', vid: 2, lat: 18.3215, lng: 73.9115, contact: '02135-222340', hours: '24 Hours', status: 'Open', emer: 1, tot: 15, avail: 8 },
-      { id: 5, name: 'Saswad Primary Health Centre', type: 'PHC', address: 'Near Municipal Ground, Saswad', vid: 6, lat: 18.3465, lng: 74.0315, contact: '02115-222115', hours: '24 Hours', status: 'Open', emer: 1, tot: 16, avail: 7 },
-      { id: 6, name: 'Narayangaon Primary Health Centre', type: 'PHC', address: 'NH-60 Bypass, Narayangaon', vid: 9, lat: 19.1215, lng: 73.9815, contact: '02132-242010', hours: '24 Hours', status: 'Open', emer: 1, tot: 14, avail: 6 },
-      { id: 7, name: 'Manchar Community Health Centre', type: 'CHC', address: 'Pune-Nashik Highway, Manchar', vid: 3, lat: 18.3565, lng: 73.9465, contact: '02133-223450', hours: '24 Hours', status: 'Open', emer: 1, tot: 35, avail: 19 },
-      { id: 8, name: 'Bhor Community Health Centre', type: 'CHC', address: 'Raja Raghunathrao Marg, Bhor', vid: 5, lat: 18.1520, lng: 73.8520, contact: '02113-222501', hours: '24 Hours', status: 'Open', emer: 1, tot: 30, avail: 14 },
-      { id: 9, name: 'Shirur Community Health Centre', type: 'CHC', address: 'Ghodnadi Road, Shirur', vid: 13, lat: 18.8270, lng: 74.3770, contact: '02137-252110', hours: '24 Hours', status: 'Open', emer: 1, tot: 40, avail: 22 },
-      { id: 10, name: 'Junnar Sub-District Hospital', type: 'Sub-District Hospital', address: 'Shivaji Chowk, Junnar', vid: 10, lat: 19.2095, lng: 73.8775, contact: '02132-222045', hours: '24 Hours', status: 'Open', emer: 1, tot: 60, avail: 28 },
-      { id: 11, name: 'Baramati Sub-District Hospital', type: 'Sub-District Hospital', address: 'MIDC Road, Baramati Rural', vid: 14, lat: 18.1570, lng: 74.5820, contact: '02112-243500', hours: '24 Hours', status: 'Open', emer: 1, tot: 75, avail: 34 },
-      { id: 12, name: 'Pune District Hospital (Aundh)', type: 'Government Hospital', address: 'Chest Hospital Campus, Aundh, Pune', vid: 2, lat: 18.3280, lng: 73.9180, contact: '020-27280450', hours: '24 Hours', status: 'Open', emer: 1, tot: 150, avail: 42 }
-    ];
-
     const facStmt = db.db.prepare(`
       INSERT INTO facilities (facility_id, facility_name, facility_type, address, village_id, latitude, longitude, contact, opening_hours, current_status, emergency_available, total_beds, available_beds)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const f of facilities) {
+    for (const f of maharashtraFacilities) {
       facStmt.run(f.id, f.name, f.type, f.address, f.vid, f.lat, f.lng, f.contact, f.hours, f.status, f.emer, f.tot, f.avail);
     }
-    console.log(`✓ Seeded ${facilities.length} Healthcare Facilities`);
+    console.log(`✓ Seeded ${maharashtraFacilities.length} Healthcare Facilities across Maharashtra`);
 
     // ----------------------------------------------------
-    // 4. DOCTORS & MEDICAL OFFICERS (12 Specialized Staff)
+    // 4. DOCTORS & SPECIALISTS
     // ----------------------------------------------------
     const doctors = [
       { id: 1, uid: 6, fid: 4, name: 'Dr. Rajesh Kulkarni', spec: 'General Medicine & Diabetology', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 02:00 PM' },
@@ -136,7 +118,21 @@ async function seed() {
       { id: 7, uid: 13, fid: 1, name: 'Dr. Smita Kamble', spec: 'Community Health Officer (CHO)', status: 'Available', days: 'Mon-Sat', hours: '08:30 AM - 03:30 PM' },
       { id: 8, uid: 14, fid: 5, name: 'Dr. Meenakshi Pawar', spec: 'General Medicine & Family Health', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 02:00 PM' },
       { id: 9, uid: 15, fid: 11, name: 'Dr. Prakash Bhosale', spec: 'Orthopedic Trauma Surgeon', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 04:00 PM' },
-      { id: 10, uid: 16, fid: 10, name: 'Dr. Swati Kadam', spec: 'Obstetrician & High-Risk Pregnancy', status: 'Available', days: 'Mon-Fri', hours: '09:30 AM - 03:30 PM' }
+      { id: 10, uid: 16, fid: 10, name: 'Dr. Swati Kadam', spec: 'Obstetrician & High-Risk Pregnancy', status: 'Available', days: 'Mon-Fri', hours: '09:30 AM - 03:30 PM' },
+
+      // Regional Doctors across Maharashtra
+      { id: 11, uid: 17, fid: 13, name: 'Dr. Nitin Kulkarni', spec: 'General Physician & Critical Care', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 04:00 PM' },
+      { id: 12, uid: 18, fid: 17, name: 'Dr. Vandana Rathod', spec: 'Gynecology & Obstetric Surgery', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 03:00 PM' },
+      { id: 13, uid: 19, fid: 21, name: 'Dr. Mohan Meshram', spec: 'Tribal Health & Tropical Medicine', status: 'Available', days: 'Mon-Sat', hours: '08:30 AM - 04:30 PM' },
+      { id: 14, uid: 20, fid: 23, name: 'Dr. Farooq Qureshi', spec: 'General Surgery & Trauma Care', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 05:00 PM' },
+      { id: 15, uid: 21, fid: 27, name: 'Dr. Ashwini Sonawane', spec: 'Pediatric Care & Nutrition', status: 'Available', days: 'Mon-Fri', hours: '09:00 AM - 03:00 PM' },
+      { id: 16, uid: 22, fid: 49, name: 'Dr. Tanaji Salunkhe', spec: 'Orthopedics & Emergency Care', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 04:00 PM' },
+      { id: 17, uid: 23, fid: 56, name: 'Dr. Pratibha Dongre', spec: 'Cardiology & Intensive Medicine', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 05:00 PM' },
+      { id: 18, uid: 24, fid: 38, name: 'Dr. Devendra Madavi', spec: 'Epidemiology & Malaria Specialist', status: 'Available', days: 'Mon-Sat', hours: '08:30 AM - 04:00 PM' },
+      { id: 19, uid: 25, fid: 62, name: 'Dr. Surekha Valvi', spec: 'Maternal Nutrition & High-Risk ANC', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 03:30 PM' },
+      { id: 20, uid: 26, fid: 64, name: 'Dr. Hemant Bagul', spec: 'Chest & Respiratory Medicine', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 04:00 PM' },
+      { id: 21, uid: 27, fid: 70, name: 'Dr. Jayashree Tare', spec: 'Community Health & Malnutrition Care', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 03:00 PM' },
+      { id: 22, uid: 28, fid: 85, name: 'Dr. Santosh Mane', spec: 'Emergency Medicine & Nephrology', status: 'Available', days: 'Mon-Sat', hours: '09:00 AM - 05:00 PM' }
     ];
 
     const docStmt = db.db.prepare(`
@@ -146,86 +142,81 @@ async function seed() {
     for (const d of doctors) {
       docStmt.run(d.id, d.uid, d.fid, d.name, d.spec, d.status, d.days, d.hours);
     }
-    console.log(`✓ Seeded ${doctors.length} Doctors & Medical Officers`);
+    console.log(`✓ Seeded ${doctors.length} Doctors & Specialized Medical Staff`);
 
     // ----------------------------------------------------
     // 5. ESSENTIAL CLINICAL SERVICES
     // ----------------------------------------------------
-    const services = [
-      { fid: 1, name: 'Primary ANC Screening & Immunization', status: 'Available', times: '09:00 AM - 01:00 PM' },
-      { fid: 1, name: 'Basic First Aid & Blood Sugar Test', status: 'Available', times: '08:00 AM - 04:00 PM' },
-      { fid: 4, name: '24x7 Emergency Resuscitation', status: 'Available', times: '24 Hours' },
-      { fid: 4, name: 'Normal Delivery / Labor Room', status: 'Available', times: '24 Hours' },
-      { fid: 4, name: 'Pathology & Diagnostic Lab (CBC, Urine, Malaria)', status: 'Available', times: '08:00 AM - 04:00 PM' },
-      { fid: 7, name: 'Emergency Surgical OT & C-Section', status: 'Available', times: '24 Hours' },
-      { fid: 7, name: 'Digital X-Ray & Ultrasonography', status: 'Available', times: '09:00 AM - 05:00 PM' },
-      { fid: 7, name: 'Neonatal Stabilization Unit (NBSU)', status: 'Available', times: '24 Hours' },
-      { fid: 8, name: '24x7 Trauma & Accident Stabilization', status: 'Available', times: '24 Hours' },
-      { fid: 8, name: 'Dental & Eye OPD Clinic', status: 'Available', times: '10:00 AM - 02:00 PM' },
-      { fid: 11, name: 'Intensive Care Unit (ICU - 12 Beds)', status: 'Available', times: '24 Hours' },
-      { fid: 12, name: 'Tertiary Dialysis & Cardiac Care', status: 'Available', times: '24 Hours' }
-    ];
-
     const srvStmt = db.db.prepare(`
       INSERT INTO services (facility_id, service_name, availability_status, timings)
       VALUES (?, ?, ?, ?)
     `);
-    for (const s of services) {
-      srvStmt.run(s.fid, s.name, s.status, s.times);
+
+    // Populate tailored services for all facilities
+    let serviceCount = 0;
+    for (const f of maharashtraFacilities) {
+      if (f.type === 'Sub-Centre') {
+        srvStmt.run(f.id, 'Primary ANC Screening & Immunization', 'Available', '09:00 AM - 01:00 PM');
+        srvStmt.run(f.id, 'Basic First Aid & Blood Sugar Test', 'Available', '08:00 AM - 04:00 PM');
+        serviceCount += 2;
+      } else if (f.type === 'PHC') {
+        srvStmt.run(f.id, 'General Outpatient (OPD) & Screening', 'Available', '08:00 AM - 04:00 PM');
+        srvStmt.run(f.id, 'Normal Delivery / 24x7 Labor Room', 'Available', '24 Hours');
+        srvStmt.run(f.id, 'Pathology & Diagnostic Lab (CBC, Urine, Malaria)', 'Available', '08:00 AM - 04:00 PM');
+        srvStmt.run(f.id, '24x7 Emergency Resuscitation & Snakebite Care', 'Available', '24 Hours');
+        serviceCount += 4;
+      } else if (f.type === 'CHC') {
+        srvStmt.run(f.id, '24x7 Emergency Resuscitation', 'Available', '24 Hours');
+        srvStmt.run(f.id, 'Emergency Surgical OT & C-Section', 'Available', '24 Hours');
+        srvStmt.run(f.id, 'Digital X-Ray & Ultrasonography', 'Available', '09:00 AM - 05:00 PM');
+        srvStmt.run(f.id, 'Neonatal Stabilization Unit (NBSU)', 'Available', '24 Hours');
+        srvStmt.run(f.id, 'Dental & Eye OPD Clinic', 'Available', '10:00 AM - 02:00 PM');
+        serviceCount += 5;
+      } else {
+        // Sub-District or Government Hospital
+        srvStmt.run(f.id, '24x7 Level-1 Emergency & Trauma Resuscitation', 'Available', '24 Hours');
+        srvStmt.run(f.id, 'Intensive Care Unit (ICU & Critical Care)', 'Available', '24 Hours');
+        srvStmt.run(f.id, 'Advanced Multi-Specialty Surgical OT', 'Available', '24 Hours');
+        srvStmt.run(f.id, 'Blood Bank & Component Storage', 'Available', '24 Hours');
+        srvStmt.run(f.id, 'Comprehensive Dialysis & Cardiology Unit', 'Available', '24 Hours');
+        serviceCount += 5;
+      }
     }
-    console.log(`✓ Seeded ${services.length} Essential Clinical Services`);
+    console.log(`✓ Seeded ${serviceCount} Essential Clinical Services`);
 
     // ----------------------------------------------------
-    // 6. MEDICINE STOCK INVENTORY (National Essential Medicines List)
+    // 6. MEDICINE STOCK INVENTORY
     // ----------------------------------------------------
-    const medicines = [
-      // Khed PHC (fid: 4)
-      { fid: 4, name: 'Paracetamol 650mg Tablets', cat: 'Analgesic / Antipyretic', qty: 2400, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 4, name: 'Amoxicillin + Clavulanate 625mg', cat: 'Antibiotic', qty: 120, unit: 'Tablets', stat: 'Low Stock' },
-      { fid: 4, name: 'Amlodipine 5mg Tablets', cat: 'Antihypertensive', qty: 1800, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 4, name: 'Metformin 500mg Tablets', cat: 'Antidiabetic', qty: 1500, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 4, name: 'WHO Oral Rehydration Salts (ORS)', cat: 'Electrolyte', qty: 450, unit: 'Sachets', stat: 'In Stock' },
-      { fid: 4, name: 'Polyvalent Anti-Snake Venom (ASV)', cat: 'Critical Antidote', qty: 18, unit: 'Vials', stat: 'In Stock' },
-      { fid: 4, name: 'Rabies Vaccine (ARV) 0.5ml', cat: 'Vaccine', qty: 25, unit: 'Vials', stat: 'In Stock' },
-      { fid: 4, name: 'Iron & Folic Acid (IFA) Tablets', cat: 'Maternal Nutrition', qty: 3200, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 4, name: 'Salbutamol Inhaler 100mcg', cat: 'Respiratory', qty: 4, unit: 'Canisters', stat: 'Low Stock' },
-
-      // Manchar CHC (fid: 7)
-      { fid: 7, name: 'Paracetamol 650mg Tablets', cat: 'Analgesic / Antipyretic', qty: 4800, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 7, name: 'Amoxicillin + Clavulanate 625mg', cat: 'Antibiotic', qty: 950, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 7, name: 'Azithromycin 500mg Tablets', cat: 'Antibiotic', qty: 620, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 7, name: 'Polyvalent Anti-Snake Venom (ASV)', cat: 'Critical Antidote', qty: 45, unit: 'Vials', stat: 'In Stock' },
-      { fid: 7, name: 'Rabies Vaccine (ARV) 0.5ml', cat: 'Vaccine', qty: 60, unit: 'Vials', stat: 'In Stock' },
-      { fid: 7, name: 'Oxytocin Injection 10 IU', cat: 'Labor & Delivery', qty: 85, unit: 'Ampoules', stat: 'In Stock' },
-      { fid: 7, name: 'Normal Saline (0.9% NaCl) 500ml IV', cat: 'IV Fluids', qty: 380, unit: 'Bottles', stat: 'In Stock' },
-
-      // Shivapur Sub-Centre (fid: 1)
-      { fid: 1, name: 'Paracetamol 500mg Tablets', cat: 'Analgesic / Antipyretic', qty: 600, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 1, name: 'WHO Oral Rehydration Salts (ORS)', cat: 'Electrolyte', qty: 150, unit: 'Sachets', stat: 'In Stock' },
-      { fid: 1, name: 'Zinc Sulfate 20mg Tablets', cat: 'Pediatric Supplement', qty: 400, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 1, name: 'Iron & Folic Acid (IFA) Tablets', cat: 'Maternal Nutrition', qty: 1200, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 1, name: 'Amoxicillin 250mg Capsules', cat: 'Antibiotic', qty: 0, unit: 'Capsules', stat: 'Out of Stock' },
-
-      // Bhor CHC (fid: 8)
-      { fid: 8, name: 'Polyvalent Anti-Snake Venom (ASV)', cat: 'Critical Antidote', qty: 30, unit: 'Vials', stat: 'In Stock' },
-      { fid: 8, name: 'Diclofenac Sodium 75mg Inj', cat: 'Analgesic', qty: 140, unit: 'Ampoules', stat: 'In Stock' },
-      { fid: 8, name: 'Ciprofloxacin 500mg Tablets', cat: 'Antibiotic', qty: 500, unit: 'Tablets', stat: 'In Stock' },
-      { fid: 8, name: 'Atorvastatin 10mg Tablets', cat: 'Cardiovascular', qty: 800, unit: 'Tablets', stat: 'In Stock' },
-
-      // Baramati SDH (fid: 11)
-      { fid: 11, name: 'Human Insulin Regular (100 IU/ml)', cat: 'Endocrinology', qty: 45, unit: 'Vials', stat: 'In Stock' },
-      { fid: 11, name: 'Ceftriaxone 1g Injection', cat: 'Antibiotic', qty: 320, unit: 'Vials', stat: 'In Stock' },
-      { fid: 11, name: 'Enoxaparin 40mg/0.4ml Inj', cat: 'Anticoagulant', qty: 65, unit: 'Syringes', stat: 'In Stock' }
-    ];
-
     const medStmt = db.db.prepare(`
       INSERT INTO medicine_stock (facility_id, medicine_name, category, quantity, unit, stock_status)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
-    for (const m of medicines) {
-      medStmt.run(m.fid, m.name, m.cat, m.qty, m.unit, m.stat);
+
+    let medStockCount = 0;
+    const essentialMedTemplates = [
+      { name: 'Paracetamol 650mg Tablets', cat: 'Analgesic / Antipyretic', baseQty: 3000, unit: 'Tablets' },
+      { name: 'Amoxicillin + Clavulanate 625mg', cat: 'Antibiotic', baseQty: 800, unit: 'Tablets' },
+      { name: 'Amlodipine 5mg Tablets', cat: 'Antihypertensive', baseQty: 1500, unit: 'Tablets' },
+      { name: 'Metformin 500mg Tablets', cat: 'Antidiabetic', baseQty: 1800, unit: 'Tablets' },
+      { name: 'WHO Oral Rehydration Salts (ORS)', cat: 'Electrolyte', baseQty: 600, unit: 'Sachets' },
+      { name: 'Polyvalent Anti-Snake Venom (ASV)', cat: 'Critical Antidote', baseQty: 40, unit: 'Vials' },
+      { name: 'Rabies Vaccine (ARV) 0.5ml', cat: 'Vaccine', baseQty: 50, unit: 'Vials' },
+      { name: 'Iron & Folic Acid (IFA) Tablets', cat: 'Maternal Nutrition', baseQty: 4000, unit: 'Tablets' }
+    ];
+
+    // Seed essentials across all facilities with realistic variance
+    for (const f of maharashtraFacilities) {
+      const beds = f.tot || f.total_beds || 10;
+      for (const t of essentialMedTemplates) {
+        let qty = Math.floor(t.baseQty * (beds / 30) * (0.6 + Math.random() * 0.8));
+        qty = Math.max(15, qty);
+        let status = 'In Stock';
+        if (qty < 25) status = 'Low Stock';
+        medStmt.run(f.id, t.name, t.cat, qty, t.unit, status);
+        medStockCount++;
+      }
     }
-    console.log(`✓ Seeded ${medicines.length} Medicine Stock Records`);
+    console.log(`✓ Seeded ${medStockCount} Medicine Stock Records across facilities`);
 
     // ----------------------------------------------------
     // 7. JAN AUSHADHI & GENERIC MEDICINE ALTERNATIVES (15 mappings)
@@ -511,58 +502,68 @@ async function seed() {
         cases: 14,
         severity: 'Severe/Outbreak',
         status: 'Active',
-        reportedBy: 'ASHA Surekha Tai (Shivapur)',
+        reportedBy: 'ASHA Surekha Tai (Shivapur, Pune)',
         action: 'Immediate thermal fogging deployed; Abate larvicide applied in 82 open water storage containers.'
       },
       {
-        vid: 4,
-        disease: 'Acute Diarrheal Disease (ADD)',
-        cat: 'Water-Borne',
-        cases: 22,
-        severity: 'Moderate',
-        status: 'Monitoring',
-        reportedBy: 'ASHA Kavita Shinde (Velhe)',
-        action: 'Bleaching powder super-chlorination of village head tank; distributed 300 ORS and Zinc packets to households.'
+        vid: 20,
+        disease: 'Severe Acute Malnutrition (SAM) & Diarrheal Illness',
+        cat: 'Nutritional/Chronic',
+        cases: 28,
+        severity: 'Severe/Outbreak',
+        status: 'Active',
+        reportedBy: 'Medical Officer Dharni Sub-District Hospital (Melghat, Amravati)',
+        action: 'Emergency Nutrition Rehabilitation Centre (NRC) beds activated; therapeutic food and ORS packets dispatched.'
       },
       {
-        vid: 8,
-        disease: 'Severe Maternal Anemia & Nutritional Deficiency',
+        vid: 46,
+        disease: 'Falciparum Malaria Outbreak Cluster',
+        cat: 'Vector-Borne',
+        cases: 38,
+        severity: 'Severe/Outbreak',
+        status: 'Active',
+        reportedBy: 'Epidemiology Field Officer (Aheri, Gadchiroli)',
+        action: 'Mass blood survey (MBS) conducted; ACT combination therapy dispensed; indoor residual spray (IRS) executed.'
+      },
+      {
+        vid: 81,
+        disease: 'Sickle Cell Anemia Crises & Pediatric Pneumonia',
         cat: 'Nutritional/Chronic',
-        cases: 9,
+        cases: 19,
         severity: 'Moderate',
         status: 'Active',
-        reportedBy: 'Medical Officer Paud PHC',
-        action: 'Weekly Iron-Folic Acid supplementation camp organized; Poshan Abhiyaan nutritional kit distribution initiated.'
+        reportedBy: 'Dhadgaon Tribal Health Mission (Nandurbar)',
+        action: 'HPLC electrophoresis screening team deployed; Hydroxyurea therapy initiated for verified trait carriers.'
       },
       {
-        vid: 2,
-        disease: 'Influenza-Like Illness (Seasonal Viral ARI)',
-        cat: 'Respiratory',
-        cases: 35,
+        vid: 93,
+        disease: 'Monsoon Leptospirosis & Snakebite Surge',
+        cat: 'Other',
+        cases: 12,
         severity: 'Moderate',
         status: 'Monitoring',
-        reportedBy: 'Dr. Rajesh Kulkarni (Khed PHC)',
-        action: 'Special fever triage OPD established; symptomatic Paracetamol and warm hydration awareness broadcasted.'
+        reportedBy: 'Jawhar Cottage Hospital Team (Palghar)',
+        action: 'Doxycycline 200mg chemoprophylaxis distributed to paddy workers; 100 vials of ASV positioned at PHCs.'
+      },
+      {
+        vid: 121,
+        disease: 'Enteric Typhoid Fever & Water Contamination',
+        cat: 'Water-Borne',
+        cases: 15,
+        severity: 'Moderate',
+        status: 'Monitoring',
+        reportedBy: 'Pandharpur Health Inspector (Solapur)',
+        action: 'Zilla Parishad water purification plant flushed; chlorination levels maintained at 2.0 ppm.'
       },
       {
         vid: 10,
         disease: 'Scrub Typhus / Fever of Unknown Origin',
         cat: 'Vector-Borne',
         cases: 6,
-        severity: 'Severe/Outbreak',
+        severity: 'Moderate',
         status: 'Active',
-        reportedBy: 'Junnar SDH Epidemiology Team',
+        reportedBy: 'Junnar SDH Epidemiology Team (Pune)',
         action: 'Rapid diagnostic ELISA testing mobilized; Doxycycline prophylaxis dispensed to agricultural field workers.'
-      },
-      {
-        vid: 6,
-        disease: 'Enteric Gastrointestinal Illness (Mild)',
-        cat: 'Water-Borne',
-        cases: 11,
-        severity: 'Mild',
-        status: 'Contained',
-        reportedBy: 'Saswad PHC Health Inspector',
-        action: 'Contaminated pipeline repaired; OT testing confirms residual chlorine at 0.5 ppm at tail-end taps.'
       }
     ];
 
@@ -605,7 +606,7 @@ async function seed() {
     console.log(`✓ Seeded ${records.length} Health Records`);
 
     // ----------------------------------------------------
-    // 12. APPOINTMENTS (OPD queue for today & future)
+    // 12. APPOINTMENTS
     // ----------------------------------------------------
     const today = new Date().toISOString().split('T')[0];
     const appointments = [
@@ -651,31 +652,44 @@ async function seed() {
     console.log(`✓ Seeded ${referrals.length} Inter-Tier Referrals`);
 
     // ----------------------------------------------------
-    // 14. EMERGENCY SERVICES
+    // 14. EMERGENCY 108 SERVICES (Covering all emergency facilities across Maharashtra)
     // ----------------------------------------------------
-    const emergServices = [
-      { fid: 4, amb: 1, contact: '108 / 02135-222340', ambPhone: '9822010801', respTime: 18, trauma: 'Level 3 (PHC Stabilization)' },
-      { fid: 7, amb: 1, contact: '108 / 02133-223450', ambPhone: '9822010802', respTime: 12, trauma: 'Level 2 (CHC Trauma Care)' },
-      { fid: 8, amb: 1, contact: '108 / 02113-222501', ambPhone: '9822010803', respTime: 15, trauma: 'Level 2 (CHC Trauma Care)' },
-      { fid: 11, amb: 1, contact: '108 / 02112-243500', ambPhone: '9822010804', respTime: 10, trauma: 'Level 1 (Sub-District Trauma & ICU)' },
-      { fid: 12, amb: 1, contact: '108 / 020-27280450', ambPhone: '9822010805', respTime: 8, trauma: 'Level 1 (Tertiary District Hospital)' }
-    ];
-
     const emStmt = db.db.prepare(`
       INSERT INTO emergency_services (facility_id, ambulance_available, emergency_contact, ambulance_phone, response_time_minutes, trauma_care_level)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
-    for (const em of emergServices) {
-      emStmt.run(em.fid, em.amb, em.contact, em.ambPhone, em.respTime, em.trauma);
+
+    let emergencyCount = 0;
+    for (const f of maharashtraFacilities) {
+      if (f.emer === 1) {
+        let traumaLevel = 'Level 2 (Secondary Stabilization & CHC Trauma)';
+        let respTime = 14;
+        if (f.type === 'Government Hospital') {
+          traumaLevel = 'Level 1 (Tertiary District Hospital & Trauma Center)';
+          respTime = 8;
+        } else if (f.type === 'Sub-District Hospital') {
+          traumaLevel = 'Level 1 (Sub-District Trauma & ICU)';
+          respTime = 11;
+        } else if (f.type === 'PHC') {
+          traumaLevel = 'Level 3 (PHC Emergency Stabilization)';
+          respTime = 18;
+        }
+
+        const ambPhone = `108 / ${f.contact.split(' ')[0] || '108'}`;
+        emStmt.run(f.id, 1, `108 / ${f.contact}`, ambPhone, respTime, traumaLevel);
+        emergencyCount++;
+      }
     }
-    console.log(`✓ Seeded ${emergServices.length} Emergency 108 Services`);
+    console.log(`✓ Seeded ${emergencyCount} Emergency 108 Services across Maharashtra facilities`);
 
     // ----------------------------------------------------
     // 15. FEEDBACK & GRIEVANCE COMPLAINTS
     // ----------------------------------------------------
     const feedbackList = [
       { pid: 1, fid: 4, rating: 5, text: 'Dr. Rajesh explained blood pressure care with utmost kindness. Quick service at pharmacy counter.' },
-      { pid: 2, fid: 4, rating: 4, text: 'ASHA worker Surekha Tai accompanied me for ANC test. Lab technician took blood sample gently.' }
+      { pid: 2, fid: 4, rating: 4, text: 'ASHA worker Surekha Tai accompanied me for ANC test. Lab technician took blood sample gently.' },
+      { pid: 3, fid: 21, rating: 5, text: 'The doctors at Dharni Sub-District Hospital provided free nutrition kits and medicines promptly.' },
+      { pid: 1, fid: 56, rating: 5, text: 'GMC Nagpur emergency ward was very responsive during our emergency transfer.' }
     ];
 
     const fbStmt = db.db.prepare(`
@@ -711,29 +725,50 @@ async function seed() {
     console.log(`✓ Seeded Feedback & Citizen Grievance Records`);
 
     // ----------------------------------------------------
-    // 16. RURAL HEALTH CAMPS
+    // 16. RURAL HEALTH CAMPS (Statewide coverage)
     // ----------------------------------------------------
     const camps = [
       {
-        fid: 4, vid: 1, name: 'Mega Rural Eye & Diabetes Screening Camp',
+        fid: 4, vid: 1, name: 'Pune Rural Eye & Diabetes Screening Camp',
         loc: 'Zilla Parishad Primary School, Shivapur',
         date: '2026-09-28', start: '09:00 AM', end: '04:00 PM',
         services: 'Ophthalmology, Cataract Screening, Blood Sugar & HbA1c, Free Reading Glasses',
         target: 'Villagers 45+ & Diabetics', stat: 'Upcoming'
       },
       {
-        fid: 7, vid: 4, name: 'Maternal & Child Poshan Abhiyaan Health Mela',
-        loc: 'Gram Panchayat Hall, Velhe',
-        date: '2026-10-05', start: '10:00 AM', end: '03:00 PM',
-        services: 'Obstetrics Consultation, Pediatric Growth Monitoring, Catch-up Immunization, Nutrition Kits',
-        target: 'Pregnant Women & Mothers with Infants', stat: 'Upcoming'
+        fid: 21, vid: 20, name: 'Melghat Tribal Maternal & Child Poshan Mela',
+        loc: 'Ashram Shala Ground, Dharni Tehsil, Amravati',
+        date: '2026-10-04', start: '09:00 AM', end: '03:30 PM',
+        services: 'Pediatric SAM Screening, Obstetric Sonography, Iron Infusion, Nutrition Kit Distribution',
+        target: 'Tribal Mothers & Under-5 Children', stat: 'Upcoming'
       },
       {
-        fid: 8, vid: 8, name: 'Tribal Area General Health & Blood Pressure Camp',
-        loc: 'Ashram Shala Ground, Ghoti Khurd',
-        date: '2026-10-12', start: '09:30 AM', end: '03:30 PM',
-        services: 'General Checkup, 12-Lead ECG, Free Chronic Drugs, Sickle Cell / Anemia Screening',
-        target: 'Tribal Families & Agricultural Workers', stat: 'Upcoming'
+        fid: 38, vid: 46, name: 'Gadchiroli Forest Malaria & Sickle Cell Screening Camp',
+        loc: 'Gram Panchayat Bhavan, Aheri',
+        date: '2026-10-10', start: '08:30 AM', end: '03:00 PM',
+        services: 'Rapid Diagnostic Malaria Tests, Sickle Cell Electrophoresis, Mosquito Net Distribution',
+        target: 'Forest Dwellers & Agricultural Families', stat: 'Upcoming'
+      },
+      {
+        fid: 62, vid: 81, name: 'Satpura Hilly Belt General Medical Camp',
+        loc: 'Dhadgaon Tribal School Ground, Nandurbar',
+        date: '2026-10-15', start: '09:30 AM', end: '04:00 PM',
+        services: 'General Health OPD, Pediatric Checkup, Free Antibiotics, Antenatal Examination',
+        target: 'Hill-top Village Communities', stat: 'Upcoming'
+      },
+      {
+        fid: 70, vid: 93, name: 'Palghar Tribal Malnutrition & Orthopedic Camp',
+        loc: 'Jawhar Cottage Hospital Community Hall',
+        date: '2026-10-22', start: '09:00 AM', end: '03:00 PM',
+        services: 'Joint Pain Assessment, Bone Density Scanning, Child Growth Monitoring',
+        target: 'Tribal Elders & Children', stat: 'Upcoming'
+      },
+      {
+        fid: 86, vid: 121, name: 'Solapur Pandharpur Pilgrim & Rural Health Checkup',
+        loc: 'Zilla Parishad High School, Pandharpur',
+        date: '2026-10-28', start: '08:00 AM', end: '02:00 PM',
+        services: 'Cardiac Screening, ECG, Diabetes Blood Test, Geriatric Medicine',
+        target: 'Rural Pilgrims & Senior Citizens', stat: 'Upcoming'
       }
     ];
 
@@ -744,7 +779,7 @@ async function seed() {
     for (const cp of camps) {
       campStmt.run(cp.fid, cp.vid, cp.name, cp.loc, cp.date, cp.start, cp.end, cp.services, cp.target, cp.stat);
     }
-    console.log(`✓ Seeded ${camps.length} Scheduled Rural Health Camps`);
+    console.log(`✓ Seeded ${camps.length} Scheduled Rural Health Camps across Maharashtra`);
 
     // ----------------------------------------------------
     // 17. NOTIFICATIONS
@@ -755,7 +790,8 @@ async function seed() {
       { uid: 4, title: 'High-Risk AI Screening Alert', msg: 'Patient Suresh Jadhav reported severe chest pain with critical risk flagged. Immediate 108 action advised.', type: 'screening' },
       { uid: 4, title: 'Outbreak Alert: Dengue in Shivapur', msg: '14 active cases detected in Shivapur. Door-to-door larval check initiated.', type: 'general' },
       { uid: 6, title: 'New Referral Received', msg: 'Urgent referral for Patient Mangal Bhosale (Severe Anemia) pending clinical review.', type: 'referral' },
-      { uid: 10, title: 'Citizen Grievance Update', msg: 'Grievance ticket #1 regarding pediatric syrup resolved; stock replenishment confirmed.', type: 'complaint' }
+      { uid: 10, title: 'Citizen Grievance Update', msg: 'Grievance ticket #1 regarding pediatric syrup resolved; stock replenishment confirmed.', type: 'complaint' },
+      { uid: 10, title: 'Maharashtra State GIS Expanded', msg: 'All 36 districts of Maharashtra now synced with verified public healthcare facilities and rural locations.', type: 'general' }
     ];
 
     const notifStmt = db.db.prepare(`
@@ -768,7 +804,12 @@ async function seed() {
     console.log(`✓ Seeded ${notifications.length} User Notifications`);
   });
 
-  console.log('✅ RuralCare massive database seeding completed successfully!');
+  // Calculate and refresh real accessibility scores for all villages based on new facility coordinates
+  console.log('⚡ Computing geospatial accessibility indices for all Maharashtra villages...');
+  refreshAllVillageScores();
+  console.log('✅ Computed real accessibility scores for all villages based on nearest healthcare facilities!');
+
+  console.log('🎉 Full Maharashtra Database Seeding Completed Successfully!');
 }
 
 if (require.main === module) {

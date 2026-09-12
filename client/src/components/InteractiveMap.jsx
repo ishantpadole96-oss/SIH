@@ -4,8 +4,8 @@ import L from 'leaflet';
 export function InteractiveMap({
   villages = [],
   facilities = [],
-  center = [18.2851, 73.8824],
-  zoom = 11,
+  center = [19.7515, 75.7139],
+  zoom = 7,
   onFacilitySelect,
   height = '480px'
 }) {

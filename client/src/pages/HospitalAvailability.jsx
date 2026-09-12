@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   Hospital, Bed, Stethoscope, ShieldAlert, Pill, Edit3, 
-  CheckCircle2, AlertCircle, RefreshCw, X 
+  CheckCircle2, AlertCircle, RefreshCw, X, Search 
 } from 'lucide-react';
 
 export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooking }) {
@@ -12,6 +12,8 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
 
   const [board, setBoard] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterDistrict, setFilterDistrict] = useState('All');
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [editingFacility, setEditingFacility] = useState(null);
   const [updateForm, setUpdateForm] = useState({
     total_beds: 0,
@@ -98,6 +100,38 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
         </button>
       </div>
 
+      {/* Filter & Search Bar */}
+      <div className="card" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ flex: '1 1 240px', position: 'relative' }}>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Search facility name, district, or town..."
+            value={searchKeyword}
+            onChange={e => setSearchKeyword(e.target.value)}
+            style={{ paddingLeft: '2.4rem' }}
+          />
+          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+        </div>
+
+        <div style={{ flex: '0 1 240px' }}>
+          <select
+            className="form-select"
+            value={filterDistrict}
+            onChange={e => setFilterDistrict(e.target.value)}
+          >
+            <option value="All">All 36 Districts (Maharashtra)</option>
+            {Array.from(new Set(board.map(b => b.district).filter(Boolean))).sort().map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+          Showing <b>{board.filter(f => (filterDistrict === 'All' || f.district === filterDistrict) && (!searchKeyword || f.facility_name.toLowerCase().includes(searchKeyword.toLowerCase()) || (f.district && f.district.toLowerCase().includes(searchKeyword.toLowerCase())))).length}</b> of {board.length} facilities
+        </div>
+      </div>
+
       {/* Live Board Grid */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
@@ -105,7 +139,16 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
         </div>
       ) : (
         <div className="grid-cols-2" style={{ gap: '1.5rem' }}>
-          {board.map(facility => {
+          {board
+            .filter(facility => {
+              const matchesDistrict = filterDistrict === 'All' || facility.district === filterDistrict;
+              const matchesSearch = !searchKeyword ||
+                facility.facility_name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+                (facility.village_name && facility.village_name.toLowerCase().includes(searchKeyword.toLowerCase())) ||
+                (facility.district && facility.district.toLowerCase().includes(searchKeyword.toLowerCase()));
+              return matchesDistrict && matchesSearch;
+            })
+            .map(facility => {
             const occupancyPct = facility.total_beds > 0
               ? Math.round(((facility.total_beds - facility.available_beds) / facility.total_beds) * 100)
               : 0;

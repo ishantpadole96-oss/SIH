@@ -17,6 +17,7 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('All');
   const [facilityType, setFacilityType] = useState('All');
   const [selectedService, setSelectedService] = useState('All');
   const [emergencyOnly, setEmergencyOnly] = useState(false);
@@ -27,6 +28,7 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
     setLoading(true);
     const params = new URLSearchParams();
     if (searchTerm) params.append('search', searchTerm);
+    if (selectedDistrict !== 'All') params.append('district', selectedDistrict);
     if (facilityType !== 'All') params.append('facility_type', facilityType);
     if (selectedService !== 'All') params.append('service', selectedService);
     if (emergencyOnly) params.append('emergency_only', 'true');
@@ -55,7 +57,7 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
 
   useEffect(() => {
     fetchFacilities();
-  }, [searchTerm, facilityType, selectedService, emergencyOnly, openNow, maxDistance, selectedVillage]);
+  }, [searchTerm, selectedDistrict, facilityType, selectedService, emergencyOnly, openNow, maxDistance, selectedVillage]);
 
   return (
     <div className="container" style={{ padding: '2rem 1.25rem 4rem 1.25rem' }}>
@@ -117,6 +119,54 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
             </div>
           </div>
 
+          {/* District Filter */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">District (Maharashtra)</label>
+            <select
+              className="form-select"
+              value={selectedDistrict}
+              onChange={e => setSelectedDistrict(e.target.value)}
+            >
+              <option value="All">All 36 Districts</option>
+              <option value="Ahmednagar">Ahmednagar (Ahilyanagar)</option>
+              <option value="Akola">Akola</option>
+              <option value="Amravati">Amravati</option>
+              <option value="Chhatrapati Sambhajinagar">Chhatrapati Sambhajinagar</option>
+              <option value="Beed">Beed</option>
+              <option value="Bhandara">Bhandara</option>
+              <option value="Buldhana">Buldhana</option>
+              <option value="Chandrapur">Chandrapur</option>
+              <option value="Dhule">Dhule</option>
+              <option value="Gadchiroli">Gadchiroli</option>
+              <option value="Gondia">Gondia</option>
+              <option value="Hingoli">Hingoli</option>
+              <option value="Jalgaon">Jalgaon</option>
+              <option value="Jalna">Jalna</option>
+              <option value="Kolhapur">Kolhapur</option>
+              <option value="Latur">Latur</option>
+              <option value="Mumbai City">Mumbai City</option>
+              <option value="Mumbai Suburban">Mumbai Suburban</option>
+              <option value="Nagpur">Nagpur</option>
+              <option value="Nanded">Nanded</option>
+              <option value="Nandurbar">Nandurbar</option>
+              <option value="Nashik">Nashik</option>
+              <option value="Dharashiv">Dharashiv (Osmanabad)</option>
+              <option value="Palghar">Palghar</option>
+              <option value="Parbhani">Parbhani</option>
+              <option value="Pune">Pune</option>
+              <option value="Raigad">Raigad</option>
+              <option value="Ratnagiri">Ratnagiri</option>
+              <option value="Sangli">Sangli</option>
+              <option value="Satara">Satara</option>
+              <option value="Sindhudurg">Sindhudurg</option>
+              <option value="Solapur">Solapur</option>
+              <option value="Thane">Thane</option>
+              <option value="Wardha">Wardha</option>
+              <option value="Washim">Washim</option>
+              <option value="Yavatmal">Yavatmal</option>
+            </select>
+          </div>
+
           {/* Facility Type Filter */}
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label">Facility Tier</label>
@@ -130,6 +180,7 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
               <option value="PHC">Primary Health Centre (PHC)</option>
               <option value="CHC">Community Health Centre (CHC)</option>
               <option value="Sub-District Hospital">Sub-District Hospital</option>
+              <option value="Government Hospital">District / Civil Hospital</option>
             </select>
           </div>
 

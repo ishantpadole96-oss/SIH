@@ -274,7 +274,7 @@ router.get('/analytics/gis-map', (req, res) => {
     }));
 
     return res.json({
-      center: { lat: 18.28, lng: 73.90, zoom: 11 },
+      center: { lat: 19.75, lng: 75.71, zoom: 7 },
       villages,
       facilities
     });
