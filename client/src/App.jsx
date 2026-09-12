@@ -122,6 +122,7 @@ function AppContent() {
         viewingRole={viewingRole}
         setViewingRole={setViewingRole}
         onOpenEmergency={() => setShowEmergencyModal(true)}
+        onOpenTelemed={() => setShowTelemedModal(true)}
         isMobileOpen={isMobileOpen}
         setIsMobileOpen={setIsMobileOpen}
       />

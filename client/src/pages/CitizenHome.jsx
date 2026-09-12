@@ -614,6 +614,92 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
         ))}
       </div>
 
+      {/* Live e-Sanjeevani Video Call Consultation Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #E8F5EE 0%, #D8EFE2 100%)',
+        border: '1.5px solid #166534',
+        borderRadius: '22px',
+        padding: '1.5rem 2rem',
+        marginBottom: '2.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '1.25rem',
+        boxShadow: '0 6px 20px rgba(16, 101, 52, 0.08)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
+          <div style={{
+            width: '50px',
+            height: '50px',
+            borderRadius: '16px',
+            background: '#173D35',
+            color: '#FFFFFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(23, 61, 53, 0.25)',
+            flexShrink: 0
+          }}>
+            <Video size={24} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A' }}>
+                e-Sanjeevani Live Video Consultation Room
+              </span>
+              <span style={{
+                background: '#166534',
+                color: '#FFFFFF',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34D399' }} />
+                DOCTOR ONLINE NOW
+              </span>
+            </div>
+            <p style={{ fontSize: '0.86rem', color: '#2B4A3F', margin: 0, lineHeight: 1.4 }}>
+              Direct video consultation with <strong>Dr. Rajesh Deshmukh</strong> (General Medicine &amp; Family Health) · Free government OPD, instant prescription &amp; vitals telemetry.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={onOpenTelemed}
+          style={{
+            background: '#173D35',
+            color: '#FFFFFF',
+            padding: '0.8rem 1.6rem',
+            borderRadius: '9999px',
+            fontSize: '0.94rem',
+            fontWeight: 700,
+            border: 'none',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.55rem',
+            boxShadow: '0 4px 14px rgba(23, 61, 53, 0.25)',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#0F2922';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = '#173D35';
+            e.currentTarget.style.transform = 'none';
+          }}
+        >
+          <Video size={18} />
+          <span>Start Video Call Now</span>
+        </button>
+      </div>
+
       {/* 3. "YOUR CARE JOURNEY" SECTION */}
       <div style={{ marginBottom: '3rem' }}>
         

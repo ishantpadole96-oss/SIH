@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Home, MapPin, Sparkles, Calendar, Pill, Activity, FileText, 
   MessageSquare, Navigation, Landmark, ShieldAlert, ChevronDown, 
-  HelpCircle, X, Check, HeartPulse, Bed
+  HelpCircle, X, Check, HeartPulse, Bed, Video
 } from 'lucide-react';
 
 export function Sidebar({ 
@@ -11,6 +11,7 @@ export function Sidebar({
   viewingRole, 
   setViewingRole, 
   onOpenEmergency,
+  onOpenTelemed,
   isMobileOpen,
   setIsMobileOpen 
 }) {
@@ -20,6 +21,7 @@ export function Sidebar({
   const navItems = [
     { id: 'home', label: 'Overview', icon: <Home size={18} /> },
     { id: 'facilities', label: 'Find healthcare', icon: <MapPin size={18} /> },
+    { id: 'telemedicine', label: 'Video consultation', icon: <Video size={18} /> },
     { id: 'screening', label: 'AI screening', icon: <Sparkles size={18} /> },
     { id: 'book-appointment', label: 'Appointments', icon: <Calendar size={18} /> },
     { id: 'medicines', label: 'Medicines', icon: <Pill size={18} /> },
@@ -46,7 +48,9 @@ export function Sidebar({
   };
 
   const handleNavClick = (id) => {
-    if (id === 'rural-map') {
+    if (id === 'telemedicine') {
+      if (onOpenTelemed) onOpenTelemed();
+    } else if (id === 'rural-map') {
       setActiveTab('facilities');
     } else {
       setActiveTab(id);
