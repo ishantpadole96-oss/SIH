@@ -1,30 +1,108 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Video, VideoOff, Mic, MicOff, PhoneOff, Activity, Heart,
-  Thermometer, Wind, FileText, CheckCircle2, User, ShieldAlert, Sparkles
+  Thermometer, Wind, FileText, CheckCircle2, User, ShieldAlert,
+  Sparkles, MessageSquare, Send, Volume2, VolumeX, Download,
+  Maximize2, Minimize2, Camera, ShieldCheck, Share2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function TelemedicineRoom({ doctorName = 'Dr. Rajesh Deshmukh', specialty = 'General Medicine', onClose }) {
+export default function TelemedicineRoom({
+  doctorName = 'Dr. Rajesh Deshmukh',
+  specialty = 'General Medicine & Family Health',
+  facility = 'Govt PHC Khedgaon • Pune District Civil Hospital',
+  patientName,
+  onClose
+}) {
   const { user } = useAuth();
   const { language } = useLanguage();
 
+  const activePatientName = patientName || user?.name || 'Ramesh Patil';
+
+  // Device & Stream States
   const [micActive, setMicActive] = useState(true);
   const [videoActive, setVideoActive] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [audioMuted, setAudioMuted] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
-  const [activeTab, setActiveTab] = useState('vitals'); // 'vitals' | 'prescription'
+  const [activeTab, setActiveTab] = useState('vitals'); // 'vitals' | 'prescription' | 'chat'
   const [prescriptionNote, setPrescriptionNote] = useState('');
   const [isPrescriptionSaved, setIsPrescriptionSaved] = useState(false);
+  const [hasCameraStream, setHasCameraStream] = useState(false);
+  const [cameraNotice, setCameraNotice] = useState('');
+
+  // Live Chat state
+  const [chatMessages, setChatMessages] = useState([
+    { sender: 'doctor', time: '10:01 AM', text: `Namaste ${activePatientName} ji. Welcome to e-Sanjeevani. I have opened your baseline record.` },
+    { sender: 'system', time: '10:01 AM', text: 'Encrypted connection established with Maharashtra Telemedicine Node.' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+
+  const localVideoRef = useRef(null);
+  const mediaStreamRef = useRef(null);
 
   // Simulated live vitals telemetry
   const [vitals, setVitals] = useState({
     heartRate: 74,
     spo2: 98,
-    bpSys: 124,
-    bpDia: 82,
+    bpSys: 122,
+    bpDia: 80,
     temp: 98.6
   });
+
+  // Access user's actual camera and microphone
+  useEffect(() => {
+    let activeStream = null;
+
+    async function initMediaDevices() {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          activeStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+            audio: true
+          });
+          mediaStreamRef.current = activeStream;
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = activeStream;
+          }
+          setHasCameraStream(true);
+        }
+      } catch (err) {
+        console.warn('Real webcam/mic not accessible or blocked, running high-fidelity simulation:', err);
+        setHasCameraStream(false);
+        setCameraNotice('Webcam in interactive simulation mode');
+      }
+    }
+
+    initMediaDevices();
+
+    return () => {
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  // Handle Video Toggle
+  useEffect(() => {
+    if (mediaStreamRef.current) {
+      const videoTracks = mediaStreamRef.current.getVideoTracks();
+      videoTracks.forEach(track => {
+        track.enabled = videoActive;
+      });
+    }
+  }, [videoActive]);
+
+  // Handle Mic Toggle
+  useEffect(() => {
+    if (mediaStreamRef.current) {
+      const audioTracks = mediaStreamRef.current.getAudioTracks();
+      audioTracks.forEach(track => {
+        track.enabled = micActive;
+      });
+    }
+  }, [micActive]);
 
   // Call duration counter
   useEffect(() => {
@@ -39,8 +117,8 @@ export default function TelemedicineRoom({ doctorName = 'Dr. Rajesh Deshmukh', s
     const vitalPulse = setInterval(() => {
       setVitals(v => ({
         ...v,
-        heartRate: 72 + Math.floor(Math.random() * 5),
-        spo2: 98 + (Math.random() > 0.7 ? 1 : 0)
+        heartRate: 72 + Math.floor(Math.random() * 6),
+        spo2: 98 + (Math.random() > 0.6 ? 1 : 0)
       }));
     }, 3000);
     return () => clearInterval(vitalPulse);
@@ -52,79 +130,236 @@ export default function TelemedicineRoom({ doctorName = 'Dr. Rajesh Deshmukh', s
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  const handleSpeakDialogue = (text) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   const handleSavePrescription = () => {
     setIsPrescriptionSaved(true);
-    setTimeout(() => setIsPrescriptionSaved(false), 4000);
+    setTimeout(() => setIsPrescriptionSaved(false), 4500);
+  };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMsg = {
+      sender: 'patient',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: chatInput.trim()
+    };
+
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatInput('');
+
+    // Doctor auto-acknowledgement simulation
+    setTimeout(() => {
+      setChatMessages(prev => [
+        ...prev,
+        {
+          sender: 'doctor',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text: `Noted regarding "${userMsg.text}". I am reviewing this alongside your vital parameters and adding clinical instructions to your prescription.`
+        }
+      ]);
+    }, 1400);
   };
 
   return (
     <div className="telemed-overlay">
       <div className="telemed-container">
-        {/* Top bar */}
+        
+        {/* Top Header Bar */}
         <div className="telemed-header">
-          <div className="flex items-center gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <div className="live-call-dot"></div>
             <div>
-              <h3 className="telemed-title">e-Sanjeevani Teleconsultation Chamber</h3>
-              <p className="telemed-subtitle">{doctorName} • {specialty} (Govt PHC Khed)</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 className="telemed-title">e-Sanjeevani Teleconsultation Chamber</h3>
+                <span style={{
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  color: '#10B981',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '0.7rem',
+                  fontWeight: 700
+                }}>
+                  LIVE 2-WAY HD
+                </span>
+              </div>
+              <p className="telemed-subtitle">{doctorName} • {specialty} ({facility})</p>
             </div>
           </div>
-          <div className="telemed-timer-badge">
-            <Activity size={14} className="text-teal animate-pulse" />
-            <span>Connected: {formatTimer(callDuration)}</span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="telemed-timer-badge">
+              <Activity size={14} className="text-teal animate-pulse" />
+              <span>Connected: {formatTimer(callDuration)}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                background: 'rgba(239, 68, 68, 0.2)',
+                color: '#F87171',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                borderRadius: '8px',
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Exit
+            </button>
           </div>
         </div>
 
-        {/* Main Content: Video Feed & Sidebar HUD */}
+        {/* Main Content Grid */}
         <div className="telemed-grid">
+          
           {/* Left: Video Area */}
           <div className="telemed-video-area">
-            {/* Main Doctor Screen */}
             <div className="doctor-video-frame">
-              {videoActive ? (
-                <div className="doctor-avatar-screen">
-                  <div className="doctor-feed-animation">
-                    <div className="doctor-badge-overlay">
-                      <span className="badge-govt">Authorized Medical Officer</span>
-                      <span className="badge-name">{doctorName}</span>
+              {/* Doctor Main Screen */}
+              <div className="doctor-avatar-screen">
+                <div className="doctor-feed-animation" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  
+                  {/* Doctor Info Badge Overlay */}
+                  <div className="doctor-badge-overlay">
+                    <span className="badge-govt">Authorized Medical Officer</span>
+                    <span className="badge-name">{doctorName}</span>
+                    <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>DHS Maharashtra • Reg #MCI-MH-49210</span>
+                  </div>
+
+                  {/* Doctor Center Portrait & Equalizer */}
+                  <div className="doctor-portrait-box">
+                    <div className="doctor-glow-ring"></div>
+                    <div style={{
+                      width: '110px',
+                      height: '110px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #0D9488 0%, #115E59 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFFFFF',
+                      boxShadow: '0 8px 30px rgba(13, 148, 136, 0.4)',
+                      border: '3px solid rgba(45, 212, 191, 0.6)'
+                    }}>
+                      <User size={64} />
                     </div>
-                    {/* Simulated visual doctor representation */}
-                    <div className="doctor-portrait-box">
-                      <div className="doctor-glow-ring"></div>
-                      <div className="doctor-silhouette">
-                        <User size={96} className="text-teal" />
-                      </div>
-                      <div className="audio-equalizer">
-                        <span className="bar bar-1"></span>
-                        <span className="bar bar-2"></span>
-                        <span className="bar bar-3"></span>
-                        <span className="bar bar-4"></span>
-                        <span className="bar bar-5"></span>
-                      </div>
-                    </div>
-                    <div className="consultation-speech-bubble">
-                      "Namaste Ramesh ji. I am reviewing your blood pressure readings and today's AI screening report. How are your headaches today?"
+
+                    <div className="audio-equalizer">
+                      <span className="bar bar-1"></span>
+                      <span className="bar bar-2"></span>
+                      <span className="bar bar-3"></span>
+                      <span className="bar bar-4"></span>
+                      <span className="bar bar-5"></span>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="video-off-placeholder">
-                  <VideoOff size={48} className="text-gray-500 mb-2" />
-                  <p>Video Feed Paused</p>
-                </div>
-              )}
 
-              {/* PiP: Patient Self-View */}
-              <div className="patient-pip-window">
-                <div className="pip-header">You ({user?.name || 'Patient'})</div>
-                <div className="pip-body">
-                  <User size={32} className="text-gray-300" />
-                  <span className="pip-label">Shivapur</span>
+                  {/* Doctor Live Clinical Dialogue */}
+                  <div className="consultation-speech-bubble">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2DD4BF' }}>
+                        DR. DESHMUKH (SPEAKING):
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleSpeakDialogue(`Namaste ${activePatientName} ji. I am reviewing your blood pressure readings and today's AI screening report. How are your symptoms today?`)}
+                        style={{
+                          background: 'rgba(45, 212, 191, 0.15)',
+                          border: 'none',
+                          color: '#2DD4BF',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}
+                      >
+                        <Volume2 size={12} /> Listen
+                      </button>
+                    </div>
+                    "Namaste {activePatientName} ji. I am reviewing your blood pressure readings and today's AI screening report. How are your symptoms today?"
+                  </div>
+                </div>
+              </div>
+
+              {/* PiP: Patient's Own Live Camera Video View */}
+              <div className="patient-pip-window" style={{ width: '170px', height: '125px', background: '#0F172A' }}>
+                <div className="pip-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>You ({activePatientName})</span>
+                  {videoActive ? (
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }}></span>
+                  ) : (
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EF4444' }}></span>
+                  )}
+                </div>
+                <div className="pip-body" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+                  {videoActive ? (
+                    hasCameraStream ? (
+                      <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transform: 'scaleX(-1)' // Mirror patient selfie view
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+                        color: '#94A3B8'
+                      }}>
+                        <User size={36} color="#38BDF8" />
+                        <span style={{ fontSize: '0.65rem', color: '#38BDF8', marginTop: '4px' }}>Self Camera Active</span>
+                      </div>
+                    )
+                  ) : (
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: '#111827',
+                      color: '#6B7280'
+                    }}>
+                      <VideoOff size={24} />
+                      <span style={{ fontSize: '0.65rem', marginTop: '2px' }}>Camera Muted</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Bottom Controls */}
+            {/* Bottom In-Call Controls Bar */}
             <div className="telemed-controls-bar">
               <button
                 type="button"
@@ -139,9 +374,28 @@ export default function TelemedicineRoom({ doctorName = 'Dr. Rajesh Deshmukh', s
                 type="button"
                 className={`control-btn ${videoActive ? 'btn-active' : 'btn-off'}`}
                 onClick={() => setVideoActive(!videoActive)}
-                title={videoActive ? 'Stop Camera' : 'Start Camera'}
+                title={videoActive ? 'Turn Off Camera' : 'Turn On Camera'}
               >
                 {videoActive ? <Video size={20} /> : <VideoOff size={20} />}
+              </button>
+
+              <button
+                type="button"
+                className={`control-btn ${activeTab === 'chat' ? 'btn-active' : ''}`}
+                onClick={() => setActiveTab(activeTab === 'chat' ? 'vitals' : 'chat')}
+                title="Open In-Call Chat"
+                style={{ position: 'relative' }}
+              >
+                <MessageSquare size={20} />
+                <span style={{
+                  position: 'absolute',
+                  top: '6px',
+                  right: '6px',
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#2DD4BF'
+                }} />
               </button>
 
               <button
@@ -156,7 +410,7 @@ export default function TelemedicineRoom({ doctorName = 'Dr. Rajesh Deshmukh', s
             </div>
           </div>
 
-          {/* Right: Clinical HUD & Prescription Pad */}
+          {/* Right: Clinical HUD, Chat, & Prescription Pad */}
           <div className="telemed-hud-sidebar">
             <div className="hud-tab-switcher">
               <button
@@ -164,30 +418,43 @@ export default function TelemedicineRoom({ doctorName = 'Dr. Rajesh Deshmukh', s
                 className={`hud-tab ${activeTab === 'vitals' ? 'active' : ''}`}
                 onClick={() => setActiveTab('vitals')}
               >
-                <Activity size={16} />
-                <span>Vitals Telemetry</span>
+                <Activity size={15} />
+                <span>Vitals</span>
               </button>
               <button
                 type="button"
                 className={`hud-tab ${activeTab === 'prescription' ? 'active' : ''}`}
                 onClick={() => setActiveTab('prescription')}
               >
-                <FileText size={16} />
-                <span>e-Prescription</span>
+                <FileText size={15} />
+                <span>Digital Rx</span>
+              </button>
+              <button
+                type="button"
+                className={`hud-tab ${activeTab === 'chat' ? 'active' : ''}`}
+                onClick={() => setActiveTab('chat')}
+              >
+                <MessageSquare size={15} />
+                <span>Chat</span>
               </button>
             </div>
 
-            {activeTab === 'vitals' ? (
+            {/* TAB 1: VITALS TELEMETRY */}
+            {activeTab === 'vitals' && (
               <div className="hud-content vitals-panel">
+                <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.04em' }}>
+                  Live Patient Telemetry
+                </div>
+
                 <div className="vitals-metric-card">
                   <div className="metric-header">
-                    <Heart size={18} className="text-red-500" />
+                    <Heart size={18} className="text-red-500 animate-pulse" />
                     <span>Heart Rate (Pulse)</span>
                   </div>
                   <div className="metric-value">
                     {vitals.heartRate} <small>BPM</small>
                   </div>
-                  <span className="metric-status normal">Normal Rhythm (60-100)</span>
+                  <span className="metric-status normal">Normal Sinus Rhythm (60-100)</span>
                 </div>
 
                 <div className="vitals-metric-card">
@@ -198,7 +465,7 @@ export default function TelemedicineRoom({ doctorName = 'Dr. Rajesh Deshmukh', s
                   <div className="metric-value">
                     {vitals.spo2}% <small>SpO₂</small>
                   </div>
-                  <span className="metric-status normal">Optimal Oxygenation</span>
+                  <span className="metric-status normal">Optimal Oxygenation (≥ 95%)</span>
                 </div>
 
                 <div className="vitals-metric-card">
@@ -209,7 +476,7 @@ export default function TelemedicineRoom({ doctorName = 'Dr. Rajesh Deshmukh', s
                   <div className="metric-value">
                     {vitals.bpSys}/{vitals.bpDia} <small>mmHg</small>
                   </div>
-                  <span className="metric-status normal">Pre-Hypertension Controlled</span>
+                  <span className="metric-status normal">Pre-Hypertension Under Review</span>
                 </div>
 
                 <div className="vitals-metric-card">
@@ -220,51 +487,154 @@ export default function TelemedicineRoom({ doctorName = 'Dr. Rajesh Deshmukh', s
                   <div className="metric-value">
                     {vitals.temp}°F <small>Oral</small>
                   </div>
-                  <span className="metric-status normal">Afebrile (Normal)</span>
+                  <span className="metric-status normal">Afebrile (Normothermic)</span>
                 </div>
-              </div>
-            ) : (
-              <div className="hud-content rx-panel">
-                <div className="rx-preview-box">
-                  <div className="rx-badge-top">GOVERNMENT OF MAHARASHTRA • DIGITAL RX</div>
-                  <div className="rx-patient-info">
-                    <strong>Patient:</strong> {user?.name || 'Ramesh Patil'} (48/M)
+
+                <div style={{ background: 'rgba(45, 212, 191, 0.1)', border: '1px solid rgba(45, 212, 191, 0.25)', borderRadius: '10px', padding: '0.85rem', marginTop: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 700, color: '#2DD4BF' }}>
+                    <ShieldCheck size={14} /> Telemetry Verified
                   </div>
-                  <div className="rx-meds-list">
-                    <div className="rx-med-item">
-                      <div className="med-name">1. Tab. Amlodipine 5mg (Jan Aushadhi)</div>
-                      <div className="med-dose">1 Tablet Once Daily (Morning after food) • 30 Days</div>
-                    </div>
-                    <div className="rx-med-item">
-                      <div className="med-name">2. Tab. Paracetamol 650mg SOS</div>
-                      <div className="med-dose">1 Tablet only if headache exceeds 5/10</div>
-                    </div>
-                  </div>
-                  <textarea
-                    className="rx-textarea"
-                    placeholder="Doctor clinical consultation notes and dietary advice..."
-                    value={prescriptionNote}
-                    onChange={(e) => setPrescriptionNote(e.target.value)}
-                    rows={4}
-                  />
-                  {isPrescriptionSaved && (
-                    <div className="rx-success-badge">
-                      <CheckCircle2 size={16} />
-                      <span>Prescription signed & sent to Patient Health Locker!</span>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    className="btn btn-primary w-full mt-3"
-                    onClick={handleSavePrescription}
-                  >
-                    Generate & Sign Digital e-Prescription
-                  </button>
+                  <p style={{ fontSize: '0.72rem', color: '#94A3B8', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+                    Streamed live from Sub-Centre Bluetooth pulse-oximeter and automated digital BP cuff.
+                  </p>
                 </div>
               </div>
             )}
+
+            {/* TAB 2: DIGITAL e-PRESCRIPTION */}
+            {activeTab === 'prescription' && (
+              <div className="hud-content rx-panel">
+                <div className="rx-preview-box">
+                  <div className="rx-badge-top">GOVERNMENT OF MAHARASHTRA • DIGITAL RX</div>
+                  <div className="rx-patient-info" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div>
+                      <strong>Patient:</strong> {activePatientName}
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: '#2DD4BF' }}>OPD #MH-9042</span>
+                  </div>
+
+                  <div className="rx-meds-list">
+                    <div className="rx-med-item">
+                      <div className="med-name">1. Tab. Amlodipine 5mg (Jan Aushadhi)</div>
+                      <div className="med-dose">1 Tablet Once Daily (Morning after breakfast) • 30 Days</div>
+                    </div>
+                    <div className="rx-med-item">
+                      <div className="med-name">2. Tab. Paracetamol 650mg SOS</div>
+                      <div className="med-dose">1 Tablet only if headache/fever exceeds 5/10</div>
+                    </div>
+                    <div className="rx-med-item">
+                      <div className="med-name">3. Cap. Multivitamin & Zinc</div>
+                      <div className="med-dose">1 Capsule daily after dinner • 15 Days</div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
+                      Doctor Clinical Notes & Dietary Advice:
+                    </label>
+                    <textarea
+                      className="rx-textarea"
+                      placeholder="Doctor advice: Low salt intake, 30 min morning walk, follow up after 14 days..."
+                      value={prescriptionNote}
+                      onChange={(e) => setPrescriptionNote(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  {isPrescriptionSaved && (
+                    <div className="rx-success-badge" style={{ marginBottom: '0.75rem' }}>
+                      <CheckCircle2 size={16} />
+                      <span>Prescription signed & linked to ABHA #{user?.abha_id || '91-4091-8821'}!</span>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary w-full"
+                      onClick={handleSavePrescription}
+                      style={{ fontSize: '0.82rem', padding: '0.65rem' }}
+                    >
+                      <Sparkles size={14} /> Digitally Sign & Issue e-Prescription
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => alert(`Prescription for ${activePatientName} downloaded as PDF and synced with nearest Jan Aushadhi Kendra!`)}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#E2E8F0',
+                        borderRadius: '8px',
+                        padding: '0.55rem',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Download size={14} /> Download Digital Prescription PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: LIVE IN-CALL CHAT */}
+            {activeTab === 'chat' && (
+              <div className="hud-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0.85rem' }}>
+                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  {chatMessages.map((msg, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        alignSelf: msg.sender === 'patient' ? 'flex-end' : msg.sender === 'doctor' ? 'flex-start' : 'center',
+                        maxWidth: msg.sender === 'system' ? '100%' : '85%',
+                        background: msg.sender === 'patient' ? '#0D9488' : msg.sender === 'doctor' ? '#1E293B' : 'rgba(255,255,255,0.06)',
+                        color: msg.sender === 'system' ? '#94A3B8' : '#FFFFFF',
+                        borderRadius: '10px',
+                        padding: '0.5rem 0.75rem',
+                        fontSize: msg.sender === 'system' ? '0.7rem' : '0.82rem',
+                        border: msg.sender === 'doctor' ? '1px solid rgba(45,212,191,0.2)' : 'none'
+                      }}
+                    >
+                      {msg.sender !== 'system' && (
+                        <div style={{ fontSize: '0.65rem', color: msg.sender === 'patient' ? 'rgba(255,255,255,0.8)' : '#2DD4BF', fontWeight: 700, marginBottom: '2px' }}>
+                          {msg.sender === 'patient' ? 'You' : doctorName} • {msg.time}
+                        </div>
+                      )}
+                      <div>{msg.text}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Type symptoms or question to doctor..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem' }}
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm"
+                    style={{ padding: '0 0.85rem' }}
+                  >
+                    <Send size={15} />
+                  </button>
+                </form>
+              </div>
+            )}
+
           </div>
+
         </div>
+
       </div>
     </div>
   );

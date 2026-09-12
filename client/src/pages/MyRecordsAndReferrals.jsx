@@ -3,10 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   FileText, ArrowRightLeft, Calendar, Stethoscope, Hospital, 
-  Activity, AlertCircle, CheckCircle2, Clock, ChevronRight 
+  Activity, AlertCircle, CheckCircle2, Clock, ChevronRight, Video 
 } from 'lucide-react';
 
-export function MyRecordsAndReferrals({ initialTab = 'records' }) {
+export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed }) {
   const { user, token } = useAuth();
   const { t } = useLanguage();
 
@@ -353,14 +353,45 @@ export function MyRecordsAndReferrals({ initialTab = 'records' }) {
                       </p>
                     </div>
 
-                    <div style={{ textAlign: 'right', background: 'var(--color-bg-primary)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Consultation Slot</div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#38BDF8' }}>
-                        {apt.appointment_date}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end' }}>
+                      <div style={{ textAlign: 'right', background: 'var(--color-bg-primary)', padding: '0.6rem 1.1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Consultation Slot</div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#38BDF8' }}>
+                          {apt.appointment_date}
+                        </div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#34D399' }}>
+                          {apt.appointment_time}
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#34D399' }}>
-                        {apt.appointment_time}
-                      </div>
+
+                      {apt.status === 'Scheduled' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenTelemed) {
+                              onOpenTelemed({
+                                doctorName: apt.doctor_name,
+                                specialty: apt.specialization,
+                                facility: apt.facility_name,
+                                patientName: data.patient?.name || user?.name
+                              });
+                            }
+                          }}
+                          className="btn btn-sm"
+                          style={{
+                            background: '#0D9488',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontWeight: 600,
+                            padding: '0.45rem 0.85rem'
+                          }}
+                        >
+                          <Video size={14} /> Join Video Call Room
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))

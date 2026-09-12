@@ -48,9 +48,7 @@ export function Sidebar({
   };
 
   const handleNavClick = (id) => {
-    if (id === 'telemedicine') {
-      if (onOpenTelemed) onOpenTelemed();
-    } else if (id === 'rural-map') {
+    if (id === 'rural-map') {
       setActiveTab('facilities');
     } else {
       setActiveTab(id);

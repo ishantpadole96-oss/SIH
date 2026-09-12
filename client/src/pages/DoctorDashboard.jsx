@@ -3,10 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   Stethoscope, Calendar, ArrowRightLeft, FileText, CheckCircle2, 
-  Clock, User, Sparkles, X, Plus, AlertCircle, Phone, Pill 
+  Clock, User, Sparkles, X, Plus, AlertCircle, Phone, Pill, Video 
 } from 'lucide-react';
 
-export function DoctorDashboard({ setActiveTab }) {
+export function DoctorDashboard({ setActiveTab, onOpenTelemed }) {
   const { user, token } = useAuth();
   const { t } = useLanguage();
 
@@ -243,25 +243,54 @@ export function DoctorDashboard({ setActiveTab }) {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {apt.status === 'Scheduled' ? (
-                      <button
-                        onClick={() => {
-                          setSelectedAppointment(apt);
-                          setConsultForm({
-                            diagnosis_notes: '',
-                            prescription: '',
-                            symptoms: apt.reason,
-                            vitals: { bp: '130/85', pulse: '76 bpm', temp: '98.6 F', spo2: '98%' },
-                            status: 'Completed'
-                          });
-                          setConsultMsg(null);
-                        }}
-                        className="btn btn-primary btn-sm"
-                        style={{ flex: 1 }}
-                      >
-                        <Stethoscope size={14} /> Conduct Consultation
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            setSelectedAppointment(apt);
+                            setConsultForm({
+                              diagnosis_notes: '',
+                              prescription: '',
+                              symptoms: apt.reason,
+                              vitals: { bp: '130/85', pulse: '76 bpm', temp: '98.6 F', spo2: '98%' },
+                              status: 'Completed'
+                            });
+                            setConsultMsg(null);
+                          }}
+                          className="btn btn-primary btn-sm"
+                          style={{ flex: 1 }}
+                        >
+                          <Stethoscope size={14} /> Conduct Consultation
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenTelemed) {
+                              onOpenTelemed({
+                                doctorName: user?.name || 'Dr. Rajesh Deshmukh',
+                                specialty: 'General Medicine & Family Health',
+                                facility: 'Govt PHC Khedgaon • Pune District Civil Hospital',
+                                patientName: apt.patient_name
+                              });
+                            }
+                          }}
+                          className="btn btn-sm"
+                          style={{
+                            background: '#0D9488',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontWeight: 600
+                          }}
+                          title="Start encrypted live video consultation with patient"
+                        >
+                          <Video size={14} /> Video Call
+                        </button>
+                      </>
                     ) : (
                       <div style={{ fontSize: '0.8rem', color: '#34D399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <CheckCircle2 size={16} /> Consultation Completed

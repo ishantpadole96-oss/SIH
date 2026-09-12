@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Calendar, Clock, Hospital, Stethoscope, CheckCircle2, User, FileText, ArrowRight, MapPin, Navigation } from 'lucide-react';
+import { Calendar, Clock, Hospital, Stethoscope, CheckCircle2, User, FileText, ArrowRight, MapPin, Navigation, Video } from 'lucide-react';
 
-export function BookAppointment({ setActiveTab, preselectedFacility }) {
+export function BookAppointment({ setActiveTab, preselectedFacility, onOpenTelemed }) {
   const { user, token, selectedVillage } = useAuth();
   const { t } = useLanguage();
 
@@ -12,6 +12,7 @@ export function BookAppointment({ setActiveTab, preselectedFacility }) {
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState('');
   
+  const [consultationMode, setConsultationMode] = useState('in_person'); // 'in_person' | 'video'
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const [appointmentDate, setAppointmentDate] = useState(tomorrow);
   const [appointmentTime, setAppointmentTime] = useState('10:00 AM');
@@ -152,7 +153,34 @@ export function BookAppointment({ setActiveTab, preselectedFacility }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {consultationMode === 'video' && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenTelemed) {
+                    onOpenTelemed({
+                      doctorName: confirmedAppointment.doctor_name,
+                      specialty: 'Government Medical Officer',
+                      facility: confirmedAppointment.facility_name,
+                      patientName: user?.name
+                    });
+                  }
+                }}
+                className="btn"
+                style={{
+                  background: '#0D9488',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.4rem'
+                }}
+              >
+                <Video size={18} /> Join Video Consultation Room Now
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('records-referrals')}
               className="btn btn-primary"
@@ -177,6 +205,58 @@ export function BookAppointment({ setActiveTab, preselectedFacility }) {
               {error}
             </div>
           )}
+
+          {/* Consultation Type Switcher: In-Person vs Video Teleconsultation */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label className="form-label" style={{ fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>
+              Consultation Mode:
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setConsultationMode('in_person')}
+                style={{
+                  padding: '0.85rem 1rem',
+                  borderRadius: '12px',
+                  border: consultationMode === 'in_person' ? '2px solid #0D9488' : '1px solid #E5ECE7',
+                  background: consultationMode === 'in_person' ? 'rgba(13, 148, 136, 0.08)' : '#FFFFFF',
+                  color: consultationMode === 'in_person' ? '#0F766E' : '#4B5563',
+                  fontWeight: consultationMode === 'in_person' ? 700 : 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem'
+                }}
+              >
+                <Hospital size={18} />
+                <span>In-Person Facility OPD</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setConsultationMode('video')}
+                style={{
+                  padding: '0.85rem 1rem',
+                  borderRadius: '12px',
+                  border: consultationMode === 'video' ? '2px solid #0D9488' : '1px solid #E5ECE7',
+                  background: consultationMode === 'video' ? 'rgba(13, 148, 136, 0.08)' : '#FFFFFF',
+                  color: consultationMode === 'video' ? '#0F766E' : '#4B5563',
+                  fontWeight: consultationMode === 'video' ? 700 : 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem'
+                }}
+              >
+                <Video size={18} />
+                <span>e-Sanjeevani Video OPD</span>
+              </button>
+            </div>
+          </div>
 
           {/* Facility Selection */}
           <div className="form-group">

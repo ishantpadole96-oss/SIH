@@ -19,6 +19,7 @@ import { AshaDashboard } from './pages/AshaDashboard';
 import { DoctorDashboard } from './pages/DoctorDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { MaharashtraServices } from './pages/MaharashtraServices';
+import { TelemedicineHub } from './pages/TelemedicineHub';
 
 import TelemedicineRoom from './components/TelemedicineRoom';
 import DigitalHealthCard from './components/DigitalHealthCard';
@@ -37,6 +38,20 @@ function AppContent() {
   const [showHealthCardModal, setShowHealthCardModal] = useState(false);
   const [selectedFacilityForBooking, setSelectedFacilityForBooking] = useState(null);
 
+  const [telemedParams, setTelemedParams] = useState({
+    doctorName: 'Dr. Rajesh Deshmukh',
+    specialty: 'General Medicine & Family Health',
+    facility: 'Govt PHC Khedgaon • Pune District Civil Hospital',
+    patientName: ''
+  });
+
+  const handleOpenTelemed = (params = {}) => {
+    if (params && typeof params === 'object') {
+      setTelemedParams(prev => ({ ...prev, ...params }));
+    }
+    setShowTelemedModal(true);
+  };
+
   // Render appropriate view based on activeTab
   const renderView = () => {
     switch (activeTab) {
@@ -45,8 +60,15 @@ function AppContent() {
           <CitizenHome
             setActiveTab={setActiveTab}
             onOpenEmergency={() => setShowEmergencyModal(true)}
-            onOpenTelemed={() => setShowTelemedModal(true)}
+            onOpenTelemed={handleOpenTelemed}
             onOpenHealthCard={() => setShowHealthCardModal(true)}
+          />
+        );
+      case 'telemedicine':
+        return (
+          <TelemedicineHub
+            setActiveTab={setActiveTab}
+            onOpenTelemed={handleOpenTelemed}
           />
         );
       case 'facilities':
@@ -76,10 +98,16 @@ function AppContent() {
           <BookAppointment
             setActiveTab={setActiveTab}
             preselectedFacility={selectedFacilityForBooking}
+            onOpenTelemed={handleOpenTelemed}
           />
         );
       case 'records-referrals':
-        return <MyRecordsAndReferrals initialTab="records" />;
+        return (
+          <MyRecordsAndReferrals
+            initialTab="records"
+            onOpenTelemed={handleOpenTelemed}
+          />
+        );
       case 'medicines':
         return <MedicineSearch />;
       case 'camps':
@@ -90,14 +118,19 @@ function AppContent() {
         return (
           <MaharashtraServices
             setActiveTab={setActiveTab}
-            onOpenTelemed={() => setShowTelemedModal(true)}
+            onOpenTelemed={handleOpenTelemed}
             onOpenHealthCard={() => setShowHealthCardModal(true)}
           />
         );
       case 'asha-dashboard':
         return <AshaDashboard setActiveTab={setActiveTab} />;
       case 'doctor-dashboard':
-        return <DoctorDashboard setActiveTab={setActiveTab} />;
+        return (
+          <DoctorDashboard
+            setActiveTab={setActiveTab}
+            onOpenTelemed={handleOpenTelemed}
+          />
+        );
       case 'admin-dashboard':
         return <AdminDashboard />;
       default:
@@ -105,7 +138,7 @@ function AppContent() {
           <CitizenHome
             setActiveTab={setActiveTab}
             onOpenEmergency={() => setShowEmergencyModal(true)}
-            onOpenTelemed={() => setShowTelemedModal(true)}
+            onOpenTelemed={handleOpenTelemed}
             onOpenHealthCard={() => setShowHealthCardModal(true)}
           />
         );
@@ -180,8 +213,10 @@ function AppContent() {
       {/* Virtual Telemedicine Consultation Room */}
       {showTelemedModal && (
         <TelemedicineRoom
-          doctorName="Dr. Rajesh Deshmukh"
-          specialty="General Medicine & Family Health"
+          doctorName={telemedParams.doctorName}
+          specialty={telemedParams.specialty}
+          facility={telemedParams.facility}
+          patientName={telemedParams.patientName}
           onClose={() => setShowTelemedModal(false)}
         />
       )}
