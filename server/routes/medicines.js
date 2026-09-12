@@ -79,6 +79,46 @@ router.get('/', (req, res) => {
 });
 
 /**
+ * GET /api/medicines/generic-alternatives
+ * Search Jan Aushadhi & Generic Medicine alternatives by brand name or generic formula
+ */
+router.get('/generic-alternatives', (req, res) => {
+  try {
+    const { search, category } = req.query;
+    let query = `SELECT * FROM generic_medicines WHERE 1=1`;
+    const params = [];
+
+    if (search) {
+      query += ` AND (brand_name LIKE ? OR generic_name LIKE ? OR description LIKE ? OR common_uses LIKE ?)`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    if (category) {
+      query += ` AND category = ?`;
+      params.push(category);
+    }
+
+    query += ` ORDER BY savings_percentage DESC, brand_name ASC`;
+    const alternatives = db.all(query, params);
+
+    const totalAlternatives = alternatives.length;
+    const avgSavings = totalAlternatives > 0
+      ? Math.round(alternatives.reduce((acc, curr) => acc + curr.savings_percentage, 0) / totalAlternatives)
+      : 0;
+
+    return res.json({
+      success: true,
+      count: totalAlternatives,
+      averageSavingsPercentage: avgSavings,
+      alternatives
+    });
+  } catch (err) {
+    console.error('Error fetching generic medicines:', err);
+    return res.status(500).json({ error: 'Failed to fetch generic medicine alternatives' });
+  }
+});
+
+/**
  * PUT /api/medicines/:id
  * Update medicine stock quantity and status (Staff/Doctor/ASHA or Admin)
  */

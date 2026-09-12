@@ -3,10 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   Search, Hospital, Sparkles, Calendar, ArrowRightLeft, FileText, 
-  ShieldAlert, Pill, Tent, MessageSquare, MapPin, ChevronRight, CheckCircle2, AlertTriangle 
+  ShieldAlert, Pill, Tent, MessageSquare, MapPin, ChevronRight, CheckCircle2, AlertTriangle, Video, Shield 
 } from 'lucide-react';
 
-export function CitizenHome({ setActiveTab, onOpenEmergency }) {
+export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOpenHealthCard }) {
   const { user, selectedVillage } = useAuth();
   const { t } = useLanguage();
 
@@ -19,6 +19,16 @@ export function CitizenHome({ setActiveTab, onOpenEmergency }) {
       badge: 'Interactive GIS',
       gradient: 'linear-gradient(135deg, rgba(13, 148, 136, 0.2) 0%, rgba(20, 30, 51, 0.8) 100%)',
       border: 'rgba(45, 212, 191, 0.3)'
+    },
+    {
+      id: 'telemedicine',
+      isTelemed: true,
+      title: 'e-Sanjeevani Teleconsultation',
+      desc: 'Connect directly with on-duty government doctors via live video chamber with vitals HUD',
+      icon: <Video size={28} color="#06B6D4" />,
+      badge: 'Live Video OPD',
+      gradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(20, 30, 51, 0.8) 100%)',
+      border: 'rgba(6, 182, 212, 0.4)'
     },
     {
       id: 'availability',
@@ -37,6 +47,16 @@ export function CitizenHome({ setActiveTab, onOpenEmergency }) {
       badge: 'AI Triage Support',
       gradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(20, 30, 51, 0.8) 100%)',
       border: 'rgba(167, 139, 250, 0.3)'
+    },
+    {
+      id: 'health-card',
+      isHealthCard: true,
+      title: 'Digital Health Card (ABHA)',
+      desc: 'Access your official QR-enabled health identity card with blood group and emergency details',
+      icon: <Shield size={28} color="#10B981" />,
+      badge: 'ABHA Style ID',
+      gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(20, 30, 51, 0.8) 100%)',
+      border: 'rgba(52, 211, 153, 0.3)'
     },
     {
       id: 'book-appointment',
@@ -80,9 +100,9 @@ export function CitizenHome({ setActiveTab, onOpenEmergency }) {
     {
       id: 'medicines',
       title: t('tile_medicine_search'),
-      desc: t('tile_medicine_search_desc'),
+      desc: 'Check live PHC stocks and search Jan Aushadhi generic alternatives saving up to 87%',
       icon: <Pill size={28} color="#EC4899" />,
-      badge: 'Live Stock Check',
+      badge: 'Stock & Generics',
       gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(20, 30, 51, 0.8) 100%)',
       border: 'rgba(244, 114, 182, 0.3)'
     },
@@ -170,6 +190,10 @@ export function CitizenHome({ setActiveTab, onOpenEmergency }) {
             onClick={() => {
               if (tile.isEmergency) {
                 onOpenEmergency();
+              } else if (tile.isTelemed) {
+                onOpenTelemed && onOpenTelemed();
+              } else if (tile.isHealthCard) {
+                onOpenHealthCard && onOpenHealthCard();
               } else {
                 setActiveTab(tile.id);
               }

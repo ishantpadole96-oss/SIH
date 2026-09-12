@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { InteractiveMap } from '../components/InteractiveMap';
+import DiseaseRadarWidget from '../components/DiseaseRadarWidget';
 import { 
   Building2, Users, Bed, Pill, AlertCircle, ArrowRightLeft, 
-  Star, MapPin, CheckCircle2, ShieldAlert, Edit3, Send, RefreshCw, X 
+  Star, MapPin, CheckCircle2, ShieldAlert, Edit3, Send, RefreshCw, X, Flame 
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -188,6 +189,12 @@ export function AdminDashboard() {
         >
           <ShieldAlert size={16} /> Grievance Resolution Desk ({complaints.filter(c => c.status !== 'Resolved').length})
         </button>
+        <button
+          onClick={() => setActiveAdminTab('surveillance')}
+          className={`btn btn-sm ${activeAdminTab === 'surveillance' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          <Flame size={16} className="text-red-400" /> Disease Surveillance Radar
+        </button>
       </div>
 
       {loading ? (
@@ -196,6 +203,11 @@ export function AdminDashboard() {
         </div>
       ) : (
         <>
+          {/* TAB: EPIDEMIOLOGICAL DISEASE SURVEILLANCE */}
+          {activeAdminTab === 'surveillance' && (
+            <DiseaseRadarWidget />
+          )}
+
           {/* TAB 1: RURAL HEALTHCARE GIS MAP */}
           {activeAdminTab === 'gis-map' && (
             <div className="card" style={{ padding: '1.5rem' }}>

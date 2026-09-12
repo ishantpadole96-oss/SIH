@@ -389,3 +389,804 @@ button, input, select, textarea {
   font-size: 0.92rem !important;
   line-height: 1.4 !important;
 }
+
+/* ==========================================================
+   FLAGSHIP COMPONENT STYLES: VOICE, HEALTH CARD, TELEMED, MCH, RADAR
+   ========================================================== */
+
+/* 1. Voice Reader (TTS) */
+.voice-reader-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(13, 148, 136, 0.15);
+  color: var(--primary-teal);
+  border: 1px solid rgba(13, 148, 136, 0.3);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.voice-reader-btn:hover {
+  background: rgba(13, 148, 136, 0.3);
+  transform: translateY(-1px);
+}
+.voice-reader-btn.speaking {
+  background: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.pulse-anim {
+  animation: pulse 1.2s infinite;
+}
+
+/* 2. Digital Health Card Modal */
+.digital-health-card-modal {
+  max-width: 580px !important;
+  background: #0B1329 !important;
+  border: 1px solid rgba(45, 212, 191, 0.3) !important;
+}
+.health-card-badge {
+  background: linear-gradient(135deg, #0A2540 0%, #0F172A 50%, #064E3B 100%);
+  border: 2px solid #2DD4BF;
+  border-radius: 16px;
+  padding: 1.5rem;
+  color: #FFFFFF;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(45, 212, 191, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+.card-top-bar {
+  display: flex;
+  justifyContent: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding-bottom: 0.85rem;
+  margin-bottom: 1.2rem;
+}
+.card-emblem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.card-gov-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: #38BDF8;
+  font-weight: 700;
+  display: block;
+}
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+.card-chip {
+  width: 36px;
+  height: 26px;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  border-radius: 4px;
+  border: 1px solid #FCD34D;
+  position: relative;
+}
+.card-body-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr 90px;
+  gap: 1rem;
+  align-items: center;
+}
+.card-photo-box {
+  width: 80px;
+  height: 95px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.photo-label {
+  font-size: 0.65rem;
+  color: #34D399;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.card-holder-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+.card-id-number {
+  font-family: monospace;
+  font-size: 0.95rem;
+  color: #2DD4BF;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+.card-details-row {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.78rem;
+  margin-top: 0.3rem;
+}
+.detail-lbl {
+  color: #94A3B8;
+  margin-right: 0.3rem;
+}
+.detail-val {
+  color: #F1F5F9;
+}
+.card-qr-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #FFFFFF;
+  padding: 0.4rem;
+  border-radius: 8px;
+}
+.qr-caption {
+  font-size: 0.6rem;
+  color: #0F172A;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.card-bottom-footer {
+  display: flex;
+  justifyContent: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 1.2rem;
+  padding-top: 0.6rem;
+  font-size: 0.68rem;
+  color: #94A3B8;
+}
+
+/* 3. Telemedicine Room */
+.telemed-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 17, 0.92);
+  backdrop-filter: blur(12px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.telemed-container {
+  width: 100%;
+  max-width: 1100px;
+  height: 85vh;
+  background: #0A1128;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+}
+.telemed-header {
+  padding: 1rem 1.5rem;
+  background: #0F1B38;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.live-call-dot {
+  width: 12px;
+  height: 12px;
+  background: #10B981;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #10B981;
+  animation: pulse 1.5s infinite;
+}
+.telemed-title {
+  font-size: 1.1rem;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+.telemed-subtitle {
+  font-size: 0.8rem;
+  color: #94A3B8;
+}
+.telemed-timer-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(13, 148, 136, 0.2);
+  color: #2DD4BF;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.telemed-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  flex: 1;
+  overflow: hidden;
+}
+@media (max-width: 860px) {
+  .telemed-grid { grid-template-columns: 1fr; }
+  .telemed-hud-sidebar { display: none; }
+}
+.telemed-video-area {
+  display: flex;
+  flex-direction: column;
+  background: #030712;
+  position: relative;
+}
+.doctor-video-frame {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.doctor-avatar-screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, #1E293B 0%, #030712 100%);
+}
+.doctor-portrait-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+.doctor-glow-ring {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 2px solid rgba(45, 212, 191, 0.4);
+  box-shadow: 0 0 25px rgba(45, 212, 191, 0.3);
+  animation: pulse 2s infinite;
+}
+.doctor-badge-overlay {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.badge-govt {
+  font-size: 0.7rem;
+  background: rgba(13, 148, 136, 0.3);
+  color: #2DD4BF;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  width: max-content;
+}
+.badge-name {
+  font-size: 1.05rem;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+.audio-equalizer {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 24px;
+  margin-top: 1.5rem;
+}
+.audio-equalizer .bar {
+  width: 4px;
+  background: #2DD4BF;
+  border-radius: 2px;
+  animation: equalize 1s infinite alternate;
+}
+.bar-1 { height: 14px; animation-delay: 0.1s; }
+.bar-2 { height: 22px; animation-delay: 0.3s; }
+.bar-3 { height: 18px; animation-delay: 0.2s; }
+.bar-4 { height: 26px; animation-delay: 0.4s; }
+.bar-5 { height: 12px; animation-delay: 0.15s; }
+
+@keyframes equalize {
+  0% { transform: scaleY(0.4); }
+  100% { transform: scaleY(1.2); }
+}
+
+.consultation-speech-bubble {
+  position: absolute;
+  bottom: 2rem;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  max-width: 80%;
+  color: #E2E8F0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  backdrop-filter: blur(6px);
+}
+.patient-pip-window {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 140px;
+  height: 105px;
+  background: #1E293B;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+}
+.pip-header {
+  background: rgba(0, 0, 0, 0.4);
+  font-size: 0.65rem;
+  color: #CBD5E1;
+  padding: 0.2rem 0.4rem;
+}
+.pip-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.pip-label {
+  font-size: 0.65rem;
+  color: #94A3B8;
+}
+.telemed-controls-bar {
+  padding: 1rem;
+  background: #0B132B;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+.control-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+.control-btn.btn-active {
+  background: #1E293B;
+  color: #FFFFFF;
+}
+.control-btn.btn-off {
+  background: rgba(239, 68, 68, 0.2);
+  color: #EF4444;
+}
+.control-btn.btn-hangup {
+  width: auto;
+  border-radius: 24px;
+  padding: 0 1.5rem;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-weight: 700;
+  display: flex;
+  gap: 0.5rem;
+}
+.telemed-hud-sidebar {
+  background: #0C152E;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+.hud-tab-switcher {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.hud-tab {
+  flex: 1;
+  padding: 0.85rem;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+.hud-tab.active {
+  color: #2DD4BF;
+  border-bottom: 2px solid #2DD4BF;
+  background: rgba(45, 212, 191, 0.05);
+}
+.hud-content {
+  flex: 1;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+.vitals-metric-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+.metric-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #94A3B8;
+  font-weight: 600;
+}
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0.2rem 0;
+}
+.metric-status.normal {
+  font-size: 0.7rem;
+  color: #34D399;
+  font-weight: 600;
+}
+.rx-preview-box {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1rem;
+}
+.rx-badge-top {
+  font-size: 0.65rem;
+  color: #2DD4BF;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.rx-med-item {
+  border-left: 2px solid #2DD4BF;
+  padding-left: 0.6rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.8rem;
+}
+.med-name { font-weight: 700; color: #FFFFFF; }
+.med-dose { color: #94A3B8; font-size: 0.75rem; }
+.rx-textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #FFFFFF;
+  padding: 0.5rem;
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+.rx-success-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #34D399;
+  font-size: 0.78rem;
+  margin-top: 0.5rem;
+}
+
+/* 4. Maternal Child Health Tracker */
+.mch-tracker-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.mch-header-banner {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.mch-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+.mch-subtitle {
+  font-size: 0.85rem;
+  color: #CBD5E1;
+  max-width: 620px;
+}
+.mch-tab-pills {
+  display: flex;
+  gap: 0.5rem;
+}
+.pill-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: #CBD5E1;
+  cursor: pointer;
+}
+.pill-btn.active {
+  background: var(--primary-teal);
+  color: #FFFFFF;
+  border-color: var(--primary-teal);
+}
+.mch-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+.mch-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.mch-card.high-risk-border {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.06) 0%, var(--card-bg) 100%);
+}
+.mch-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+.badge-category {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.badge-category.mother {
+  background: rgba(236, 72, 153, 0.2);
+  color: #F472B6;
+}
+.badge-category.infant {
+  background: rgba(14, 165, 233, 0.2);
+  color: #38BDF8;
+}
+.badge-risk-alert {
+  font-size: 0.7rem;
+  background: #EF4444;
+  color: #FFFFFF;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-weight: 800;
+}
+.mch-village-badge {
+  font-size: 0.72rem;
+  color: #94A3B8;
+}
+.beneficiary-name {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+.beneficiary-meta {
+  font-size: 0.8rem;
+  color: #94A3B8;
+  margin: 0.2rem 0 0.5rem 0;
+}
+.high-risk-callout {
+  background: rgba(239, 68, 68, 0.15);
+  border-left: 3px solid #EF4444;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  color: #FCA5A5;
+  border-radius: 0 4px 4px 0;
+  margin-bottom: 0.75rem;
+}
+.anc-progress-box {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin: 0.6rem 0;
+}
+.anc-status-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #CBD5E1;
+  margin-bottom: 0.4rem;
+}
+.anc-progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+.anc-progress-fill {
+  height: 100%;
+  background: var(--primary-teal);
+  border-radius: 3px;
+}
+.anc-dates-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #94A3B8;
+}
+.imm-header {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #CBD5E1;
+  margin-bottom: 0.4rem;
+}
+.imm-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.imm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.imm-chip.done {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34D399;
+}
+.imm-chip.pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: #FBBF24;
+}
+.mch-card-footer {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.6rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+}
+.asha-assigned {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #2DD4BF;
+  font-weight: 600;
+}
+.mch-notes-snippet {
+  color: #94A3B8;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+/* 5. Disease Surveillance Radar */
+.surveillance-radar-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+.radar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+}
+.radar-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+.radar-subtitle {
+  font-size: 0.8rem;
+  color: #94A3B8;
+}
+.radar-stats-pills {
+  display: flex;
+  gap: 0.75rem;
+}
+.stat-pill {
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.stat-pill.severe {
+  background: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.stat-pill.total {
+  background: rgba(14, 165, 233, 0.2);
+  color: #38BDF8;
+  border: 1px solid rgba(14, 165, 233, 0.4);
+}
+.radar-alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.radar-alert-item {
+  background: var(--card-hover);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+.radar-alert-item.border-severe {
+  border-left: 4px solid #EF4444;
+}
+.radar-alert-item.border-moderate {
+  border-left: 4px solid #F59E0B;
+}
+.alert-meta-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.severity-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+.severity-badge.severe {
+  background: #EF4444;
+  color: #FFFFFF;
+}
+.severity-badge.moderate {
+  background: #F59E0B;
+  color: #FFFFFF;
+}
+.category-badge {
+  font-size: 0.72rem;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+.status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+.status-badge.active {
+  background: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+}
+.status-badge.contained {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34D399;
+}
+.cases-badge {
+  font-size: 0.85rem;
+  color: #F87171;
+  background: rgba(239, 68, 68, 0.15);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+}
+.alert-containment-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #D1FAE5;
+}
+

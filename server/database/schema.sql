@@ -263,6 +263,58 @@ CREATE TABLE IF NOT EXISTS notifications (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- 18. Jan Aushadhi & Generic Medicine Alternatives
+CREATE TABLE IF NOT EXISTS generic_medicines (
+    generic_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    brand_name TEXT NOT NULL,
+    generic_name TEXT NOT NULL,
+    dosage_form TEXT NOT NULL DEFAULT 'Tablet',
+    category TEXT NOT NULL,
+    market_price REAL NOT NULL,
+    jan_aushadhi_price REAL NOT NULL,
+    savings_percentage INTEGER NOT NULL,
+    description TEXT,
+    common_uses TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 19. Maternal & Child Health (MCH / RCH Tracking)
+CREATE TABLE IF NOT EXISTS maternal_child_health (
+    mch_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id INTEGER NOT NULL,
+    category TEXT NOT NULL CHECK(category IN ('Pregnant Mother', 'Infant/Child')),
+    gestational_weeks INTEGER,
+    expected_delivery_date DATE,
+    child_dob DATE,
+    high_risk_flag INTEGER NOT NULL DEFAULT 0 CHECK(high_risk_flag IN (0, 1)),
+    high_risk_reason TEXT,
+    anc_visits_completed INTEGER DEFAULT 0,
+    last_anc_date DATE,
+    next_due_date DATE,
+    immunizations_json TEXT DEFAULT '[]',
+    asha_worker_id INTEGER,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (asha_worker_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- 20. Epidemiological Disease Surveillance & Outbreak Radar
+CREATE TABLE IF NOT EXISTS disease_surveillance (
+    report_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    village_id INTEGER NOT NULL,
+    disease_name TEXT NOT NULL,
+    category TEXT NOT NULL CHECK(category IN ('Vector-Borne', 'Water-Borne', 'Respiratory', 'Nutritional/Chronic', 'Other')),
+    cases_reported INTEGER NOT NULL DEFAULT 1,
+    severity TEXT NOT NULL CHECK(severity IN ('Mild', 'Moderate', 'Severe/Outbreak')) DEFAULT 'Moderate',
+    containment_status TEXT NOT NULL CHECK(containment_status IN ('Active', 'Monitoring', 'Contained')) DEFAULT 'Active',
+    reported_by TEXT NOT NULL DEFAULT 'ASHA Worker',
+    reported_date DATE DEFAULT (DATE('now')),
+    action_taken TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (village_id) REFERENCES villages(village_id) ON DELETE CASCADE
+);
+
 -- Indexes for optimal lookup and geospatial searching
 CREATE INDEX IF NOT EXISTS idx_facilities_village ON facilities(village_id);
 CREATE INDEX IF NOT EXISTS idx_facilities_type ON facilities(facility_type);
@@ -275,3 +327,8 @@ CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(appointment_dat
 CREATE INDEX IF NOT EXISTS idx_referrals_patient ON referrals(patient_id);
 CREATE INDEX IF NOT EXISTS idx_complaints_patient ON complaints(patient_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_generic_brand ON generic_medicines(brand_name);
+CREATE INDEX IF NOT EXISTS idx_generic_name ON generic_medicines(generic_name);
+CREATE INDEX IF NOT EXISTS idx_mch_patient ON maternal_child_health(patient_id);
+CREATE INDEX IF NOT EXISTS idx_surveillance_village ON disease_surveillance(village_id);
+

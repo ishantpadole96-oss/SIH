@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import MaternalChildTracker from '../components/MaternalChildTracker';
 import { 
   Users, AlertTriangle, ArrowRightLeft, Calendar, UserPlus, 
-  Activity, CheckCircle2, Phone, Stethoscope, ChevronRight, X, Heart 
+  Activity, CheckCircle2, Phone, Stethoscope, ChevronRight, X, Heart, Baby 
 } from 'lucide-react';
 
 export function AshaDashboard({ setActiveTab }) {
   const { user, token, selectedVillage, villages } = useAuth();
   const { t } = useLanguage();
 
+  const [ashaSubTab, setAshaSubTab] = useState('triage'); // 'triage' | 'mch'
   const [patients, setPatients] = useState([]);
   const [highRiskCases, setHighRiskCases] = useState([]);
   const [referrals, setReferrals] = useState([]);
@@ -179,8 +181,29 @@ export function AshaDashboard({ setActiveTab }) {
         </div>
       </div>
 
-      {/* Main Grid: High Risk Cases Queue + Patient Registry */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '2rem' }}>
+      {/* ASHA Sub-Tabs */}
+      <div style={{ display: 'flex', gap: '0.75rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem', marginBottom: '2rem' }}>
+        <button
+          type="button"
+          onClick={() => setAshaSubTab('triage')}
+          className={`btn btn-sm ${ashaSubTab === 'triage' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          <Activity size={16} /> Community Triage &amp; Villager Directory
+        </button>
+        <button
+          type="button"
+          onClick={() => setAshaSubTab('mch')}
+          className={`btn btn-sm ${ashaSubTab === 'mch' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          <Baby size={16} className="text-teal" /> Maternal &amp; Child Health (MCH / RCH) Registry
+        </button>
+      </div>
+
+      {ashaSubTab === 'mch' ? (
+        <MaternalChildTracker />
+      ) : (
+        /* Main Grid: High Risk Cases Queue + Patient Registry */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '2rem' }}>
         
         {/* Urgent High-Risk Screening Cases */}
         <div>
@@ -315,6 +338,7 @@ export function AshaDashboard({ setActiveTab }) {
         </div>
 
       </div>
+      )}
 
       {/* Field Patient Registration Modal */}
       {showRegisterModal && (

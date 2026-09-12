@@ -18,6 +18,9 @@ import { AshaDashboard } from './pages/AshaDashboard';
 import { DoctorDashboard } from './pages/DoctorDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 
+import TelemedicineRoom from './components/TelemedicineRoom';
+import DigitalHealthCard from './components/DigitalHealthCard';
+
 import { HeartPulse, ShieldAlert, Phone, Globe, Shield } from 'lucide-react';
 
 function AppContent() {
@@ -27,6 +30,8 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('home');
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showTelemedModal, setShowTelemedModal] = useState(false);
+  const [showHealthCardModal, setShowHealthCardModal] = useState(false);
   const [selectedFacilityForBooking, setSelectedFacilityForBooking] = useState(null);
 
   // Render appropriate view based on activeTab and Role
@@ -37,6 +42,8 @@ function AppContent() {
           <CitizenHome
             setActiveTab={setActiveTab}
             onOpenEmergency={() => setShowEmergencyModal(true)}
+            onOpenTelemed={() => setShowTelemedModal(true)}
+            onOpenHealthCard={() => setShowHealthCardModal(true)}
           />
         );
       case 'facilities':
@@ -177,6 +184,22 @@ function AppContent() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
       />
+
+      {/* Virtual Telemedicine Consultation Room */}
+      {showTelemedModal && (
+        <TelemedicineRoom
+          doctorName="Dr. Rajesh Deshmukh"
+          specialty="General Medicine & Family Health"
+          onClose={() => setShowTelemedModal(false)}
+        />
+      )}
+
+      {/* National Digital Health ID Card (ABHA-style) */}
+      {showHealthCardModal && (
+        <DigitalHealthCard
+          onClose={() => setShowHealthCardModal(false)}
+        />
+      )}
 
     </div>
   );

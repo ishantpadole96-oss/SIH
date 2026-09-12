@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Pill, Search, Hospital, Edit2, AlertCircle, CheckCircle2, Phone, X } from 'lucide-react';
+import { Pill, Search, Hospital, Edit2, AlertCircle, CheckCircle2, Phone, X, Sparkles, TrendingDown, ArrowRight } from 'lucide-react';
+import VoiceReader from '../components/VoiceReader';
 
 export function MedicineSearch() {
   const { user, role, token } = useAuth();
   const { t } = useLanguage();
 
+  const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' | 'generics'
   const [search, setSearch] = useState('');
   const [medicines, setMedicines] = useState([]);
   const [groupedMedicines, setGroupedMedicines] = useState([]);
+  const [generics, setGenerics] = useState([]);
+  const [genericStats, setGenericStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Edit stock modal state
@@ -34,9 +38,32 @@ export function MedicineSearch() {
       });
   };
 
+  const fetchGenerics = () => {
+    setLoading(true);
+    const url = search ? `/api/medicines/generic-alternatives?search=${encodeURIComponent(search)}` : '/api/medicines/generic-alternatives';
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        setGenerics(data.alternatives || []);
+        setGenericStats({
+          count: data.count,
+          avgSavings: data.averageSavingsPercentage
+        });
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load generic medicines:', err);
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
-    fetchMedicines();
-  }, [search]);
+    if (activeTab === 'inventory') {
+      fetchMedicines();
+    } else {
+      fetchGenerics();
+    }
+  }, [search, activeTab]);
 
   const handleUpdateStock = async (e) => {
     e.preventDefault();
@@ -58,177 +85,318 @@ export function MedicineSearch() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update stock');
 
-      setStatusMsg({ type: 'success', text: 'Stock quantity updated in database!' });
+      setStatusMsg({ type: 'success', text: 'Stock inventory updated successfully!' });
       fetchMedicines();
-      setTimeout(() => setEditingMed(null), 1000);
+      setTimeout(() => setEditingMed(null), 1200);
     } catch (err) {
       setStatusMsg({ type: 'error', text: err.message });
     }
   };
 
-  const canEdit = role === 'doctor' || role === 'asha' || role === 'admin';
+  const canEdit = ['doctor', 'asha', 'admin'].includes(role);
 
   return (
-    <div className="container" style={{ padding: '2rem 1.25rem 4rem 1.25rem' }}>
-      
-      {/* Title */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
-          {t('tile_medicine_search')}
+    <div className="container" style={{ padding: '2rem 1rem', maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Header Banner */}
+      <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(13, 148, 136, 0.15)', color: 'var(--primary-teal)', padding: '0.35rem 1rem', borderRadius: 'var(--radius-full)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+          <Pill size={16} /> National Essential Medicines List (NEML) & Jan Aushadhi
+        </div>
+        <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.5rem' }}>
+          Rural Medicine Availability & Generic Finder
         </h1>
-        <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
-          Search essential medicines across rural PHCs, CHCs, and District Hospitals in real time
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '680px', margin: '0 auto', fontSize: '1rem' }}>
+          Check real-time pharmacy stocks across Sub-Centres, PHCs, and District Hospitals, or find affordable government-subsidized Jan Aushadhi generic alternatives.
         </p>
       </div>
 
-      {/* Search Bar */}
-      <div className="card" style={{ padding: '1.25rem', marginBottom: '2rem' }}>
-        <div style={{ position: 'relative' }}>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Search medicine by generic name (e.g. Paracetamol, Amoxicillin, ORS, Metformin, Amlodipine)..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ paddingLeft: '2.5rem', fontSize: '1rem' }}
-          />
-          <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
-        </div>
+      {/* Mode Switcher Tabs */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <button
+          type="button"
+          onClick={() => { setActiveTab('inventory'); setSearch(''); }}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: 'var(--radius-full)',
+            border: activeTab === 'inventory' ? '2px solid var(--primary-teal)' : '1px solid var(--border-subtle)',
+            background: activeTab === 'inventory' ? 'var(--primary-teal)' : 'var(--card-bg)',
+            color: '#FFFFFF',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Hospital size={18} />
+          <span>PHC & Hospital Live Stock</span>
+        </button>
 
-        {/* Quick Tag Pills */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Popular:</span>
-          {['Paracetamol', 'Amoxicillin', 'Amlodipine', 'Metformin', 'ORS', 'Anti-Snake Venom'].map(tag => (
-            <button
-              key={tag}
-              onClick={() => setSearch(tag)}
-              style={{
-                background: search === tag ? 'var(--color-brand-500)' : 'var(--color-bg-primary)',
-                color: search === tag ? '#FFFFFF' : 'var(--text-secondary)',
-                border: '1px solid var(--border-subtle)',
-                padding: '3px 10px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: '0.78rem',
-                cursor: 'pointer'
-              }}
-            >
-              {tag}
-            </button>
-          ))}
+        <button
+          type="button"
+          onClick={() => { setActiveTab('generics'); setSearch(''); }}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: 'var(--radius-full)',
+            border: activeTab === 'generics' ? '2px solid #F59E0B' : '1px solid var(--border-subtle)',
+            background: activeTab === 'generics' ? 'rgba(245, 158, 11, 0.2)' : 'var(--card-bg)',
+            color: activeTab === 'generics' ? '#FBBF24' : '#FFFFFF',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Sparkles size={18} className={activeTab === 'generics' ? 'text-amber-400 animate-spin-slow' : ''} />
+          <span>Jan Aushadhi Generic Savings Finder (Save up to 87%)</span>
+        </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="card" style={{ padding: '1.25rem', marginBottom: '2rem', background: 'var(--card-bg)', border: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              className="form-input"
+              style={{ paddingLeft: '2.75rem', fontSize: '1rem', width: '100%' }}
+              placeholder={activeTab === 'inventory'
+                ? "Search essential medicines (e.g., Paracetamol, Anti-Snake Venom, Amoxicillin, Insulin)..."
+                : "Search popular brand name (e.g. Augmentin, Pan-D, Glycomet, Telma, Dolo, Montair)..."}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
           {search && (
-            <button onClick={() => setSearch('')} style={{ background: 'transparent', border: 'none', color: '#F87171', fontSize: '0.78rem', cursor: 'pointer', marginLeft: 'auto' }}>
-              Clear Filter
+            <button className="btn btn-secondary" onClick={() => setSearch('')}>
+              Clear
             </button>
           )}
         </div>
       </div>
 
-      {/* Grouped Medicine Availability Cards */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-          Checking medicine inventories...
-        </div>
-      ) : groupedMedicines.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <Pill size={40} style={{ opacity: 0.3, marginBottom: '0.75rem' }} />
-          <h3>No Medicines Found</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            No stock records match "{search}".
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {groupedMedicines.map(group => (
-            <div key={group.medicine_name} className="card" style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
-                <div>
-                  <span className="badge badge-info" style={{ fontSize: '0.72rem', marginBottom: '0.3rem' }}>
-                    {group.category || 'Essential Drug'}
-                  </span>
-                  <h3 style={{ fontSize: '1.35rem', color: '#FFFFFF', fontWeight: 700 }}>
-                    {group.medicine_name}
-                  </h3>
-                </div>
-
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  Stocked at <b>{group.facilities.length}</b> facilities
-                </div>
+      {/* VIEW A: Jan Aushadhi Generic Savings Finder */}
+      {activeTab === 'generics' ? (
+        <div>
+          {genericStats && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(13, 148, 136, 0.15) 100%)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1rem 1.5rem',
+              marginBottom: '1.5rem',
+              color: '#FFFFFF'
+            }}>
+              <div>
+                <strong style={{ fontSize: '1.1rem', color: '#FBBF24' }}>Pradhan Mantri Bhartiya Janaushadhi Pariyojana (PMBJP)</strong>
+                <p style={{ fontSize: '0.85rem', color: '#CBD5E1', margin: 0 }}>
+                  High-quality generic medicines matching WHO-GMP bioequivalence at a fraction of branded market retail cost.
+                </p>
               </div>
-
-              {/* Cross-Facility Breakdown Table / Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-                {group.facilities.map(fac => {
-                  let badgeColor = 'badge-success';
-                  let statusText = '🟢 In Stock';
-                  if (fac.stock_status === 'Low Stock') {
-                    badgeColor = 'badge-warning';
-                    statusText = '🟡 Low Stock';
-                  } else if (fac.stock_status === 'Out of Stock') {
-                    badgeColor = 'badge-danger';
-                    statusText = '🔴 Out of Stock';
-                  }
-
-                  return (
-                    <div
-                      key={fac.medicine_id}
-                      style={{
-                        background: 'var(--color-bg-primary)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-md)',
-                        padding: '1rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                          <span className={`badge ${badgeColor}`} style={{ fontSize: '0.72rem' }}>
-                            {statusText}
-                          </span>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                            {fac.facility_type}
-                          </span>
-                        </div>
-
-                        <h4 style={{ fontSize: '1rem', color: '#FFFFFF', fontWeight: 700, margin: '2px 0' }}>
-                          {fac.facility_name}
-                        </h4>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                          📍 {fac.village_name} Village
-                        </div>
-
-                        <div style={{ fontSize: '0.9rem', color: '#CBD5E1', marginBottom: '0.5rem' }}>
-                          Current Quantity: <b>{fac.quantity} {group.unit}</b>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          Updated: {fac.last_updated ? fac.last_updated.substring(0, 10) : 'Recent'}
-                        </span>
-
-                        {canEdit && (
-                          <button
-                            onClick={() => {
-                              setEditingMed(fac);
-                              setNewQuantity(fac.quantity);
-                              setNewStatus(fac.stock_status);
-                              setStatusMsg(null);
-                            }}
-                            className="btn btn-sm btn-outline"
-                            style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
-                          >
-                            <Edit2 size={12} /> Edit Stock
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34D399' }}>~{genericStats.avgSavings}%</span>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Average Citizen Savings</div>
               </div>
             </div>
-          ))}
+          )}
+
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading generic alternatives...</div>
+          ) : generics.length === 0 ? (
+            <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No generic mapping found for "{search}". Try searching "Augmentin", "Pan-D", "Telma", or "Dolo".
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.5rem' }}>
+              {generics.map(g => (
+                <div key={g.generic_id} className="card" style={{
+                  padding: '1.5rem',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  background: 'var(--card-bg)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    {/* Header Pill */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', background: 'rgba(255, 255, 255, 0.1)', color: '#CBD5E1' }}>
+                        {g.category}
+                      </span>
+                      <span style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 800,
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: 'var(--radius-full)',
+                        background: 'rgba(16, 185, 129, 0.2)',
+                        color: '#34D399',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem'
+                      }}>
+                        <TrendingDown size={14} /> Save {g.savings_percentage}%
+                      </span>
+                    </div>
+
+                    {/* Brand vs Generic Title */}
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Popular Brand Name</div>
+                      <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#FFFFFF', margin: '0.1rem 0 0.5rem 0' }}>{g.brand_name}</h3>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-teal)', fontWeight: 600, fontSize: '0.95rem' }}>
+                        <ArrowRight size={16} />
+                        <span>Jan Aushadhi Generic Formula:</span>
+                      </div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#2DD4BF', marginTop: '0.2rem' }}>
+                        {g.generic_name}
+                      </div>
+                    </div>
+
+                    {/* Price Comparison Widget */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '0.75rem',
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      padding: '0.85rem',
+                      borderRadius: 'var(--radius-md)',
+                      margin: '1rem 0'
+                    }}>
+                      <div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Market Retail (MRP):</span>
+                        <div style={{ fontSize: '1.1rem', color: '#94A3B8', textDecoration: 'line-through' }}>
+                          ₹{g.market_price.toFixed(2)}
+                        </div>
+                      </div>
+                      <div style={{ borderLeft: '1px solid var(--border-subtle)', paddingLeft: '0.75rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 600 }}>Jan Aushadhi Price:</span>
+                        <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#10B981' }}>
+                          ₹{g.jan_aushadhi_price.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: '0.85rem', color: '#94A3B8', lineHeight: 1.5, marginBottom: '0.75rem' }}>
+                      {g.description}
+                    </p>
+
+                    <div style={{ fontSize: '0.8rem', color: '#CBD5E1', background: 'rgba(255, 255, 255, 0.05)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <strong>Common Uses:</strong> {g.common_uses}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Form: {g.dosage_form}</span>
+                    <VoiceReader text={`${g.brand_name}. Generic equivalent is ${g.generic_name}. Market price is ${g.market_price} rupees, government Jan Aushadhi price is only ${g.jan_aushadhi_price} rupees. You save ${g.savings_percentage} percent.`} label="Read Aloud" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* VIEW B: Existing Live PHC & Hospital Stock */
+        <div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading pharmacy inventories...</div>
+          ) : groupedMedicines.length === 0 ? (
+            <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No medicines found matching "{search}".
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {groupedMedicines.map((group, idx) => (
+                <div key={idx} className="card" style={{ padding: '1.5rem', background: 'var(--card-bg)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <h2 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#FFFFFF' }}>{group.medicine_name}</h2>
+                        <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', background: 'rgba(13, 148, 136, 0.2)', color: 'var(--primary-teal)', fontWeight: 600 }}>
+                          {group.category}
+                        </span>
+                      </div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                        Available across {group.facilities.length} government healthcare centres
+                      </p>
+                    </div>
+
+                    <VoiceReader text={`${group.medicine_name}, category ${group.category}. Available in ${group.facilities.length} healthcare facilities.`} />
+                  </div>
+
+                  {/* Facilities Grid for this medicine */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                    {group.facilities.map(fac => {
+                      const isOutOfStock = fac.stock_status === 'Out of Stock' || fac.quantity === 0;
+                      const isLowStock = fac.stock_status === 'Low Stock';
+
+                      return (
+                        <div
+                          key={fac.facility_id}
+                          style={{
+                            background: 'var(--card-hover)',
+                            border: `1px solid ${isOutOfStock ? 'rgba(239, 68, 68, 0.3)' : isLowStock ? 'rgba(245, 158, 11, 0.3)' : 'var(--border-subtle)'}`,
+                            borderRadius: 'var(--radius-md)',
+                            padding: '1rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between'
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#FFFFFF' }}>{fac.facility_name}</h3>
+                              <span
+                                className={`badge ${isOutOfStock ? 'badge-danger' : isLowStock ? 'badge-warning' : 'badge-success'}`}
+                                style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', whiteSpace: 'nowrap' }}
+                              >
+                                {fac.stock_status}
+                              </span>
+                            </div>
+
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                              {fac.facility_type} • {fac.village_name || 'Pune District'}
+                            </div>
+
+                            <div style={{ fontSize: '0.9rem', color: '#CBD5E1', marginBottom: '0.5rem' }}>
+                              Current Quantity: <b>{fac.quantity} {group.unit}</b>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                              Updated: {fac.last_updated ? fac.last_updated.substring(0, 10) : 'Recent'}
+                            </span>
+
+                            {canEdit && (
+                              <button
+                                onClick={() => {
+                                  setEditingMed(fac);
+                                  setNewQuantity(fac.quantity);
+                                  setNewStatus(fac.stock_status);
+                                  setStatusMsg(null);
+                                }}
+                                className="btn btn-sm btn-outline"
+                                style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
+                              >
+                                <Edit2 size={12} /> Edit Stock
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -297,7 +465,6 @@ export function MedicineSearch() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -109,7 +109,7 @@ async function runTests() {
       method: 'POST',
       headers: { Authorization: `Bearer ${citizenToken}` },
       body: JSON.stringify({
-        facility_id: 1,
+        facility_id: 4,
         doctor_id: 1,
         appointment_date: tomorrow,
         appointment_time: '11:00 AM',
@@ -159,6 +159,34 @@ async function runTests() {
 
     const gis = await api('/api/admin/analytics/gis-map');
     assert(gis.status === 200 && gis.data.villages.length >= 8 && gis.data.facilities.length >= 6, 'GIS map endpoint returns geo-located villages with accessibility badges and facilities');
+
+    // 16. Jan Aushadhi & Generic Medicine Alternatives
+    const genericRes = await api('/api/medicines/generic-alternatives?search=Augmentin');
+    assert(
+      genericRes.status === 200 &&
+      genericRes.data.alternatives.length > 0 &&
+      genericRes.data.alternatives[0].savings_percentage >= 70,
+      'Jan Aushadhi generic alternatives endpoint returns matches with >70% savings'
+    );
+
+    // 17. Maternal & Child Health (MCH) tracking
+    const mchRes = await api('/api/mch', {
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+    assert(
+      mchRes.status === 200 &&
+      mchRes.data.records.length >= 2,
+      'MCH tracking endpoint returns high-risk mothers and infant records'
+    );
+
+    // 18. Epidemiological Disease Surveillance & Outbreak Radar
+    const survRes = await api('/api/surveillance/alerts');
+    assert(
+      survRes.status === 200 &&
+      survRes.data.summary.totalActiveOutbreaks > 0 &&
+      survRes.data.alerts.length >= 4,
+      'Disease surveillance endpoint returns active disease outbreaks and clusters'
+    );
 
   } catch (err) {
     console.error('Test execution error:', err);
