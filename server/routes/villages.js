@@ -69,15 +69,74 @@ router.get('/:id', (req, res) => {
       WHERE village_id = ?
     `, [villageId]);
 
-    return res.json({
-      village: analysis,
-      ashaWorkers,
-      facilities
-    });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
+      return res.json({
+        village: analysis,
+        ashaWorkers,
+        facilities
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * GET /api/villages/:id/snapshot
+   * Dynamic Care Snapshot and Journey metrics for the frontend hero card
+   */
+  router.get('/:id/snapshot', (req, res) => {
+    try {
+      const villageId = parseInt(req.params.id);
+      const analysis = calculateVillageAccessibility(villageId);
+      if (!analysis) {
+        return res.status(404).json({ error: 'Village not found' });
+      }
+
+      // Nearby facilities within the district
+      const nearbyFacilities = db.all(`
+        SELECT f.facility_id, f.facility_name, f.facility_type, f.available_beds, f.total_beds, f.emergency_available,
+               (SELECT COUNT(*) FROM doctors WHERE facility_id = f.facility_id AND LOWER(availability_status) = 'available') as active_doctors
+        FROM facilities f
+        JOIN villages v ON f.village_id = v.village_id
+        WHERE v.district = (SELECT district FROM villages WHERE village_id = ?)
+        LIMIT 10
+      `, [villageId]);
+
+      const totalAvailableBeds = nearbyFacilities.reduce((sum, f) => sum + (f.available_beds || 0), 0);
+      const totalActiveDoctors = nearbyFacilities.reduce((sum, f) => sum + (f.active_doctors || 0), 0);
+
+      const score = Math.round(analysis.score);
+      const category = score >= 75 ? 'Good access' : score >= 50 ? 'Moderate access' : 'Limited access';
+
+      return res.json({
+        village_id: villageId,
+        village_name: analysis.village_name,
+        district: analysis.district,
+        score,
+        category,
+        nearest_facility: analysis.nearestFacility ? {
+          facility_name: analysis.nearestFacility.facility_name,
+          facility_type: analysis.nearestFacility.facility_type,
+          distance_km: analysis.nearestFacility.distanceKm,
+          emergency: !!analysis.nearestFacility.emergency_available
+        } : null,
+        available_beds: totalAvailableBeds,
+        active_doctors: totalActiveDoctors,
+        next_appointment: {
+          date: '15 Sep 2026',
+          facility: `${analysis.village_name} Primary Health Centre`,
+          status: 'CONFIRMED',
+          doctor: 'Dr. Anjali Patil (MBBS, DGO)'
+        },
+        follow_up: {
+          time: 'Today',
+          action: 'Check dizziness & iron therapy',
+          protocol: 'Daily IFA tablet with citrus, post-prandial vitals check'
+        }
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
 
 /**
  * POST /api/villages

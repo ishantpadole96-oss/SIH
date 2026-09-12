@@ -59,7 +59,25 @@ export const translations = {
     role_citizen: 'Citizen / Patient',
     role_asha: 'ASHA Worker',
     role_doctor: 'Doctor / Medical Officer',
-    role_admin: 'Govt Administrator'
+    role_admin: 'Govt Administrator',
+
+    // Dashboard Reference Keys
+    hero_title: 'Care that\nreaches\nyour doorstep.',
+    hero_subtitle: 'Find trusted government healthcare, understand your options, and take the next step with confidence.',
+    hero_find_btn: 'Find healthcare',
+    hero_screen_btn: 'Start screening',
+    care_snapshot: 'YOUR CARE SNAPSHOT',
+    access_score: 'access score',
+    good_access: 'Good access',
+    care_journey: 'YOUR CARE JOURNEY',
+    good_morning: 'Good morning',
+    attention_today: "Here's what needs your attention today",
+    view_all_records: 'View all records',
+    next_appointment: 'NEXT APPOINTMENT',
+    confirmed: 'CONFIRMED',
+    follow_up_due: 'FOLLOW-UP DUE',
+    manage: 'Manage',
+    open_follow_up: 'Open follow-up'
   },
   hi: {
     app_title: 'रूरलकेयर',
@@ -121,7 +139,25 @@ export const translations = {
     role_citizen: 'नागरिक / मरीज',
     role_asha: 'आशा कार्यकर्ता',
     role_doctor: 'चिकित्सक / डॉक्टर',
-    role_admin: 'सरकारी प्रशासक'
+    role_admin: 'सरकारी प्रशासक',
+
+    // Dashboard Reference Keys
+    hero_title: 'स्वास्थ्य सेवा जो\nआपके दरवाजे तक\nपहुंचे।',
+    hero_subtitle: 'विश्वसनीय सरकारी स्वास्थ्य सेवा खोजें, अपने विकल्पों को समझें और आत्मविश्वास से अगला कदम उठाएं।',
+    hero_find_btn: 'स्वास्थ्य सेवा खोजें',
+    hero_screen_btn: 'जांच शुरू करें',
+    care_snapshot: 'आपकी देखभाल का स्नैपशॉट',
+    access_score: 'पहुंच स्कोर',
+    good_access: 'उत्कृष्ट पहुंच',
+    care_journey: 'आपकी स्वास्थ्य यात्रा',
+    good_morning: 'शुभ प्रभात',
+    attention_today: 'आज आपके ध्यान की आवश्यकता है',
+    view_all_records: 'सभी रिकॉर्ड देखें',
+    next_appointment: 'अगली अपॉइंटमेंट',
+    confirmed: 'पुष्टीकृत',
+    follow_up_due: 'फॉलो-अप देय',
+    manage: 'प्रबंधित करें',
+    open_follow_up: 'फॉलो-अप खोलें'
   },
   mr: {
     app_title: 'रूरलकेअर',
@@ -183,6 +219,24 @@ export const translations = {
     role_citizen: 'नागरिक / रुग्ण',
     role_asha: 'आशा सेविका',
     role_doctor: 'वैद्यकीय अधिकारी',
-    role_admin: 'प्रशासक'
+    role_admin: 'प्रशासक',
+
+    // Dashboard Reference Keys
+    hero_title: 'आपल्या घरापर्यंत\nपोहोचणारी\nआरोग्य सेवा.',
+    hero_subtitle: 'विश्वासार्ह सरकारी आरोग्य सेवा शोधा, आपले पर्याय समजून घ्या आणि आत्मविश्वासाने पुढचे पाऊल टाका.',
+    hero_find_btn: 'आरोग्य सेवा शोधा',
+    hero_screen_btn: 'तपासणी सुरू करा',
+    care_snapshot: 'आरोग्य विहंगावलोकन',
+    access_score: 'पहोच गुण',
+    good_access: 'उत्तम सुविधा',
+    care_journey: 'तुमचा आरोग्य प्रवास',
+    good_morning: 'शुभ सकाळ',
+    attention_today: 'आज या बाबींकडे लक्ष देणे आवश्यक आहे',
+    view_all_records: 'सर्व नोंदी पहा',
+    next_appointment: 'पुढील अपॉइंटमेंट',
+    confirmed: 'निश्चित',
+    follow_up_due: 'फॉलो-अप देय',
+    manage: 'व्यवस्थापित करा',
+    open_follow_up: 'फॉलो-अप उघडा'
   }
 };

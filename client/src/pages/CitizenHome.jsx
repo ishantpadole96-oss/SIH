@@ -1,54 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   Search, Hospital, Sparkles, Calendar, FileText, 
   ShieldAlert, Pill, Activity, MessageSquare, MapPin, 
   ChevronRight, CheckCircle2, Video, Shield, Phone, 
-  Stethoscope, Clock, Heart, ArrowRight, Bed, AlertTriangle
+  Stethoscope, Clock, Heart, ArrowRight, Bed, AlertTriangle,
+  X, Check, User, Info, Award
 } from 'lucide-react';
 
 export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOpenHealthCard }) {
   const { user, selectedVillage } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+
+  const [snapshotData, setSnapshotData] = useState(null);
+  const [loadingSnapshot, setLoadingSnapshot] = useState(false);
+
+  // Modals for deep interactivity
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [ifaDoseLogged, setIfaDoseLogged] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   const currentVillage = selectedVillage?.village_name || 'Khedgaon';
   const currentDistrict = selectedVillage?.district || 'Nashik & Dindori';
   const greetingName = user?.name ? user.name.split(' ')[0] : 'Asha';
 
+  // Fetch real-time village snapshot from backend
+  useEffect(() => {
+    const villageId = selectedVillage?.village_id || 1;
+    setLoadingSnapshot(true);
+    fetch(`/api/villages/${villageId}/snapshot`)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch snapshot');
+        return res.json();
+      })
+      .then(data => {
+        setSnapshotData(data);
+        setLoadingSnapshot(false);
+      })
+      .catch(() => {
+        // Safe fallback data
+        setSnapshotData({
+          score: 86,
+          category: 'Good access',
+          available_beds: 42,
+          active_doctors: 18,
+          nearest_facility: {
+            facility_name: `${currentVillage} Primary Health Centre`,
+            facility_type: 'PHC',
+            distance_km: 1.8
+          }
+        });
+        setLoadingSnapshot(false);
+      });
+  }, [selectedVillage, currentVillage]);
+
+  // Log dose handler
+  const handleLogDose = () => {
+    setIfaDoseLogged(true);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
+  };
+
+  const score = snapshotData?.score || 86;
+  const categoryLabel = snapshotData?.category || t('good_access');
+
   // 4 Action Cards
   const quickCards = [
     {
       id: 'facilities',
-      label: 'Find healthcare',
+      label: t('tile_find_healthcare'),
       icon: <MapPin size={20} color="#0D9488" />,
       iconBg: '#E8F5EE',
       onClick: () => setActiveTab('facilities'),
     },
     {
       id: 'availability',
-      label: 'Hospital availability',
+      label: t('tile_hospital_availability'),
       icon: <Bed size={20} color="#6366F1" />,
       iconBg: '#EEF2FF',
       onClick: () => setActiveTab('availability'),
     },
     {
       id: 'screening',
-      label: 'AI screening',
+      label: t('tile_ai_screening'),
       icon: <Sparkles size={20} color="#F59E0B" />,
       iconBg: '#FEF3C7',
       onClick: () => setActiveTab('screening'),
     },
     {
       id: 'emergency',
-      label: 'Emergency help',
+      label: t('tile_emergency_help'),
       icon: <ShieldAlert size={20} color="#EF4444" />,
       iconBg: '#FEE2E2',
       onClick: onOpenEmergency,
     },
   ];
 
-  // Extended Core Services below the fold
+  // Extended Services
   const extendedServices = [
     {
       id: 'telemedicine',
@@ -91,6 +141,30 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
   return (
     <div style={{ padding: '0 2rem 4rem 2rem', maxWidth: '1280px', margin: '0 auto' }}>
       
+      {/* Toast Alert */}
+      {showToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          background: '#11322A',
+          color: '#FFFFFF',
+          padding: '0.85rem 1.4rem',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.65rem',
+          zIndex: 2000,
+          boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+          animation: 'slideUp 0.3s ease'
+        }}>
+          <CheckCircle2 size={18} color="#34D399" />
+          <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>
+            Today's IFA dose marked as taken! 100% adherence streak.
+          </span>
+        </div>
+      )}
+
       {/* 1. HERO CARD: "Care that reaches your doorstep." */}
       <div style={{
         background: 'linear-gradient(135deg, #DCF0E4 0%, #E6F5EC 55%, #D3EBDC 100%)',
@@ -157,11 +231,10 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             lineHeight: 1.08,
             color: '#103127',
             letterSpacing: '-0.03em',
-            marginBottom: '1.1rem'
+            marginBottom: '1.1rem',
+            whiteSpace: 'pre-line'
           }}>
-            Care that<br />
-            reaches<br />
-            your doorstep.
+            {t('hero_title')}
           </h1>
 
           {/* Subtitle */}
@@ -173,7 +246,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             maxWidth: '520px',
             fontWeight: 400
           }}>
-            Find trusted government healthcare, understand your options, and take the next step with confidence.
+            {t('hero_subtitle')}
           </p>
 
           {/* Hero CTAs */}
@@ -205,7 +278,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               }}
             >
               <Search size={17} />
-              <span>Find healthcare</span>
+              <span>{t('hero_find_btn')}</span>
             </button>
 
             <button
@@ -235,7 +308,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               }}
             >
               <Sparkles size={17} color="#0D9488" />
-              <span>Start screening</span>
+              <span>{t('hero_screen_btn')}</span>
             </button>
           </div>
 
@@ -262,7 +335,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               textTransform: 'uppercase',
               color: '#6B7280'
             }}>
-              YOUR CARE SNAPSHOT
+              {t('care_snapshot')}
             </span>
             <div style={{
               width: '26px',
@@ -283,15 +356,21 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             <span style={{
               fontSize: '3.2rem',
               fontWeight: 800,
-              color: '#166534',
+              color: score >= 75 ? '#166534' : score >= 50 ? '#D97706' : '#DC2626',
               lineHeight: 1,
               fontFamily: "'Outfit', sans-serif"
             }}>
-              86
+              {score}
             </span>
             <div>
-              <div style={{ fontSize: '0.72rem', color: '#6B7280', lineHeight: 1.1 }}>access score</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#166534' }}>Good access</div>
+              <div style={{ fontSize: '0.72rem', color: '#6B7280', lineHeight: 1.1 }}>{t('access_score')}</div>
+              <div style={{
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: score >= 75 ? '#166534' : score >= 50 ? '#D97706' : '#DC2626'
+              }}>
+                {categoryLabel}
+              </div>
             </div>
           </div>
 
@@ -304,10 +383,11 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             marginBottom: '0.85rem'
           }}>
             <div style={{
-              width: '86%',
+              width: `${score}%`,
               height: '100%',
-              background: '#10B981',
-              borderRadius: '9999px'
+              background: score >= 75 ? '#10B981' : score >= 50 ? '#F59E0B' : '#EF4444',
+              borderRadius: '9999px',
+              transition: 'width 0.5s ease-in-out'
             }} />
           </div>
 
@@ -318,7 +398,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             lineHeight: 1.35,
             margin: 0
           }}>
-            Based on distance, beds, doctors &amp; medicines in {currentVillage}
+            Based on distance, {snapshotData?.available_beds || 42} beds, {snapshotData?.active_doctors || 18} doctors &amp; medicines in {currentVillage}
           </p>
         </div>
 
@@ -405,7 +485,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               color: '#6B7280',
               marginBottom: '0.3rem'
             }}>
-              YOUR CARE JOURNEY
+              {t('care_journey')}
             </div>
             <h2 style={{
               fontSize: '1.6rem',
@@ -413,10 +493,10 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               color: '#11322A',
               lineHeight: 1.2
             }}>
-              Good morning, {greetingName}
+              {t('good_morning')}, {greetingName}
             </h2>
             <p style={{ fontSize: '0.88rem', color: '#52786D', marginTop: '0.2rem' }}>
-              Here's what needs your attention today
+              {t('attention_today')}
             </p>
           </div>
 
@@ -435,7 +515,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               padding: '0.4rem 0'
             }}
           >
-            <span>View all records</span>
+            <span>{t('view_all_records')}</span>
             <ArrowRight size={15} />
           </button>
         </div>
@@ -461,7 +541,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  NEXT APPOINTMENT
+                  {t('next_appointment')}
                 </span>
                 <span style={{
                   background: '#E6F5EC',
@@ -475,7 +555,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                   gap: '0.3rem'
                 }}>
                   <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#166534' }} />
-                  CONFIRMED
+                  {t('confirmed')}
                 </span>
               </div>
 
@@ -496,15 +576,20 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                 }}>
                   <Stethoscope size={16} />
                 </div>
-                <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#111827' }}>
-                  {currentVillage} Primary Health Centre
+                <div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#111827' }}>
+                    {currentVillage} Primary Health Centre
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                    Dr. Anjali Patil · 10:30 AM
+                  </div>
                 </div>
               </div>
             </div>
 
             <div style={{ marginTop: '1.25rem', paddingTop: '0.85rem', borderTop: '1px solid #F0F5F2' }}>
               <button
-                onClick={() => setActiveTab('book-appointment')}
+                onClick={() => setShowAppointmentModal(true)}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -518,7 +603,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                   padding: 0
                 }}
               >
-                <span>Manage</span>
+                <span>{t('manage')}</span>
                 <ArrowRight size={14} />
               </button>
             </div>
@@ -538,7 +623,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#A7F3D0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  FOLLOW-UP DUE
+                  {t('follow_up_due')}
                 </span>
                 <div style={{
                   width: '26px',
@@ -565,7 +650,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
 
             <div style={{ marginTop: '1.25rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.15)' }}>
               <button
-                onClick={() => setActiveTab('screening')}
+                onClick={() => setShowFollowUpModal(true)}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -579,7 +664,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                   padding: 0
                 }}
               >
-                <span>Open follow-up</span>
+                <span>{t('open_follow_up')}</span>
                 <ArrowRight size={14} />
               </button>
             </div>
@@ -763,6 +848,290 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
           </a>
         </div>
       </div>
+
+      {/* ================= MODALS ================= */}
+
+      {/* Interactive Appointment Modal */}
+      {showAppointmentModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(17, 34, 25, 0.55)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '24px',
+            maxWidth: '480px',
+            width: '100%',
+            padding: '2rem',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            position: 'relative',
+            border: '1px solid #E2EAE5'
+          }}>
+            <button
+              onClick={() => setShowAppointmentModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: '#F0F5F2',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#4B5563'
+              }}
+            >
+              <X size={16} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                background: '#E8F5EE',
+                color: '#166534',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Calendar size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#11322A', margin: 0 }}>
+                  Appointment Details
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#166534', fontWeight: 600 }}>
+                  Token #KHD-2026-0814 · Confirmed
+                </span>
+              </div>
+            </div>
+
+            <div style={{ background: '#F8FAF9', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid #E2ECE5' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Facility:</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{currentVillage} PHC</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Medical Officer:</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>Dr. Anjali Patil (MBBS, DGO)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Scheduled Date:</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>15 Sep 2026</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>OPD Slot:</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10B981' }}>10:30 AM (Zero-Wait Token)</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button
+                onClick={() => {
+                  setShowAppointmentModal(false);
+                  onOpenTelemed();
+                }}
+                style={{
+                  background: '#173D35',
+                  color: '#FFFFFF',
+                  padding: '0.75rem',
+                  borderRadius: '12px',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Video size={16} />
+                <span>Switch to Live Teleconsultation</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowAppointmentModal(false);
+                  setActiveTab('book-appointment');
+                }}
+                style={{
+                  background: '#FFFFFF',
+                  color: '#173D35',
+                  border: '1px solid #BFD9CB',
+                  padding: '0.75rem',
+                  borderRadius: '12px',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Reschedule or Change Slot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive Iron Therapy / Follow-Up Modal */}
+      {showFollowUpModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(17, 34, 25, 0.55)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '24px',
+            maxWidth: '500px',
+            width: '100%',
+            padding: '2rem',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            position: 'relative',
+            border: '1px solid #E2EAE5'
+          }}>
+            <button
+              onClick={() => setShowFollowUpModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: '#F0F5F2',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#4B5563'
+              }}
+            >
+              <X size={16} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                background: '#FEF3C7',
+                color: '#D97706',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Pill size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#11322A', margin: 0 }}>
+                  Iron Therapy &amp; Vitals Protocol
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#D97706', fontWeight: 600 }}>
+                  Active Care Plan · Maternal Anemia Care
+                </span>
+              </div>
+            </div>
+
+            <div style={{ background: '#F8FAF9', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.25rem', border: '1px solid #E2ECE5' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Current Hemoglobin:</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#DC2626' }}>9.8 g/dL (Mild Anemia)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Prescribed Dose:</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>1x IFA Tablet (Red) Daily</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Absorption Tip:</span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#166534' }}>Take with Lemon Water / Orange</span>
+              </div>
+            </div>
+
+            <div style={{
+              background: ifaDoseLogged ? '#E8F5EE' : '#F0F5F2',
+              borderRadius: '14px',
+              padding: '1rem',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#11322A' }}>
+                  {ifaDoseLogged ? '✓ Today\'s Dose Logged' : 'Log Today\'s IFA Tablet'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#52786D' }}>
+                  {ifaDoseLogged ? 'Recorded for ASHA Worker Sunita' : 'Tap button to register daily adherence'}
+                </div>
+              </div>
+
+              {!ifaDoseLogged ? (
+                <button
+                  onClick={handleLogDose}
+                  style={{
+                    background: '#173D35',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    padding: '0.55rem 1rem',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Log Dose
+                </button>
+              ) : (
+                <div style={{ background: '#10B981', color: '#FFFFFF', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700 }}>
+                  Completed
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => {
+                  setShowFollowUpModal(false);
+                  setActiveTab('screening');
+                }}
+                style={{
+                  flex: 1,
+                  background: '#173D35',
+                  color: '#FFFFFF',
+                  padding: '0.75rem',
+                  borderRadius: '12px',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Run AI Symptom Re-Check
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
