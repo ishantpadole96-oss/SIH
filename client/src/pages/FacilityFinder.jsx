@@ -12,8 +12,21 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
   const { t } = useLanguage();
 
   const [facilities, setFacilities] = useState([]);
+  const [selectedFacility, setSelectedFacility] = useState(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('both'); // 'both' | 'cards' | 'map'
+
+  const handleSelectFacility = (facility, fromMap = false) => {
+    setSelectedFacility(facility);
+    if (fromMap && facility?.facility_id) {
+      setTimeout(() => {
+        const cardEl = document.getElementById(`facility-card-${facility.facility_id}`);
+        if (cardEl) {
+          cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 100);
+    }
+  };
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -255,6 +268,8 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
           <div style={{ position: viewMode === 'both' ? 'sticky' : 'relative', top: viewMode === 'both' ? '90px' : 'auto', height: viewMode === 'both' ? '680px' : '560px' }}>
             <InteractiveMap
               facilities={facilities}
+              selectedFacility={selectedFacility}
+              onFacilitySelect={(fac) => handleSelectFacility(fac, true)}
               height="100%"
             />
           </div>
@@ -276,148 +291,179 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
                 </p>
               </div>
             ) : (
-              facilities.map(f => (
-                <div
-                  key={f.facility_id}
-                  className="card"
-                  style={{
-                    background: 'var(--color-bg-card)',
-                    border: f.emergency_available ? '1px solid rgba(13, 148, 136, 0.4)' : '1px solid var(--border-subtle)',
-                    padding: '1.4rem'
-                  }}
-                >
-                  {/* Top Bar: Type, Distance & Rating */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <span className="badge badge-info" style={{ fontWeight: 700 }}>
-                        {f.facility_type}
-                      </span>
-                      <span className={`badge ${f.current_status === 'Open' ? 'badge-success' : 'badge-danger'}`}>
-                        {f.current_status}
-                      </span>
-                      {f.emergency_available ? (
-                        <span className="badge badge-danger">
-                          🚨 24x7 Emergency
+              facilities.map(f => {
+                const isSelected = selectedFacility && (selectedFacility.facility_id === f.facility_id || selectedFacility.id === f.id);
+
+                return (
+                  <div
+                    key={f.facility_id}
+                    id={`facility-card-${f.facility_id}`}
+                    className="card"
+                    style={{
+                      background: isSelected ? 'rgba(15, 23, 42, 0.95)' : 'var(--color-bg-card)',
+                      border: isSelected 
+                        ? '2px solid #2DD4BF' 
+                        : (f.emergency_available ? '1px solid rgba(13, 148, 136, 0.4)' : '1px solid var(--border-subtle)'),
+                      boxShadow: isSelected ? '0 0 20px rgba(45, 212, 191, 0.28)' : 'none',
+                      padding: '1.4rem',
+                      transition: 'all 0.25s ease'
+                    }}
+                  >
+                    {/* Top Bar: Type, Distance & Rating */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span className="badge badge-info" style={{ fontWeight: 700 }}>
+                          {f.facility_type}
                         </span>
-                      ) : null}
+                        <span className={`badge ${f.current_status === 'Open' ? 'badge-success' : 'badge-danger'}`}>
+                          {f.current_status}
+                        </span>
+                        {f.emergency_available ? (
+                          <span className="badge badge-danger">
+                            🚨 24x7 Emergency
+                          </span>
+                        ) : null}
+                        {isSelected && (
+                          <span className="badge badge-success" style={{ background: '#0D9488', color: '#FFFFFF', fontWeight: 700 }}>
+                            📍 Map Focused
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Distance from selected village */}
+                      {f.distanceKm !== null && (
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#2DD4BF' }}>
+                            {f.distanceKm} km
+                          </span>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            from {selectedVillage?.village_name}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Distance from selected village */}
-                    {f.distanceKm !== null && (
-                      <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#2DD4BF' }}>
-                          {f.distanceKm} km
-                        </span>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          from {selectedVillage?.village_name}
+                    {/* Facility Name & Address */}
+                    <h3 
+                      onClick={() => handleSelectFacility(f)} 
+                      style={{ fontSize: '1.25rem', color: '#FFFFFF', marginBottom: '0.25rem', fontWeight: 700, cursor: 'pointer' }}
+                      title="Click to locate on map"
+                    >
+                      {f.facility_name}
+                    </h3>
+                    <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                      📍 {f.address}
+                    </p>
+                    <div style={{ fontSize: '0.76rem', color: '#38BDF8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '0.85rem' }}>
+                      <MapPin size={13} /> GPS: {f.latitude?.toFixed(4)}° N, {f.longitude?.toFixed(4)}° E &bull; {f.district || 'Maharashtra'}
+                    </div>
+
+                    {/* 4 Core Availability Indicators (Real-time from Database) */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: '0.5rem',
+                      background: 'var(--color-bg-primary)',
+                      padding: '0.75rem',
+                      borderRadius: 'var(--radius-md)',
+                      marginBottom: '1rem'
+                    }}>
+                      {/* Doctors */}
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Stethoscope size={13} /> Doctors
+                        </div>
+                        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: f.doctors_available_count > 0 ? '#34D399' : '#F87171' }}>
+                          {f.doctors_available_count} Available
                         </div>
                       </div>
+
+                      {/* Beds */}
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Bed size={13} /> Beds
+                        </div>
+                        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#38BDF8' }}>
+                          {f.available_beds} / {f.total_beds}
+                        </div>
+                      </div>
+
+                      {/* Medicines */}
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Pill size={13} /> Medicines
+                        </div>
+                        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: f.medicine_summary?.out_of_stock > 1 ? '#FBBF24' : '#34D399' }}>
+                          {f.medicine_summary?.in_stock || 0} in stock
+                        </div>
+                      </div>
+
+                      {/* Rating */}
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Star size={13} color="#FBBF24" /> Rating
+                        </div>
+                        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#FFFFFF' }}>
+                          ⭐ {f.average_rating} ({f.total_reviews_count || 4})
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Services tags */}
+                    {f.services && f.services.length > 0 && (
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                        {f.services.slice(0, 4).map((s, idx) => (
+                          <span key={idx} style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px' }}>
+                            ✓ {s}
+                          </span>
+                        ))}
+                      </div>
                     )}
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectFacility(f)}
+                        className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                        title="Focus and zoom to this hospital on the map"
+                      >
+                        <MapPin size={15} /> {isSelected ? 'Focused on Map' : 'Locate on Map'}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (setSelectedFacilityForBooking) setSelectedFacilityForBooking(f);
+                          setActiveTab('book-appointment');
+                        }}
+                        className="btn btn-primary btn-sm"
+                        style={{ flex: 1 }}
+                      >
+                        <Calendar size={16} /> Book Appointment
+                      </button>
+                      <a
+                        href={`tel:${f.contact}`}
+                        className="btn btn-secondary btn-sm"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <Phone size={16} /> Call
+                      </a>
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${f.latitude},${f.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        style={{ textDecoration: 'none' }}
+                        title="Open exact GPS coordinates in Google Maps"
+                      >
+                        <Navigation size={16} /> Directions
+                      </a>
+                    </div>
+
                   </div>
-
-                  {/* Facility Name & Address */}
-                  <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF', marginBottom: '0.25rem', fontWeight: 700 }}>
-                    {f.facility_name}
-                  </h3>
-                  <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '0.85rem' }}>
-                    📍 {f.address}
-                  </p>
-
-                  {/* 4 Core Availability Indicators (Real-time from Database) */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(4, 1fr)',
-                    gap: '0.5rem',
-                    background: 'var(--color-bg-primary)',
-                    padding: '0.75rem',
-                    borderRadius: 'var(--radius-md)',
-                    marginBottom: '1rem'
-                  }}>
-                    {/* Doctors */}
-                    <div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Stethoscope size={13} /> Doctors
-                      </div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: f.doctors_available_count > 0 ? '#34D399' : '#F87171' }}>
-                        {f.doctors_available_count} Available
-                      </div>
-                    </div>
-
-                    {/* Beds */}
-                    <div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Bed size={13} /> Beds
-                      </div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#38BDF8' }}>
-                        {f.available_beds} / {f.total_beds}
-                      </div>
-                    </div>
-
-                    {/* Medicines */}
-                    <div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Pill size={13} /> Medicines
-                      </div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: f.medicine_summary?.out_of_stock > 1 ? '#FBBF24' : '#34D399' }}>
-                        {f.medicine_summary?.in_stock || 0} in stock
-                      </div>
-                    </div>
-
-                    {/* Rating */}
-                    <div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Star size={13} color="#FBBF24" /> Rating
-                      </div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#FFFFFF' }}>
-                        ⭐ {f.average_rating} ({f.total_reviews_count || 4})
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Services tags */}
-                  {f.services && f.services.length > 0 && (
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                      {f.services.slice(0, 4).map((s, idx) => (
-                        <span key={idx} style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px' }}>
-                          ✓ {s}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>
-                    <button
-                      onClick={() => {
-                        if (setSelectedFacilityForBooking) setSelectedFacilityForBooking(f);
-                        setActiveTab('book-appointment');
-                      }}
-                      className="btn btn-primary btn-sm"
-                      style={{ flex: 1 }}
-                    >
-                      <Calendar size={16} /> Book Appointment
-                    </button>
-                    <a
-                      href={`tel:${f.contact}`}
-                      className="btn btn-secondary btn-sm"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <Phone size={16} /> Call {f.contact}
-                    </a>
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${f.latitude},${f.longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-secondary btn-sm"
-                      style={{ textDecoration: 'none' }}
-                      title="Google Maps Navigation"
-                    >
-                      <Navigation size={16} /> Directions
-                    </a>
-                  </div>
-
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}

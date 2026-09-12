@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Calendar, Clock, Hospital, Stethoscope, CheckCircle2, User, FileText, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, Hospital, Stethoscope, CheckCircle2, User, FileText, ArrowRight, MapPin, Navigation } from 'lucide-react';
 
 export function BookAppointment({ setActiveTab, preselectedFacility }) {
   const { user, token, selectedVillage } = useAuth();
@@ -195,6 +195,52 @@ export function BookAppointment({ setActiveTab, preselectedFacility }) {
                 </option>
               ))}
             </select>
+
+            {/* Selected Hospital Location & Verification Details */}
+            {(() => {
+              const cur = facilities.find(f => f.facility_id === parseInt(selectedFacilityId));
+              if (!cur) return null;
+              return (
+                <div style={{
+                  background: 'rgba(13, 148, 136, 0.08)',
+                  border: '1px solid rgba(13, 148, 136, 0.35)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.9rem 1.1rem',
+                  marginTop: '0.65rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
+                    <div style={{ fontWeight: 800, color: '#FFFFFF', fontSize: '0.96rem' }}>
+                      📍 {cur.facility_name}
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <span className="badge badge-info" style={{ fontSize: '0.7rem', fontWeight: 700 }}>{cur.facility_type}</span>
+                      {cur.emergency_available ? (
+                        <span className="badge badge-danger" style={{ fontSize: '0.7rem', fontWeight: 700 }}>🚨 24x7 Emergency</span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                    {cur.address} &bull; <b>{cur.district || 'Maharashtra'}</b>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '0.76rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '6px', marginTop: '6px' }}>
+                    <span style={{ color: '#38BDF8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <MapPin size={13} /> GPS: {cur.latitude?.toFixed(4)}° N, {cur.longitude?.toFixed(4)}° E
+                    </span>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <span style={{ color: '#94A3B8' }}>Available Beds: <b style={{ color: '#38BDF8' }}>{cur.available_beds}</b> / {cur.total_beds}</span>
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${cur.latitude},${cur.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#2DD4BF', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}
+                      >
+                        <Navigation size={12} /> Google Maps &rarr;
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Doctor Selection */}

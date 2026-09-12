@@ -155,6 +155,7 @@ router.get('/availability/all', (req, res) => {
     const facilities = db.all(`
       SELECT f.facility_id, f.facility_name, f.facility_type, f.address, f.opening_hours,
              f.current_status, f.emergency_available, f.total_beds, f.available_beds,
+             f.latitude, f.longitude, f.contact,
              v.village_name, v.district,
              es.ambulance_available, es.emergency_contact, es.ambulance_phone,
              (SELECT COUNT(*) FROM doctors d WHERE d.facility_id = f.facility_id AND d.availability_status = 'Available') as doctors_available,

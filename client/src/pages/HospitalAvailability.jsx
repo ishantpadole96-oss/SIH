@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   Hospital, Bed, Stethoscope, ShieldAlert, Pill, Edit3, 
-  CheckCircle2, AlertCircle, RefreshCw, X, Search 
+  CheckCircle2, AlertCircle, RefreshCw, X, Search, Navigation, MapPin 
 } from 'lucide-react';
 
 export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooking }) {
@@ -195,9 +195,14 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
                   <h3 style={{ fontSize: '1.3rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '0.2rem' }}>
                     {facility.facility_name}
                   </h3>
-                  <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                  <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                     📍 {facility.address} ({facility.village_name}) • {facility.opening_hours}
                   </p>
+                  {facility.latitude && facility.longitude && (
+                    <div style={{ fontSize: '0.76rem', color: '#38BDF8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '1.1rem' }}>
+                      <MapPin size={13} /> GPS: {facility.latitude?.toFixed(4)}° N, {facility.longitude?.toFixed(4)}° E &bull; {facility.district || 'Maharashtra'}
+                    </div>
+                  )}
 
                   {/* Live Status Indicators (Exact specs from prompt) */}
                   <div style={{
@@ -320,6 +325,18 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
                   >
                     Call ({facility.contact})
                   </a>
+                  {facility.latitude && facility.longitude && (
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${facility.latitude},${facility.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary btn-sm"
+                      style={{ textDecoration: 'none' }}
+                      title="Open GPS Navigation in Google Maps"
+                    >
+                      <Navigation size={15} /> Directions
+                    </a>
+                  )}
                 </div>
 
               </div>
