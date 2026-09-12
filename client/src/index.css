@@ -3,53 +3,53 @@
    ======================================================== */
 
 :root {
-  /* Color Palette */
-  --color-bg-primary: #0A0F1D;
-  --color-bg-secondary: #0F172A;
-  --color-bg-card: #141E33;
-  --color-bg-card-hover: #1A2642;
-  --color-bg-elevated: #1E293B;
+  /* Clean Sage, Mint & Deep Pine Modern Healthcare Theme */
+  --color-bg-primary: #F4F7F5;
+  --color-bg-secondary: #EDF3EF;
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-hover: #F8FAF9;
+  --color-bg-elevated: #FFFFFF;
   
-  --color-brand-50: #F0FDFA;
-  --color-brand-100: #CCFBF1;
+  --color-brand-50: #F0FDF4;
+  --color-brand-100: #DCFCE7;
   --color-brand-400: #2DD4BF;
-  --color-brand-500: #0D9488;
-  --color-brand-600: #0F766E;
-  --color-brand-gradient: linear-gradient(135deg, #0D9488 0%, #0284C7 100%);
+  --color-brand-500: #173D35;
+  --color-brand-600: #102B24;
+  --color-brand-gradient: linear-gradient(135deg, #173D35 0%, #195B48 100%);
   
   --color-accent-blue: #0284C7;
-  --color-accent-sky: #38BDF8;
-  --color-accent-purple: #8B5CF6;
+  --color-accent-sky: #0284C7;
+  --color-accent-purple: #7C3AED;
   
-  --color-emergency: #EF4444;
-  --color-emergency-dark: #B91C1C;
+  --color-emergency: #DC2626;
+  --color-emergency-dark: #991B1B;
   --color-emergency-gradient: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
   
-  --color-warning: #F59E0B;
-  --color-success: #10B981;
-  --color-info: #3B82F6;
+  --color-warning: #D97706;
+  --color-success: #16A34A;
+  --color-info: #2563EB;
 
   /* Text Colors */
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-inverse: #0F172A;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6B7280;
+  --text-inverse: #FFFFFF;
 
   /* Borders & Shadows */
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --border-brand: rgba(13, 148, 136, 0.4);
+  --border-subtle: #E2ECE5;
+  --border-strong: #CBD7CE;
+  --border-brand: rgba(23, 61, 53, 0.25);
   
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.25);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
-  --shadow-glow-brand: 0 0 20px rgba(13, 148, 136, 0.3);
-  --shadow-glow-emergency: 0 0 25px rgba(239, 68, 68, 0.45);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(17, 34, 25, 0.06);
+  --shadow-lg: 0 10px 25px -4px rgba(17, 34, 25, 0.08);
+  --shadow-glow-brand: 0 0 20px rgba(23, 61, 53, 0.15);
+  --shadow-glow-emergency: 0 0 20px rgba(239, 68, 68, 0.25);
 
   /* Radius & Transitions */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
   --radius-full: 9999px;
   
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -75,8 +75,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle at 50% 0%, #172554 0%, #0A0F1D 45%, #050811 100%);
-  background-attachment: fixed;
+  background-color: #F4F7F5;
+  color: var(--text-primary);
   overflow-x: hidden;
 }
 
@@ -179,12 +179,13 @@ button, input, select, textarea {
 }
 
 .btn-outline {
-  background: transparent;
-  color: var(--color-brand-400);
-  border: 1px solid var(--color-brand-500);
+  background: #FFFFFF;
+  color: #173D35;
+  border: 1px solid #C4D9CC;
 }
 .btn-outline:hover {
-  background: rgba(13, 148, 136, 0.15);
+  background: #EDF5F0;
+  border-color: #173D35;
 }
 
 .btn-sm {
@@ -1188,5 +1189,26 @@ button, input, select, textarea {
   border-radius: 6px;
   font-size: 0.8rem;
   color: #D1FAE5;
+}
+
+/* Sidebar & Dashboard Responsive Layout */
+@media (max-width: 900px) {
+  .sidebar-nav {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.25s ease-in-out !important;
+  }
+  .sidebar-nav.mobile-open {
+    transform: translateX(0) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
+  }
+  .mobile-menu-toggle {
+    display: flex !important;
+  }
+  .mobile-close-btn {
+    display: block !important;
+  }
 }
 
