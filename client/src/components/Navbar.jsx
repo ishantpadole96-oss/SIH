@@ -126,37 +126,25 @@ export function Navbar({ activeTab, setActiveTab, onOpenAuth }) {
       }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '72px' }}>
           
-          {/* Brand Logo */}
+          {/* Official Brand Logo */}
           <div
             onClick={() => setActiveTab('home')}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', userSelect: 'none' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', userSelect: 'none' }}
+            title="RuralCare — Connected care, closer"
           >
-            <div style={{
-              background: 'var(--color-brand-gradient)',
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              boxShadow: '0 4px 14px rgba(13, 148, 136, 0.4)'
-            }}>
-              <HeartPulse size={26} />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#FFFFFF' }}>
-                  Rural<span style={{ color: '#2DD4BF' }}>Care</span>
-                </span>
-                <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '1px 5px' }}>
-                  Live
-                </span>
-              </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                {t('app_tagline')}
-              </div>
-            </div>
+            <img
+              src="/ruralcare-logo.png"
+              alt="RuralCare Maharashtra Government Healthcare Platform"
+              style={{
+                height: '46px',
+                width: 'auto',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                background: '#FFFFFF',
+                padding: '3px 8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+            />
           </div>
 
           {/* Location / Village Selector Badge */}

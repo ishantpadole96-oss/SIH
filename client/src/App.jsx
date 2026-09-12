@@ -122,16 +122,24 @@ function AppContent() {
       }}>
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <div style={{ background: 'var(--color-brand-500)', padding: '0.4rem', borderRadius: '8px', color: '#FFFFFF' }}>
-                <HeartPulse size={20} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{
+                background: '#FFFFFF',
+                padding: '0.35rem 0.6rem',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <img 
+                  src="/ruralcare-logo.png" 
+                  alt="RuralCare — Maharashtra Government Healthcare Platform" 
+                  style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+                />
               </div>
               <div>
-                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FFFFFF' }}>
-                  Rural<span style={{ color: '#2DD4BF' }}>Care</span>
-                </span>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  Smart India Hackathon Healthcare Platform
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
+                  Maharashtra Public Healthcare Platform • Connected care, closer.
                 </p>
               </div>
             </div>
