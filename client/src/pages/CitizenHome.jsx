@@ -6,15 +6,25 @@ import {
   ShieldAlert, Pill, Activity, MessageSquare, MapPin, 
   ChevronRight, CheckCircle2, Video, Shield, Phone, 
   Stethoscope, Clock, Heart, ArrowRight, Bed, AlertTriangle,
-  X, Check, User, Info, Award
+  X, Check, User, Info, Award, Building2, Flame, Baby,
+  Navigation, Users, HeartHandshake
 } from 'lucide-react';
 
+import DiseaseRadarWidget from '../components/DiseaseRadarWidget';
+import MaternalChildTracker from '../components/MaternalChildTracker';
+
 export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOpenHealthCard }) {
-  const { user, selectedVillage } = useAuth();
+  const { user, role, demoLogin, selectedVillage, setSelectedVillage, villages } = useAuth();
   const { t, lang } = useLanguage();
 
   const [snapshotData, setSnapshotData] = useState(null);
   const [loadingSnapshot, setLoadingSnapshot] = useState(false);
+
+  // Role workspace tab selector
+  const [selectedWorkspaceTab, setSelectedWorkspaceTab] = useState('citizen');
+
+  // Community health tab (Radar vs MCH)
+  const [activeCommunityTab, setActiveCommunityTab] = useState('radar'); // 'radar' | 'mch'
 
   // Modals for deep interactivity
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
@@ -40,7 +50,6 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
         setLoadingSnapshot(false);
       })
       .catch(() => {
-        // Safe fallback data
         setSnapshotData({
           score: 86,
           category: 'Good access',
@@ -66,7 +75,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
   const score = snapshotData?.score || 86;
   const categoryLabel = snapshotData?.category || t('good_access');
 
-  // 4 Action Cards
+  // 4 Top Quick Action Cards
   const quickCards = [
     {
       id: 'facilities',
@@ -98,48 +107,166 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
     },
   ];
 
-  // Extended Services
-  const extendedServices = [
+  // Role workspaces detail
+  const workspaces = {
+    citizen: {
+      role: 'citizen',
+      title: 'Citizen & Patient Care Journey',
+      subtitle: 'Personalized health records, clinical triage, medicine discovery & appointments',
+      badge: 'Citizen Workspace',
+      items: [
+        'Check symptoms with AI clinical triage assistant',
+        'Book zero-wait appointments at nearest government hospital',
+        'Access QR-enabled ABHA Digital Health Card & digital Rx',
+        'Search affordable generic medicines at Jan Aushadhi Kendras'
+      ],
+      actionLabel: 'Open Citizen Dashboard',
+      actionTab: 'home'
+    },
+    asha: {
+      role: 'asha',
+      title: 'ASHA Field Healthcare Workspace',
+      subtitle: 'Door-to-door village health surveys, high-risk pregnancy ANC, and child immunization tracking',
+      badge: 'ASHA Field Portal',
+      items: [
+        'Village household health surveys and vulnerability tracking',
+        'High-risk pregnancy (ANC/PNC) monitoring & emergency flagging',
+        'Child immunization tracking & drop-out recovery',
+        'Direct referral submission to Sub-District and Civil Hospitals'
+      ],
+      actionLabel: 'Launch ASHA Workspace',
+      actionTab: 'asha-dashboard'
+    },
+    doctor: {
+      role: 'doctor',
+      title: 'Clinical OPD & Teleconsultation Workspace',
+      subtitle: 'OPD queue management, live telemedicine chamber, and digital prescription issuance',
+      badge: 'Doctor OPD Portal',
+      items: [
+        'Real-time outpatient consultation queue and patient history',
+        'Live e-Sanjeevani video consultation chamber with vitals HUD',
+        'Digital prescription writer with Jan Aushadhi generic mapping',
+        'Inward referrals acceptance and tertiary hospital transfers'
+      ],
+      actionLabel: 'Launch Doctor Portal',
+      actionTab: 'doctor-dashboard'
+    },
+    admin: {
+      role: 'admin',
+      title: 'District Command Centre (Govt Admin)',
+      subtitle: 'Statewide epidemiological radar, bed occupancy alerts, and resource allocation',
+      badge: 'District Admin Command',
+      items: [
+        'Real-time disease surveillance & seasonal outbreak radar',
+        'Statewide vacant bed census & oxygen/ICU readiness',
+        '108 Ambulance response time tracking and dispatch latency',
+        'Citizen grievance escalation and resolution tracking'
+      ],
+      actionLabel: 'Launch Admin Command Centre',
+      actionTab: 'admin-dashboard'
+    }
+  };
+
+  const currentWorkspace = workspaces[selectedWorkspaceTab];
+
+  // 9 Core Public Healthcare Modules
+  const coreServices = [
+    {
+      id: 'facilities',
+      title: 'Find Healthcare Near You',
+      marathiTitle: 'जवळचे आरोग्य केंद्र शोधा',
+      desc: 'Locate 350+ verified PHCs, CHCs, Sub-District Hospitals & Civil Hospitals with exact GPS navigation.',
+      badge: 'Interactive GIS Map',
+      badgeColor: '#0D9488',
+      icon: <Search size={22} color="#0D9488" />,
+      actionText: 'Explore Facilities'
+    },
+    {
+      id: 'screening',
+      title: 'AI Clinical Triage & Screening',
+      marathiTitle: 'एआय लक्षण तपासणी',
+      desc: 'Instant decision-support evaluating vitals, red-flag symptoms, and recommended facility level.',
+      badge: 'Clinical Decision Support',
+      badgeColor: '#8B5CF6',
+      icon: <Sparkles size={22} color="#8B5CF6" />,
+      actionText: 'Check Symptoms'
+    },
+    {
+      id: 'availability',
+      title: 'Hospital Availability Census',
+      marathiTitle: 'रुग्णालय खाटा व डॉक्टर स्थिती',
+      desc: 'Live census of vacant general/ICU beds, on-duty specialist doctors, and 24x7 emergency readiness.',
+      badge: 'Real-Time Census',
+      badgeColor: '#0284C7',
+      icon: <Hospital size={22} color="#0284C7" />,
+      actionText: 'View Live Beds'
+    },
+    {
+      id: 'book-appointment',
+      title: 'Book OPD Consultation',
+      marathiTitle: 'ओपीडी अपॉइंटमेंट बुक करा',
+      desc: 'Schedule appointment slots with verified government doctors with zero queue waiting times.',
+      badge: 'Zero-Wait Scheduling',
+      badgeColor: '#10B981',
+      icon: <Calendar size={22} color="#10B981" />,
+      actionText: 'Book Slot'
+    },
     {
       id: 'telemedicine',
+      isTelemed: true,
       title: 'e-Sanjeevani Teleconsultation',
-      desc: 'Connect via real-time live video with verified Maharashtra government medical officers.',
+      marathiTitle: 'ई-संजीवनी टेलिमेडिसिन',
+      desc: 'Direct video consultation with government doctors and specialists from the comfort of home.',
       badge: 'Live Video OPD',
-      badgeColor: '#0D9488',
-      icon: <Video size={22} color="#0D9488" />,
-      onClick: onOpenTelemed
+      badgeColor: '#06B6D4',
+      icon: <Video size={22} color="#06B6D4" />,
+      actionText: 'Start Consultation'
     },
     {
       id: 'health-card',
+      isHealthCard: true,
       title: 'Digital Health Card (ABHA)',
-      desc: 'Official QR-enabled digital health identity card with blood group and emergency vitals.',
+      marathiTitle: 'डिजिटल हेल्थ कार्ड (आभा)',
+      desc: 'Official QR-enabled digital health identity card with blood group, allergies, and emergency contacts.',
       badge: 'ABHA Identity',
       badgeColor: '#16A34A',
       icon: <Shield size={22} color="#16A34A" />,
-      onClick: onOpenHealthCard
+      actionText: 'View Health Card'
     },
     {
       id: 'medicines',
-      title: 'Jan Aushadhi Generic Medicines',
-      desc: 'Search 25+ essential medicines saving up to 87% cost and check live inventory at local PHCs.',
-      badge: '87% Cost Savings',
+      title: 'Jan Aushadhi & Generic Medicines',
+      marathiTitle: 'जन औषधी व जेनेरिक औषधे',
+      desc: 'Search 25+ essential generic medicines saving up to 87% cost and check live inventory at local PHCs.',
+      badge: 'Up to 87% Savings',
       badgeColor: '#EC4899',
       icon: <Pill size={22} color="#EC4899" />,
-      onClick: () => setActiveTab('medicines')
+      actionText: 'Search Medicines'
     },
     {
       id: 'camps',
       title: 'Rural Health Camps',
+      marathiTitle: 'ग्रामीण आरोग्य शिबिरे',
       desc: 'Upcoming free community health checkup camps for maternal care, diabetes, and eye screenings.',
       badge: 'Free Community Care',
       badgeColor: '#F59E0B',
       icon: <Activity size={22} color="#F59E0B" />,
-      onClick: () => setActiveTab('camps')
+      actionText: 'View Health Camps'
     },
+    {
+      id: 'complaints',
+      title: 'Quality Monitor & Grievances',
+      marathiTitle: 'तक्रार निवारण व दर्जा सनियंत्रण',
+      desc: 'Directly report doctor absence, medicine shortages, or facility hygiene to the District Health Officer.',
+      badge: 'Direct Redressal',
+      badgeColor: '#D97706',
+      icon: <MessageSquare size={22} color="#D97706" />,
+      actionText: 'File Feedback'
+    }
   ];
 
   return (
-    <div style={{ padding: '0 2rem 4rem 2rem', maxWidth: '1280px', margin: '0 auto' }}>
+    <div style={{ padding: '0 2rem 5rem 2rem', maxWidth: '1280px', margin: '0 auto' }}>
       
       {/* Toast Alert */}
       {showToast && (
@@ -182,7 +309,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
         marginBottom: '2rem'
       }}>
         
-        {/* Subtle Decorative Organic Wave SVG */}
+        {/* Subtle Decorative Organic Wave */}
         <div style={{
           position: 'absolute',
           right: '-60px',
@@ -309,6 +436,27 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             >
               <Sparkles size={17} color="#0D9488" />
               <span>{t('hero_screen_btn')}</span>
+            </button>
+
+            <button
+              onClick={onOpenEmergency}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.55rem',
+                background: '#FEE2E2',
+                color: '#DC2626',
+                padding: '0.82rem 1.4rem',
+                borderRadius: '9999px',
+                fontSize: '0.94rem',
+                fontWeight: 700,
+                border: '1px solid #FECACA',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <ShieldAlert size={17} />
+              <span>108 Emergency</span>
             </button>
           </div>
 
@@ -674,33 +822,343 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
 
       </div>
 
-      {/* 4. EXTENDED SERVICES & TELEMEDICINE / ABHA CARDS */}
-      <div style={{ marginBottom: '3rem' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1.25rem'
-        }}>
-          <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#11322A' }}>
-              Connected Public Healthcare Services
-            </h3>
-            <p style={{ fontSize: '0.84rem', color: '#6B7280' }}>
-              Instant access to teleconsultation, digital health cards, and essential medicines
-            </p>
+      {/* 4. STATEWIDE LIVE CENSUS (4 Bento Metric Cards) */}
+      <div style={{
+        background: '#FFFFFF',
+        borderRadius: '24px',
+        padding: '2rem 2.25rem',
+        border: '1px solid #E2EBE5',
+        marginBottom: '3rem',
+        boxShadow: '0 2px 8px rgba(17, 34, 25, 0.02)'
+      }}>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            REAL-TIME STATEWIDE TELEMETRY
           </div>
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
+            Maharashtra Public Healthcare Infrastructure at a Glance
+          </h3>
         </div>
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '1.25rem'
         }}>
-          {extendedServices.map((svc) => (
+          <div style={{ background: '#F8FAF9', border: '1px solid #E2ECE5', borderRadius: '16px', padding: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Public Facilities</span>
+              <Building2 size={18} color="#0D9488" />
+            </div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#11322A' }}>
+              350 Verified
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#52786D' }}>
+              PHCs, Sub-Centers, CHCs &amp; Civil Hospitals
+            </div>
+          </div>
+
+          <div style={{ background: '#F8FAF9', border: '1px solid #E2ECE5', borderRadius: '16px', padding: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Live Bed Census</span>
+              <Hospital size={18} color="#0284C7" />
+            </div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0284C7' }}>
+              Real-time Vacancy
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#52786D' }}>
+              General, Maternity &amp; ICU Beds Monitored
+            </div>
+          </div>
+
+          <div style={{ background: '#F8FAF9', border: '1px solid #E2ECE5', borderRadius: '16px', padding: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Doctors on Duty</span>
+              <Stethoscope size={18} color="#16A34A" />
+            </div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#16A34A' }}>
+              520+ Available
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#52786D' }}>
+              General Physicians &amp; Specialists
+            </div>
+          </div>
+
+          <div style={{ background: '#F8FAF9', border: '1px solid #E2ECE5', borderRadius: '16px', padding: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Districts Coverage</span>
+              <Award size={18} color="#D97706" />
+            </div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#D97706' }}>
+              36 Districts
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#52786D' }}>
+              From Konkan to Vidarbha Tribal Belts
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. LOCAL VILLAGE ACCESSIBILITY & GIS MAP RADAR */}
+      <div style={{
+        background: '#FFFFFF',
+        borderRadius: '24px',
+        padding: '2rem 2.25rem',
+        border: '1px solid #E2EBE5',
+        marginBottom: '3rem',
+        boxShadow: '0 2px 8px rgba(17, 34, 25, 0.02)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              VILLAGE REACHABILITY INDEX
+            </div>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
+              Local Area Reachability: {currentVillage} ({currentDistrict})
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#4B5563', margin: '0.2rem 0 0 0' }}>
+              Verified ground distance, road transit times, and 108 ambulance dispatch latency.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setActiveTab('facilities')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: '#E8F5EE',
+              color: '#166534',
+              border: '1px solid #C6E4D2',
+              padding: '0.55rem 1.1rem',
+              borderRadius: '10px',
+              fontSize: '0.84rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            <Navigation size={15} />
+            <span>Explore Local GIS Map</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1rem'
+        }}>
+          <div style={{ background: '#F8FAF9', borderRadius: '14px', padding: '1rem', border: '1px solid #E2ECE5' }}>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>Nearest Sub-Centre</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0' }}>0.8 km</div>
+            <div style={{ fontSize: '0.75rem', color: '#166534' }}>~12 min walk (Village level)</div>
+          </div>
+
+          <div style={{ background: '#F8FAF9', borderRadius: '14px', padding: '1rem', border: '1px solid #E2ECE5' }}>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>Nearest PHC</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0' }}>1.8 km</div>
+            <div style={{ fontSize: '0.75rem', color: '#166534' }}>~6 min transit (Doctor on duty)</div>
+          </div>
+
+          <div style={{ background: '#F8FAF9', borderRadius: '14px', padding: '1rem', border: '1px solid #E2ECE5' }}>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>District Civil Hospital</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0' }}>14.2 km</div>
+            <div style={{ fontSize: '0.75rem', color: '#0284C7' }}>~25 min ambulance transport</div>
+          </div>
+
+          <div style={{ background: '#F8FAF9', borderRadius: '14px', padding: '1rem', border: '1px solid #E2ECE5' }}>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>108 Ambulance Dispatch</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#DC2626', margin: '0.2rem 0' }}>14 mins ETA</div>
+            <div style={{ fontSize: '0.75rem', color: '#991B1B' }}>GPS tracked toll-free dispatch</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. MULTI-STAKEHOLDER ROLE WORKSPACES (Dedicated Interactive Switcher) */}
+      <div style={{ marginBottom: '3.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              ROLE WORKSPACES
+            </div>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
+              Multi-Stakeholder Workspaces
+            </h2>
+            <p style={{ fontSize: '0.88rem', color: '#52786D', margin: 0 }}>
+              Seamlessly switch views between Citizens, ASHA Community Workers, Doctors, and District Health Administrators
+            </p>
+          </div>
+
+          {/* Workspace Tabs */}
+          <div style={{ display: 'flex', background: '#F0F5F2', padding: '4px', borderRadius: '12px', border: '1px solid #DCE6E1', gap: '4px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setSelectedWorkspaceTab('citizen')}
+              style={{
+                background: selectedWorkspaceTab === 'citizen' ? '#173D35' : 'transparent',
+                color: selectedWorkspaceTab === 'citizen' ? '#FFFFFF' : '#374151',
+                border: 'none',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              👤 Citizen
+            </button>
+            <button
+              onClick={() => setSelectedWorkspaceTab('asha')}
+              style={{
+                background: selectedWorkspaceTab === 'asha' ? '#173D35' : 'transparent',
+                color: selectedWorkspaceTab === 'asha' ? '#FFFFFF' : '#374151',
+                border: 'none',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              👩‍⚕️ ASHA Worker
+            </button>
+            <button
+              onClick={() => setSelectedWorkspaceTab('doctor')}
+              style={{
+                background: selectedWorkspaceTab === 'doctor' ? '#173D35' : 'transparent',
+                color: selectedWorkspaceTab === 'doctor' ? '#FFFFFF' : '#374151',
+                border: 'none',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              🩺 Doctor / MO
+            </button>
+            <button
+              onClick={() => setSelectedWorkspaceTab('admin')}
+              style={{
+                background: selectedWorkspaceTab === 'admin' ? '#173D35' : 'transparent',
+                color: selectedWorkspaceTab === 'admin' ? '#FFFFFF' : '#374151',
+                border: 'none',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              🏛️ District Admin
+            </button>
+          </div>
+        </div>
+
+        {/* Active Workspace Showcase Card */}
+        <div style={{
+          background: '#FFFFFF',
+          borderRadius: '24px',
+          border: '1.5px solid #173D35',
+          padding: '2rem 2.25rem',
+          boxShadow: '0 8px 24px rgba(23, 61, 53, 0.06)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.75rem' }}>
+            <div style={{ flex: '1 1 500px' }}>
+              <span style={{
+                background: '#E8F5EE',
+                color: '#166534',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                display: 'inline-block',
+                marginBottom: '0.75rem'
+              }}>
+                {currentWorkspace.badge}
+              </span>
+
+              <h3 style={{ fontSize: '1.45rem', color: '#11322A', fontWeight: 800, marginBottom: '0.4rem' }}>
+                {currentWorkspace.title}
+              </h3>
+
+              <p style={{ fontSize: '0.9rem', color: '#4B5563', marginBottom: '1.5rem', lineHeight: 1.45 }}>
+                {currentWorkspace.subtitle}
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.85rem' }}>
+                {currentWorkspace.items.map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.86rem', color: '#1F2937' }}>
+                    <CheckCircle2 size={16} color="#0D9488" style={{ flexShrink: 0 }} />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignSelf: 'center' }}>
+              <button
+                onClick={async () => {
+                  await demoLogin(currentWorkspace.role);
+                  setActiveTab(currentWorkspace.actionTab);
+                }}
+                style={{
+                  background: '#173D35',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '0.85rem 1.6rem',
+                  borderRadius: '12px',
+                  fontSize: '0.94rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 14px rgba(23, 61, 53, 0.25)'
+                }}
+              >
+                <span>{currentWorkspace.actionLabel}</span>
+                <ArrowRight size={17} />
+              </button>
+              <div style={{ fontSize: '0.72rem', color: '#6B7280', textAlign: 'center' }}>
+                1-Click Quick Evaluator Switch
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 7. ALL 9 CORE PUBLIC HEALTHCARE SERVICES (Bento Grid) */}
+      <div style={{ marginBottom: '3.5rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            PUBLIC HEALTHCARE MODULES
+          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
+            Official Public Healthcare Services
+          </h2>
+          <p style={{ fontSize: '0.88rem', color: '#52786D', margin: 0 }}>
+            Explore digital health workflows designed for Maharashtra's rural citizens &amp; frontline health workers
+          </p>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '1.25rem'
+        }}>
+          {coreServices.map((service) => (
             <div
-              key={svc.id}
-              onClick={svc.onClick}
+              key={service.id}
+              onClick={() => {
+                if (service.isEmergency) onOpenEmergency();
+                else if (service.isTelemed) onOpenTelemed();
+                else if (service.isHealthCard) onOpenHealthCard();
+                else setActiveTab(service.id);
+              }}
               style={{
                 background: '#FFFFFF',
                 border: '1px solid #E2EBE5',
@@ -725,7 +1183,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               }}
             >
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
                   <div style={{
                     width: '38px',
                     height: '38px',
@@ -735,46 +1193,118 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
-                    {svc.icon}
+                    {service.icon}
                   </div>
                   <span style={{
+                    background: `${service.badgeColor}18`,
+                    color: service.badgeColor,
                     fontSize: '0.7rem',
                     fontWeight: 700,
-                    color: svc.badgeColor,
-                    background: `${svc.badgeColor}18`,
                     padding: '3px 8px',
                     borderRadius: '9999px'
                   }}>
-                    {svc.badge}
+                    {service.badge}
                   </span>
                 </div>
 
-                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', marginBottom: '0.4rem' }}>
-                  {svc.title}
+                <h3 style={{ fontSize: '1.05rem', color: '#111827', fontWeight: 800, marginBottom: '0.2rem' }}>
+                  {service.title}
+                </h3>
+                <div style={{ fontSize: '0.78rem', color: '#52786D', marginBottom: '0.65rem', fontWeight: 500 }}>
+                  {service.marathiTitle}
                 </div>
-                <p style={{ fontSize: '0.82rem', color: '#4B5563', lineHeight: 1.45, margin: 0 }}>
-                  {svc.desc}
+                <p style={{ fontSize: '0.82rem', color: '#4B5563', lineHeight: 1.45, margin: '0 0 1rem 0' }}>
+                  {service.desc}
                 </p>
               </div>
 
               <div style={{
-                marginTop: '1.25rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.35rem',
-                color: '#173D35',
                 fontSize: '0.82rem',
-                fontWeight: 700
+                fontWeight: 700,
+                color: '#173D35',
+                borderTop: '1px solid #F0F5F2',
+                paddingTop: '0.75rem'
               }}>
-                <span>Launch Service</span>
-                <ArrowRight size={14} />
+                <span>{service.actionText}</span>
+                <ChevronRight size={15} />
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* 5. 24x7 EMERGENCY HELPLINE STRIP */}
+      {/* 8. COMMUNITY HEALTH RADAR & MATERNAL REGISTRY (Interactive Surveillance Tab) */}
+      <div style={{
+        background: '#FFFFFF',
+        borderRadius: '24px',
+        padding: '2rem 2.25rem',
+        border: '1px solid #E2EBE5',
+        marginBottom: '3rem',
+        boxShadow: '0 2px 10px rgba(17, 34, 25, 0.03)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              DISTRICT CLINICAL EPIDEMIOLOGY &amp; MCH
+            </div>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
+              Community Surveillance &amp; Maternal Health
+            </h3>
+          </div>
+
+          <div style={{ display: 'flex', background: '#F0F5F2', padding: '4px', borderRadius: '10px', gap: '4px' }}>
+            <button
+              onClick={() => setActiveCommunityTab('radar')}
+              style={{
+                background: activeCommunityTab === 'radar' ? '#173D35' : 'transparent',
+                color: activeCommunityTab === 'radar' ? '#FFFFFF' : '#374151',
+                border: 'none',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem'
+              }}
+            >
+              <Flame size={14} color={activeCommunityTab === 'radar' ? '#EF4444' : '#6B7280'} />
+              <span>Disease Outbreak Radar</span>
+            </button>
+            <button
+              onClick={() => setActiveCommunityTab('mch')}
+              style={{
+                background: activeCommunityTab === 'mch' ? '#173D35' : 'transparent',
+                color: activeCommunityTab === 'mch' ? '#FFFFFF' : '#374151',
+                border: 'none',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem'
+              }}
+            >
+              <Baby size={14} color={activeCommunityTab === 'mch' ? '#2DD4BF' : '#6B7280'} />
+              <span>Maternal &amp; Child Health</span>
+            </button>
+          </div>
+        </div>
+
+        {activeCommunityTab === 'radar' ? (
+          <DiseaseRadarWidget />
+        ) : (
+          <MaternalChildTracker />
+        )}
+      </div>
+
+      {/* 9. 24x7 EMERGENCY HELPLINE STRIP */}
       <div style={{
         background: 'linear-gradient(135deg, #FFF5F5 0%, #FEF2F2 100%)',
         border: '1px solid #FECACA',
@@ -810,7 +1340,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap' }}>
           <a
             href="tel:108"
             style={{
@@ -823,10 +1353,11 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.5rem',
-              boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)'
+              boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
+              textDecoration: 'none'
             }}
           >
-            <Phone size={14} /> Call 108 (Ambulance)
+            <Phone size={14} /> 108 Ambulance
           </a>
 
           <a
@@ -841,10 +1372,30 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               fontWeight: 700,
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              textDecoration: 'none'
             }}
           >
-            <Phone size={14} /> Call 104 (Health Helpline)
+            <Phone size={14} /> 104 Health Helpline
+          </a>
+
+          <a
+            href="tel:102"
+            style={{
+              background: '#FFFFFF',
+              color: '#991B1B',
+              border: '1px solid #FCA5A5',
+              padding: '0.65rem 1.25rem',
+              borderRadius: '9999px',
+              fontSize: '0.88rem',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              textDecoration: 'none'
+            }}
+          >
+            <Phone size={14} /> 102 Matritva Vahan
           </a>
         </div>
       </div>
