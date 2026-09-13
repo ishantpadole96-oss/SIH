@@ -169,33 +169,81 @@ function screenPatient(screeningData) {
     }
   }
 
-  // Determine urgency & consultation recommendations
-  if (riskLevel === 'Emergency') {
+  // Determine urgency & consultation recommendations & 3-Tier Triage
+  let triageCategory = 'Normal';
+  let smartActions = [];
+  let suggestedSpecialist = 'General Medicine';
+  let suggestedTests = ['CBC (Complete Blood Count)', 'Basic Metabolic Panel'];
+
+  if (isPregnant) {
+    suggestedSpecialist = 'Gynecology & Obstetrics';
+    suggestedTests = ['CBC', 'USG Pelvis / Obstetric Ultrasound', 'Urine Albumin'];
+  } else if (hasChestPain || hasSweating || sysBP >= 160) {
+    suggestedSpecialist = 'Cardiology & Emergency Medicine';
+    suggestedTests = ['12-Lead ECG', 'Troponin-I', 'Chest X-Ray', 'Lipid Profile'];
+  } else if (age <= 12) {
+    suggestedSpecialist = 'Pediatrics';
+    suggestedTests = ['Pediatric Hemogram', 'Urine Routine', 'Hydration Evaluation'];
+  } else if (hasDiarrhea || hasVomiting) {
+    suggestedSpecialist = 'Gastroenterology / Internal Medicine';
+    suggestedTests = ['Serum Electrolytes', 'Stool Routine', 'CBC'];
+  }
+
+  if (riskLevel === 'Emergency' || riskLevel === 'High') {
+    triageCategory = 'High Risk';
     consultationRecommended = 1;
-    urgency = 'IMMEDIATE EMERGENCY: Seek medical care within 1 hour';
-    recommendation = `CRITICAL WARNING: High-priority symptoms or vital sign red flags detected (${redFlags.join('; ')}). Do NOT wait. Call 108 Emergency Ambulance or report directly to the nearest Hospital with Emergency/Trauma/ICU capabilities.`;
-  } else if (riskLevel === 'High') {
-    consultationRecommended = 1;
-    urgency = 'Prompt Consultation: Visit doctor within 12-24 hours';
-    recommendation = `High-risk indicators identified (${redFlags.length > 0 ? redFlags.join('; ') : 'Severe clinical presentation'}). You should be examined by a doctor at a Primary Health Centre (PHC) or Community Health Centre (CHC) today. Stay hydrated, avoid strenuous physical activity, and monitor breathing.`;
+    urgency = riskLevel === 'Emergency' 
+      ? 'IMMEDIATE EMERGENCY: Seek medical care within 1 hour'
+      : 'Urgent Evaluation: Visit higher facility within 12-24 hours';
+    
+    recommendation = `CRITICAL DECISION SUPPORT: High-priority clinical red flags detected (${redFlags.length > 0 ? redFlags.join('; ') : 'Severe acute symptoms'}). Immediate referral to higher facility (${requiredFacilityType} or District Hospital) advised. Prepare patient stabilization.`;
+    
+    smartActions = [
+      'Immediate medical evaluation recommended at secondary/tertiary facility.',
+      'Notify supervising Medical Officer / ASHA supervisor immediately.',
+      'Prepare urgent smart referral with pre-booked queue ticket.',
+      'If SpO2 < 92% or BP >= 180/120, dispatch 108 emergency ambulance.'
+    ];
   } else if (riskLevel === 'Moderate') {
+    triageCategory = 'Needs Doctor';
     consultationRecommended = 1;
-    urgency = 'Routine Consultation: Visit clinic within 48 hours';
-    recommendation = `Moderate symptoms present. Schedule a routine OPD consultation at your nearest PHC. Take plenty of warm fluids, rest, and follow basic symptom care. If symptoms worsen or fever exceeds 102°F, seek prompt medical attention.`;
+    urgency = 'Doctor Consultation: Schedule teleconsultation or PHC OPD within 24-48 hours';
+    recommendation = `Moderate symptoms identified. Patient requires medical evaluation by a Medical Officer via Teleconsultation or at the local Primary Health Centre (PHC).`;
+    smartActions = [
+      'Connect patient with Medical Officer via Teleconsultation Hub.',
+      'Schedule OPD appointment at nearest PHC.',
+      'Provide basic oral rehydration or symptom relief as per ASHA kit protocol.',
+      'Re-evaluate vitals if symptoms persist past 48 hours.'
+    ];
   } else {
+    triageCategory = 'Normal';
     consultationRecommended = 0;
-    urgency = 'Self-care & Observation (48-72 hours)';
-    recommendation = `Your reported vitals and symptoms are currently in the low-risk range. Practice adequate hydration, balanced diet, and rest. If symptoms persist for more than 3-4 days or new symptoms develop, consult your local ASHA worker or PHC doctor.`;
+    urgency = 'Self-care & Village Follow-up (48-72 hours)';
+    recommendation = `Vitals and symptoms are in the safe normal baseline. No emergency escalation required. Provide village-level guidance and routine follow-up.`;
+    smartActions = [
+      'Administer local village-level first aid / symptomatic care.',
+      'Counsel on hydration, nutrition, and rest.',
+      'ASHA worker to conduct routine 72-hour follow-up check.',
+      'Escalate if temperature rises above 101°F or new red flags develop.'
+    ];
   }
 
   return {
     ai_risk_level: riskLevel,
+    triage_category: triageCategory,
     red_flags: redFlags,
     possible_conditions: possibleConditions,
     recommendation: recommendation,
     consultation_recommended: consultationRecommended,
     urgency: urgency,
     required_facility_type: requiredFacilityType,
+    smart_actions: smartActions,
+    smart_referral_suggestion: {
+      specialist: suggestedSpecialist,
+      required_tests: suggestedTests.join(', '),
+      urgency: triageCategory === 'High Risk' ? '🔴 Urgent' : '🟡 Routine',
+      triage_color: triageCategory === 'High Risk' ? '#EF4444' : triageCategory === 'Needs Doctor' ? '#F59E0B' : '#10B981'
+    },
     vitals_evaluated: {
       temperature: `${temp}°F`,
       blood_pressure: `${sysBP}/${diaBP} mmHg`,

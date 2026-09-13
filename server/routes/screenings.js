@@ -114,10 +114,10 @@ router.post('/', authenticateToken, (req, res) => {
       const insert = db.run(`
         INSERT INTO screenings (
           patient_id, symptoms_json, duration_days, severity, vitals_json,
-          ai_risk_level, possible_conditions_json, recommendation,
-          consultation_recommended, matched_facility_id
+          ai_risk_level, triage_category, possible_conditions_json, recommendation,
+          smart_actions_json, consultation_recommended, matched_facility_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         targetPatientId,
         JSON.stringify(symptoms),
@@ -125,8 +125,10 @@ router.post('/', authenticateToken, (req, res) => {
         severity,
         JSON.stringify(vitals),
         screeningResult.ai_risk_level,
+        screeningResult.triage_category || 'Normal',
         JSON.stringify(screeningResult.possible_conditions),
         screeningResult.recommendation,
+        JSON.stringify(screeningResult.smart_actions || []),
         screeningResult.consultation_recommended,
         topMatchedFacility ? topMatchedFacility.facility_id : null
       ]);

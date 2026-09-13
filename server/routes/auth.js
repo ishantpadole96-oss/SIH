@@ -75,15 +75,52 @@ router.post('/register', (req, res) => {
 /**
  * POST /api/auth/login
  * Authenticate with email/phone & password
+ * Also supports universal demo credentials: demo_user / demo_password
  */
 router.post('/login', (req, res) => {
   try {
-    const { identifier, password } = req.body; // identifier can be email or phone
+    const { identifier, password, role: requestedRole } = req.body;
 
     if (!identifier || !password) {
       return res.status(400).json({ error: 'Email/phone and password are required.' });
     }
 
+    // ── Universal Demo Credentials: demo_user / demo_password ──
+    if (identifier === 'demo_user' && password === 'demo_password') {
+      const demoEmailMap = {
+        citizen: 'ramesh@ruralcare.in',
+        asha: 'sunita.asha@ruralcare.in',
+        doctor: 'dr.rajesh@ruralcare.in',
+        admin: 'admin@ruralcare.in'
+      };
+
+      const targetRole = requestedRole && demoEmailMap[requestedRole] ? requestedRole : 'citizen';
+      const targetEmail = demoEmailMap[targetRole];
+
+      const user = db.get(`
+        SELECT u.*, v.village_name, p.patient_id, d.staff_id as doctor_id, d.facility_id as doctor_facility_id
+        FROM users u
+        LEFT JOIN villages v ON u.village_id = v.village_id
+        LEFT JOIN patients p ON u.user_id = p.user_id
+        LEFT JOIN doctors d ON u.user_id = d.user_id
+        WHERE u.email = ?
+      `, [targetEmail]);
+
+      if (!user) {
+        return res.status(500).json({ error: 'Demo account not found. Please run database seed first.' });
+      }
+
+      const token = generateToken(user);
+      delete user.password_hash;
+
+      return res.json({
+        message: `Demo login successful as ${targetRole}`,
+        token,
+        user
+      });
+    }
+
+    // ── Standard email/phone + password login ──
     const user = db.get(`
       SELECT u.*, v.village_name, p.patient_id, d.staff_id as doctor_id, d.facility_id as doctor_facility_id
       FROM users u
@@ -188,7 +225,15 @@ router.get('/demo-accounts', (req, res) => {
     }
   ];
 
-  return res.json({ demoAccounts: accounts, commonPassword: 'Demo@123' });
+  return res.json({
+    demoAccounts: accounts,
+    commonPassword: 'Demo@123',
+    universalCredentials: {
+      username: 'demo_user',
+      password: 'demo_password',
+      note: 'Use demo_user / demo_password with any role to login instantly'
+    }
+  });
 });
 
 module.exports = router;

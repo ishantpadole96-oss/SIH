@@ -13,6 +13,7 @@ export default function TelemedicineRoom({
   specialty = 'General Medicine & Family Health',
   facility = 'Govt PHC Khedgaon • Pune District Civil Hospital',
   patientName,
+  initialMode = 'video',
   onClose
 }) {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export default function TelemedicineRoom({
 
   // Device & Stream States
   const [micActive, setMicActive] = useState(true);
-  const [videoActive, setVideoActive] = useState(true);
+  const [videoActive, setVideoActive] = useState(initialMode !== 'audio');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [callDuration, setCallDuration] = useState(0);

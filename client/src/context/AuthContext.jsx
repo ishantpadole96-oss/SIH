@@ -44,11 +44,11 @@ export function AuthProvider({ children }) {
   }, [selectedVillage]);
 
   // Login handler
-  const login = async (identifier, password) => {
+  const login = async (identifier, password, role) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier, password })
+      body: JSON.stringify({ identifier, password, role })
     });
     const data = await res.json();
     if (!res.ok) {
@@ -69,17 +69,9 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
-  // Quick Demo Login for evaluator convenience
+  // Quick Demo Login using universal demo_user / demo_password
   const demoLogin = async (role) => {
-    const credentials = {
-      citizen: 'ramesh@ruralcare.in',
-      asha: 'sunita.asha@ruralcare.in',
-      doctor: 'dr.rajesh@ruralcare.in',
-      admin: 'admin@ruralcare.in'
-    };
-
-    const email = credentials[role] || 'ramesh@ruralcare.in';
-    return await login(email, 'Demo@123');
+    return await login('demo_user', 'demo_password', role);
   };
 
   // Logout handler

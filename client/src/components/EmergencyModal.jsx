@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { AlertTriangle, Phone, Navigation, ShieldAlert, X, Hospital, Ambulance } from 'lucide-react';
+import { AlertTriangle, Phone, Navigation, ShieldAlert, X, Hospital, Ambulance, Radio } from 'lucide-react';
+import { EmergencyCallModal } from './EmergencyCallModal';
 
 export function EmergencyModal({ isOpen, onClose }) {
   const { selectedVillage, setSelectedVillage, villages } = useAuth();
   const { t } = useLanguage();
   const [emergencyData, setEmergencyData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showCallSimulator, setShowCallSimulator] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -73,13 +75,23 @@ export function EmergencyModal({ isOpen, onClose }) {
               Free 24x7 emergency medical response for rural areas
             </p>
           </div>
-          <a
-            href="tel:108"
-            className="btn btn-emergency btn-lg"
-            style={{ textDecoration: 'none' }}
-          >
-            <Phone size={20} /> Call 108 Now
-          </a>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setShowCallSimulator(true)}
+              className="btn btn-emergency btn-lg"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)' }}
+            >
+              <Radio size={18} className="animate-pulse" /> Live 108 Voice Call
+            </button>
+            <a
+              href="tel:108"
+              className="btn btn-secondary"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.75rem 1rem' }}
+            >
+              <Phone size={16} /> Dial 108
+            </a>
+          </div>
         </div>
 
         {/* Location selector for accuracy */}
@@ -193,6 +205,14 @@ export function EmergencyModal({ isOpen, onClose }) {
           </button>
         </div>
       </div>
+
+      {/* Interactive In-Browser Live 108 Emergency Voice Dispatch Call Screen */}
+      <EmergencyCallModal
+        isOpen={showCallSimulator}
+        onClose={() => setShowCallSimulator(false)}
+        serviceNumber="108"
+        serviceName="Maharashtra 108 Emergency Medical Services (MEMS)"
+      />
     </div>
   );
 }

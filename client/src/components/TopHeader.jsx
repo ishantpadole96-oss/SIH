@@ -1,83 +1,199 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { offlineStorage } from '../services/offlineStorage';
 import { 
   MapPin, Globe, Bell, ChevronDown, Menu, User, 
-  Check, LogOut, ShieldCheck 
+  Check, LogOut, ShieldCheck, Wifi, WifiOff, QrCode, Sparkles 
 } from 'lucide-react';
 
-export function TopHeader({ onToggleMobileSidebar, onOpenAuth }) {
+export function TopHeader({ onToggleMobileSidebar, onOpenAuth, onOpenJourneyScanner, onOpenCopilot }) {
   const { user, role, logout, selectedVillage, setSelectedVillage, villages } = useAuth();
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
 
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNotificationToast, setShowNotificationToast] = useState(false);
+  const [offlineStatus, setOfflineStatus] = useState(offlineStorage.getStatus());
 
-  // Default demo villages
-  const defaultLocations = [
-    { village_id: 99, village_name: 'Khedgaon', district: 'Nashik & Dindori', latitude: 20.0825, longitude: 73.8567 },
-    { village_id: 1, village_name: 'Shivapur', district: 'Pune', latitude: 18.2851, longitude: 73.8824 },
-    { village_id: 2, village_name: 'Shirwal', district: 'Satara', latitude: 18.1342, longitude: 74.0271 },
-    { village_id: 3, village_name: 'Katol', district: 'Nagpur', latitude: 21.2721, longitude: 78.5833 },
-    { village_id: 4, village_name: 'Aheri', district: 'Gadchiroli', latitude: 19.4167, longitude: 79.9833 },
-  ];
+  useEffect(() => {
+    const unsub = offlineStorage.subscribe(status => setOfflineStatus(status));
+    return unsub;
+  }, []);
 
-  const availableLocations = villages && villages.length > 0 ? villages : defaultLocations;
-  const currentLoc = selectedVillage || availableLocations[0];
+  const handleToggleOffline = () => {
+    const isNowOffline = offlineStorage.toggleSimulatedOffline();
+    if (!isNowOffline) {
+      offlineStorage.syncPendingRecords().then(res => {
+        if (res.synced) {
+          alert(`Online Sync: ${res.message || 'Records synced to central server'}`);
+        }
+      });
+    }
+  };
 
   const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'mr', label: 'मराठी (Marathi)' },
+    { code: 'en', label: 'English (EN)' },
     { code: 'hi', label: 'हिन्दी (Hindi)' },
+    { code: 'mr', label: 'मराठी (Marathi)' },
   ];
 
   const currentLangLabel = languages.find(l => l.code === lang)?.label || 'English';
 
-  const userName = user ? (user.name || user.email.split('@')[0]) : 'Ishant Padole';
+  const defaultLocations = [
+    { village_id: 1, village_name: 'Khedgaon', district: 'Pune' },
+    { village_id: 2, village_name: 'Bhor', district: 'Pune' },
+    { village_id: 3, village_name: 'Junnar', district: 'Pune' },
+    { village_id: 4, village_name: 'Baramati', district: 'Pune' },
+    { village_id: 5, village_name: 'Ambegaon', district: 'Pune' },
+    { village_id: 6, village_name: 'Shirur', district: 'Pune' },
+    { village_id: 7, village_name: 'Mulshi', district: 'Pune' },
+    { village_id: 8, village_name: 'Daund', district: 'Pune' }
+  ];
+
+  const availableLocations = (villages && villages.length > 0) ? villages : defaultLocations;
+  const currentLoc = selectedVillage || availableLocations[0];
+
+  const userName = user 
+    ? (user.name || user.email.split('@')[0]) 
+    : (lang === 'mr' ? 'अतिथी नागरिक' : lang === 'hi' ? 'अतिथि नागरिक' : 'Guest Citizen');
   const userInitial = userName.charAt(0).toUpperCase();
 
   return (
     <header style={{
-      height: '64px',
-      background: 'transparent',
+      height: '68px',
+      borderBottom: '1px solid #E6ECE8',
+      background: '#FFFFFF',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0.75rem 2rem',
-      position: 'relative',
-      zIndex: 50
+      padding: '0 2rem',
+      position: 'sticky',
+      top: 0,
+      zIndex: 90,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
     }}>
-      {/* Left: Mobile Hamburger Toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <button
-          onClick={onToggleMobileSidebar}
-          className="mobile-menu-toggle"
-          style={{
-            display: 'none',
-            background: '#FFFFFF',
-            border: '1px solid #E2ECE5',
-            borderRadius: '8px',
-            padding: '0.45rem',
-            cursor: 'pointer',
-            color: '#11322A'
-          }}
-          aria-label="Toggle Menu"
-        >
-          <Menu size={20} />
-        </button>
+      {/* Mobile Hamburger Toggle */}
+      <button
+        onClick={onToggleMobileSidebar}
+        className="mobile-hamburger-btn"
+        aria-label="Toggle navigation"
+        style={{
+          display: 'none',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '0.5rem',
+          marginRight: '0.75rem',
+          color: '#11322A'
+        }}
+      >
+        <Menu size={22} />
+      </button>
+
+      {/* Maharashtra Government Official Subtitle */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        <span style={{
+          fontSize: '0.74rem',
+          fontWeight: 700,
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+          color: '#43685C',
+          background: '#F0F5F2',
+          padding: '0.28rem 0.65rem',
+          borderRadius: '6px'
+        }}>
+          {t('gov_subtitle')}
+        </span>
       </div>
 
       {/* Right-aligned Header Actions */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '0.85rem',
+        gap: '0.65rem',
         marginLeft: 'auto',
         flexWrap: 'nowrap'
       }}>
         
+        {/* Offline Mode Toggle & Status Pill */}
+        <button
+          onClick={handleToggleOffline}
+          title={!offlineStatus.isOnline ? t('status_online') : t('simulate_offline_tooltip')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            background: !offlineStatus.isOnline ? '#FFF7ED' : '#F0FDF4',
+            border: !offlineStatus.isOnline ? '1px solid #F97316' : '1px solid #86EFAC',
+            color: !offlineStatus.isOnline ? '#C2410C' : '#166534',
+            padding: '0.4rem 0.75rem',
+            borderRadius: '9999px',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+          }}
+        >
+          {!offlineStatus.isOnline ? <WifiOff size={13} /> : <Wifi size={13} />}
+          <span>{!offlineStatus.isOnline ? t('status_offline') : t('status_online')}</span>
+          {offlineStatus.pending.total > 0 && (
+            <span style={{ background: '#EA580C', color: '#FFFFFF', borderRadius: '10px', padding: '1px 5px', fontSize: '0.68rem', fontWeight: 800 }}>
+              {offlineStatus.pending.total}
+            </span>
+          )}
+        </button>
+
+        {/* Scan Journey QR Button */}
+        {onOpenJourneyScanner && (
+          <button
+            onClick={onOpenJourneyScanner}
+            title={t('btn_scan_qr_tooltip')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              background: '#FFFFFF',
+              border: '1px solid #0D9488',
+              color: '#0D9488',
+              padding: '0.4rem 0.75rem',
+              borderRadius: '9999px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+            }}
+          >
+            <QrCode size={13} />
+            <span>{t('btn_scan_qr')}</span>
+          </button>
+        )}
+
+        {/* Smart Copilot Button */}
+        {onOpenCopilot && (
+          <button
+            onClick={onOpenCopilot}
+            title={t('btn_copilot_tooltip')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              background: 'linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%)',
+              border: 'none',
+              color: '#FFFFFF',
+              padding: '0.4rem 0.75rem',
+              borderRadius: '9999px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(124, 58, 237, 0.25)'
+            }}
+          >
+            <Sparkles size={13} />
+            <span>{t('btn_copilot')}</span>
+          </button>
+        )}
+
         {/* Location Dropdown Pill: 📍 Khedgaon ⌄ */}
         <div style={{ position: 'relative' }}>
           <button
@@ -123,7 +239,7 @@ export function TopHeader({ onToggleMobileSidebar, onOpenAuth }) {
               zIndex: 1000
             }}>
               <div style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>
-                Select District / Cluster
+                {t('select_district_cluster')}
               </div>
               {availableLocations.slice(0, 8).map(loc => (
                 <div
@@ -274,12 +390,12 @@ export function TopHeader({ onToggleMobileSidebar, onOpenAuth }) {
               zIndex: 1000
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#11322A' }}>Notifications</span>
-                <span style={{ fontSize: '0.7rem', color: '#0D9488', fontWeight: 600 }}>1 New</span>
+                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#11322A' }}>{t('notifications')}</span>
+                <span style={{ fontSize: '0.7rem', color: '#0D9488', fontWeight: 600 }}>{t('one_new')}</span>
               </div>
               <div style={{ padding: '0.6rem', background: '#F0FDF4', borderRadius: '8px', border: '1px solid #DCFCE7' }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#166534' }}>ANC Check-up Tomorrow</div>
-                <div style={{ fontSize: '0.72rem', color: '#4B5563', marginTop: '2px' }}>Khedgaon PHC doctor consultation scheduled for 10:30 AM.</div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#166534' }}>{t('notif_anc_title')}</div>
+                <div style={{ fontSize: '0.72rem', color: '#4B5563', marginTop: '2px' }}>{t('notif_anc_desc')}</div>
               </div>
             </div>
           )}
@@ -350,7 +466,9 @@ export function TopHeader({ onToggleMobileSidebar, onOpenAuth }) {
             }}>
               <div style={{ padding: '0.4rem 0.6rem', borderBottom: '1px solid #F0F4F1', marginBottom: '0.4rem' }}>
                 <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#11322A' }}>{userName}</div>
-                <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>Role: {role || 'Citizen'}</div>
+                <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>
+                  {t('role_label')} {role === 'doctor' ? t('role_doctor') : role === 'asha' ? t('role_asha') : role === 'admin' ? t('role_admin') : t('role_citizen')}
+                </div>
               </div>
               <button
                 onClick={() => {
@@ -375,7 +493,7 @@ export function TopHeader({ onToggleMobileSidebar, onOpenAuth }) {
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <LogOut size={14} />
-                <span>Sign out</span>
+                <span>{t('sign_out')}</span>
               </button>
             </div>
           )}

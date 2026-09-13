@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   Home, MapPin, Sparkles, Calendar, Pill, Activity, FileText, 
   MessageSquare, Navigation, Landmark, ShieldAlert, ChevronDown, 
-  HelpCircle, X, Check, HeartPulse, Bed, Video
+  HelpCircle, X, Check, HeartPulse, Bed, Video, ArrowLeft, Stethoscope, Building2, Users
 } from 'lucide-react';
 
 export function Sidebar({ 
@@ -15,31 +16,94 @@ export function Sidebar({
   isMobileOpen,
   setIsMobileOpen 
 }) {
+  const { t, lang } = useLanguage();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
-  const [showHelpTooltip, setShowHelpTooltip] = useState(false);
 
-  const navItems = [
-    { id: 'home', label: 'Overview', icon: <Home size={18} /> },
-    { id: 'facilities', label: 'Find healthcare', icon: <MapPin size={18} /> },
-    { id: 'telemedicine', label: 'Video consultation', icon: <Video size={18} /> },
-    { id: 'screening', label: 'AI screening', icon: <Sparkles size={18} /> },
-    { id: 'book-appointment', label: 'Appointments', icon: <Calendar size={18} /> },
-    { id: 'medicines', label: 'Medicines', icon: <Pill size={18} /> },
-    { id: 'camps', label: 'Health camps', icon: <Activity size={18} /> },
-    { id: 'records-referrals', label: 'Health records', icon: <FileText size={18} /> },
-    { id: 'complaints', label: 'Feedback & complaints', icon: <MessageSquare size={18} /> },
-    { id: 'rural-map', label: 'Rural map', icon: <Navigation size={18} /> },
-    { id: 'services', label: 'Maharashtra services', icon: <Landmark size={18} /> },
-  ];
+  // Role Metadata & Visual Branding
+  const roleMeta = {
+    citizen: {
+      id: 'citizen',
+      label: t('role_citizen'),
+      desc: t('role_citizen_desc'),
+      tab: 'home',
+      badge: t('role_citizen_badge'),
+      color: '#0D9488',
+      bg: '#E8F5EE',
+      icon: <Users size={16} />
+    },
+    asha: {
+      id: 'asha',
+      label: t('role_asha'),
+      desc: t('role_asha_desc'),
+      tab: 'asha-dashboard',
+      badge: t('role_asha_badge'),
+      color: '#E11D48',
+      bg: '#FFE4E6',
+      icon: <HeartPulse size={16} />
+    },
+    doctor: {
+      id: 'doctor',
+      label: t('role_doctor'),
+      desc: t('role_doctor_desc'),
+      tab: 'doctor-dashboard',
+      badge: t('role_doctor_badge'),
+      color: '#2563EB',
+      bg: '#EFF6FF',
+      icon: <Stethoscope size={16} />
+    },
+    admin: {
+      id: 'admin',
+      label: t('role_admin'),
+      desc: t('role_admin_desc'),
+      tab: 'admin-dashboard',
+      badge: t('role_admin_badge'),
+      color: '#D97706',
+      bg: '#FEF3C7',
+      icon: <Building2 size={16} />
+    }
+  };
 
-  const roles = [
-    { id: 'citizen', label: 'Citizen', desc: 'Patient view & appointments', tab: 'home' },
-    { id: 'asha', label: 'ASHA Worker', desc: 'Door-to-door survey & ANC', tab: 'asha-dashboard' },
-    { id: 'doctor', label: 'Doctor', desc: 'OPD queue & teleconsultation', tab: 'doctor-dashboard' },
-    { id: 'admin', label: 'District Admin', desc: 'Bed census & epidemiology', tab: 'admin-dashboard' },
-  ];
+  const currentMeta = roleMeta[viewingRole] || roleMeta.citizen;
 
-  const currentRoleObj = roles.find(r => r.id === viewingRole) || roles[0];
+  // Panel-specific filtered navigation links
+  const panelNavItems = {
+    citizen: [
+      { id: 'home', label: t('nav_overview'), icon: <Home size={18} /> },
+      { id: 'facilities', label: t('nav_find_healthcare'), icon: <MapPin size={18} /> },
+      { id: 'book-appointment', label: t('nav_appointments'), icon: <Calendar size={18} /> },
+      { id: 'telemedicine', label: t('nav_video_consult'), icon: <Video size={18} /> },
+      { id: 'screening', label: t('nav_ai_screening'), icon: <Sparkles size={18} /> },
+      { id: 'medicines', label: t('nav_medicines'), icon: <Pill size={18} /> },
+      { id: 'records-referrals', label: t('nav_records'), icon: <FileText size={18} /> },
+      { id: 'camps', label: t('nav_camps'), icon: <Activity size={18} /> },
+      { id: 'complaints', label: t('nav_complaints'), icon: <MessageSquare size={18} /> },
+      { id: 'services', label: t('nav_services'), icon: <Landmark size={18} /> }
+    ],
+    asha: [
+      { id: 'asha-dashboard', label: t('nav_asha_workspace'), icon: <HeartPulse size={18} /> },
+      { id: 'records-referrals', label: t('nav_asha_tracker'), icon: <FileText size={18} /> },
+      { id: 'screening', label: t('nav_asha_triage'), icon: <Sparkles size={18} /> },
+      { id: 'facilities', label: t('nav_asha_hospitals'), icon: <MapPin size={18} /> },
+      { id: 'medicines', label: t('nav_asha_stocks'), icon: <Pill size={18} /> },
+      { id: 'camps', label: t('nav_asha_camps'), icon: <Activity size={18} /> }
+    ],
+    doctor: [
+      { id: 'doctor-dashboard', label: t('nav_doc_opd'), icon: <Stethoscope size={18} /> },
+      { id: 'telemedicine', label: t('nav_doc_telemed'), icon: <Video size={18} /> },
+      { id: 'records-referrals', label: t('nav_doc_history'), icon: <FileText size={18} /> },
+      { id: 'facilities', label: t('nav_doc_transfers'), icon: <MapPin size={18} /> },
+      { id: 'medicines', label: t('nav_doc_pharmacy'), icon: <Pill size={18} /> }
+    ],
+    admin: [
+      { id: 'admin-dashboard', label: t('nav_admin_bottlenecks'), icon: <Building2 size={18} /> },
+      { id: 'rural-map', label: t('nav_admin_gis_map'), icon: <Navigation size={18} /> },
+      { id: 'availability', label: t('nav_admin_bed_census'), icon: <Bed size={18} /> },
+      { id: 'facilities', label: t('nav_admin_matrix'), icon: <MapPin size={18} /> },
+      { id: 'complaints', label: t('nav_admin_grievances'), icon: <MessageSquare size={18} /> }
+    ]
+  };
+
+  const navList = panelNavItems[viewingRole] || panelNavItems.citizen;
 
   const handleSelectRole = (r) => {
     setViewingRole(r.id);
@@ -100,9 +164,9 @@ export function Sidebar({
       className={`sidebar-nav ${isMobileOpen ? 'mobile-open' : ''}`}
       >
         {/* Brand Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', paddingLeft: '0.35rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', paddingLeft: '0.35rem' }}>
           <div 
-            onClick={() => { setActiveTab('home'); setViewingRole('citizen'); }}
+            onClick={() => setActiveTab('landing')}
             style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer' }}
           >
             <div style={{
@@ -132,10 +196,14 @@ export function Sidebar({
                 letterSpacing: '-0.02em',
                 lineHeight: 1.15
               }}>
-                Rural<span style={{ color: '#0D9488' }}>Care</span>
+                {lang === 'en' ? (
+                  <>Rural<span style={{ color: '#0D9488' }}>Care</span></>
+                ) : (
+                  <span style={{ color: '#173D35' }}>{t('app_title')}</span>
+                )}
               </div>
               <div style={{ fontSize: '0.72rem', color: '#52786D', fontWeight: 500 }}>
-                Connected care, closer
+                {t('app_tagline')}
               </div>
             </div>
           </div>
@@ -158,7 +226,39 @@ export function Sidebar({
           )}
         </div>
 
-        {/* VIEWING AS Section */}
+        {/* PROMINENT "RETURN TO MAIN LANDING PORTAL" BUTTON */}
+        <button
+          onClick={() => setActiveTab('landing')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.55rem',
+            width: '100%',
+            padding: '0.55rem 0.85rem',
+            borderRadius: '10px',
+            background: '#F0F5F2',
+            border: '1px solid #D4E8DC',
+            color: '#11322A',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            marginBottom: '1rem',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#E2EFE7';
+            e.currentTarget.style.borderColor = '#0D9488';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = '#F0F5F2';
+            e.currentTarget.style.borderColor = '#D4E8DC';
+          }}
+        >
+          <ArrowLeft size={15} color="#0D9488" />
+          <span>← {t('nav_landing')}</span>
+        </button>
+
+        {/* ACTIVE PANEL BADGE & ROLE SWITCHER */}
         <div style={{ marginBottom: '1.25rem', position: 'relative' }}>
           <div style={{
             display: 'flex',
@@ -172,66 +272,40 @@ export function Sidebar({
             marginBottom: '0.45rem',
             paddingLeft: '0.35rem'
           }}>
-            <span>VIEWING AS</span>
-            <div 
-              style={{ position: 'relative', cursor: 'pointer' }}
-              onMouseEnter={() => setShowHelpTooltip(true)}
-              onMouseLeave={() => setShowHelpTooltip(false)}
-            >
-              <HelpCircle size={13} color="#839B92" />
-              {showHelpTooltip && (
-                <div style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: 0,
-                  width: '200px',
-                  background: '#11322A',
-                  color: '#FFFFFF',
-                  padding: '0.5rem 0.65rem',
-                  borderRadius: '8px',
-                  fontSize: '0.7rem',
-                  lineHeight: 1.35,
-                  zIndex: 1001,
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
-                }}>
-                  Switch viewing perspective between Citizen, ASHA Frontline Worker, Doctor, and District Admin.
-                </div>
-              )}
-            </div>
+            <span>{t('active_panel')}</span>
+            <span style={{ fontSize: '0.65rem', color: '#0D9488', fontWeight: 600 }}>{t('switch_panel')}</span>
           </div>
 
-          {/* Role Pill Dropdown Button */}
-          <button
+          {/* Role Pill Trigger */}
+          <div
             onClick={() => setShowRoleDropdown(!showRoleDropdown)}
             style={{
-              width: '100%',
+              background: currentMeta.bg,
+              border: `1.5px solid ${currentMeta.color}40`,
+              borderRadius: '12px',
+              padding: '0.65rem 0.85rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0.6rem 0.85rem',
-              background: '#F0F5F2',
-              border: '1px solid #DCE6E1',
-              borderRadius: '10px',
-              fontSize: '0.88rem',
-              fontWeight: 600,
-              color: '#11322A',
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
           >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: viewingRole === 'admin' ? '#0284C7' : viewingRole === 'doctor' ? '#8B5CF6' : viewingRole === 'asha' ? '#F59E0B' : '#10B981'
-              }} />
-              {currentRoleObj.label}
-            </span>
-            <ChevronDown size={15} color="#52786D" style={{ transform: showRoleDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-          </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+              <span style={{ color: currentMeta.color }}>{currentMeta.icon}</span>
+              <div>
+                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#11322A', lineHeight: 1.2 }}>
+                  {currentMeta.label}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: currentMeta.color, fontWeight: 700 }}>
+                  {currentMeta.badge}
+                </div>
+              </div>
+            </div>
+            <ChevronDown size={15} color="#52786D" />
+          </div>
 
-          {/* Role Dropdown Menu */}
+          {/* Role Selection Dropdown Menu */}
           {showRoleDropdown && (
             <div style={{
               position: 'absolute',
@@ -240,12 +314,15 @@ export function Sidebar({
               right: 0,
               background: '#FFFFFF',
               borderRadius: '12px',
-              boxShadow: '0 10px 25px -3px rgba(17, 34, 25, 0.15), 0 4px 6px -2px rgba(17, 34, 25, 0.05)',
+              boxShadow: '0 10px 25px -3px rgba(17, 34, 25, 0.18)',
               border: '1px solid #E2ECE5',
-              padding: '0.4rem',
-              zIndex: 1000
+              padding: '0.35rem',
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.2rem'
             }}>
-              {roles.map(r => (
+              {Object.values(roleMeta).map((r) => (
                 <div
                   key={r.id}
                   onClick={() => handleSelectRole(r)}
@@ -256,30 +333,32 @@ export function Sidebar({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     cursor: 'pointer',
-                    background: viewingRole === r.id ? '#E8F5EE' : 'transparent',
+                    background: viewingRole === r.id ? r.bg : 'transparent',
                     color: viewingRole === r.id ? '#11322A' : '#374151',
                     fontSize: '0.84rem',
-                    fontWeight: viewingRole === r.id ? 700 : 500,
-                    transition: 'background 0.15s'
+                    fontWeight: viewingRole === r.id ? 700 : 500
                   }}
                   onMouseEnter={(e) => { if (viewingRole !== r.id) e.currentTarget.style.background = '#F6FAF7'; }}
                   onMouseLeave={(e) => { if (viewingRole !== r.id) e.currentTarget.style.background = 'transparent'; }}
                 >
-                  <div>
-                    <div>{r.label}</div>
-                    <div style={{ fontSize: '0.68rem', color: '#6B7280', fontWeight: 400 }}>{r.desc}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: r.color }}>{r.icon}</span>
+                    <div>
+                      <div>{r.label}</div>
+                      <div style={{ fontSize: '0.68rem', color: '#6B7280' }}>{r.badge}</div>
+                    </div>
                   </div>
-                  {viewingRole === r.id && <Check size={14} color="#0D9488" />}
+                  {viewingRole === r.id && <Check size={14} color={r.color} />}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Navigation Items */}
+        {/* PANEL NAVIGATION ITEMS */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1 }}>
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id || (item.id === 'rural-map' && activeTab === 'rural-map');
+          {navList.map((item) => {
+            const isActive = activeTab === item.id || (item.id === 'rural-map' && activeTab === 'facilities');
             return (
               <button
                 key={item.id}
@@ -292,12 +371,12 @@ export function Sidebar({
                   padding: '0.62rem 0.9rem',
                   borderRadius: '12px',
                   border: 'none',
-                  fontSize: '0.88rem',
-                  fontWeight: isActive ? 600 : 500,
+                  fontSize: '0.86rem',
+                  fontWeight: isActive ? 700 : 500,
                   cursor: 'pointer',
                   textAlign: 'left',
                   transition: 'all 0.15s ease',
-                  background: isActive ? '#173D35' : 'transparent',
+                  background: isActive ? currentMeta.color : 'transparent',
                   color: isActive ? '#FFFFFF' : '#374151',
                 }}
                 onMouseEnter={(e) => {
@@ -321,7 +400,9 @@ export function Sidebar({
                 }}>
                   {item.icon}
                 </span>
-                <span>{item.label}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {item.label}
+                </span>
               </button>
             );
           })}
@@ -350,11 +431,11 @@ export function Sidebar({
                 <ShieldAlert size={16} />
               </div>
               <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827' }}>
-                Emergency help
+                {t('nav_emergency_help')}
               </span>
             </div>
             <p style={{ fontSize: '0.75rem', color: '#4B5563', lineHeight: 1.35, margin: '0 0 0.6rem 0' }}>
-              Nearest 24x7 facility, ambulance and directions.
+              {t('nav_emergency_desc')}
             </p>
             <button
               onClick={onOpenEmergency}
@@ -371,11 +452,11 @@ export function Sidebar({
                 cursor: 'pointer'
               }}
             >
-              Get help →
+              {t('nav_get_help')}
             </button>
           </div>
 
-          {/* Verification Status */}
+          {/* SIH Status */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -391,10 +472,9 @@ export function Sidebar({
               background: '#10B981',
               boxShadow: '0 0 6px #10B981'
             }} />
-            <span>Demo dataset · verified 12 Sep 2026</span>
+            <span>{t('sih_footer_notice')}</span>
           </div>
         </div>
-
       </aside>
     </>
   );

@@ -32,9 +32,13 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
   const [ifaDoseLogged, setIfaDoseLogged] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
-  const currentVillage = selectedVillage?.village_name || 'Khedgaon';
-  const currentDistrict = selectedVillage?.district || 'Nashik & Dindori';
-  const greetingName = user?.name ? user.name.split(' ')[0] : 'Asha';
+  const currentVillage = selectedVillage?.village_name 
+    ? (lang === 'mr' ? (selectedVillage.marathi_name || selectedVillage.village_name) : lang === 'hi' ? (selectedVillage.hindi_name || selectedVillage.village_name) : selectedVillage.village_name) 
+    : (lang === 'mr' ? 'खेडगाव' : lang === 'hi' ? 'खेडगांव' : 'Khedgaon');
+  const currentDistrict = selectedVillage?.district 
+    ? (lang === 'mr' ? 'नाशिक व दिंडोरी' : lang === 'hi' ? 'नासिक व दिंडोरी' : selectedVillage.district) 
+    : (lang === 'mr' ? 'नाशिक व दिंडोरी' : lang === 'hi' ? 'नासिक व दिंडोरी' : 'Nashik & Dindori');
+  const greetingName = user?.name ? user.name.split(' ')[0] : (lang === 'mr' ? 'आशा' : lang === 'hi' ? 'आशा' : 'Asha');
 
   // Fetch real-time village snapshot from backend
   useEffect(() => {
@@ -73,7 +77,11 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
   };
 
   const score = snapshotData?.score || 86;
-  const categoryLabel = snapshotData?.category || t('good_access');
+  const categoryLabel = (snapshotData?.category === 'Good access' || !snapshotData?.category)
+    ? t('good_access')
+    : (snapshotData.category === 'Moderate access'
+        ? (lang === 'mr' ? 'मध्यम पोहोच' : lang === 'hi' ? 'मध्यम पहुंच' : 'Moderate access')
+        : t(snapshotData.category));
 
   // 4 Top Quick Action Cards
   const quickCards = [
@@ -111,58 +119,98 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
   const workspaces = {
     citizen: {
       role: 'citizen',
-      title: 'Citizen & Patient Care Journey',
-      subtitle: 'Personalized health records, clinical triage, medicine discovery & appointments',
-      badge: 'Citizen Workspace',
-      items: [
+      title: lang === 'mr' ? 'नागरिक व रुग्ण आरोग्य प्रवास' : lang === 'hi' ? 'नागरिक एवं मरीज स्वास्थ्य यात्रा' : 'Citizen & Patient Care Journey',
+      subtitle: lang === 'mr' ? 'आरोग्य नोंदी, एआय लक्षण तपासणी, औषध शोध आणि अपॉइंटमेंट' : lang === 'hi' ? 'व्यक्तिगत स्वास्थ्य रिकॉर्ड, क्लीनिकल ट्राइएज, दवा खोज और अपॉइंटमेंट' : 'Personalized health records, clinical triage, medicine discovery & appointments',
+      badge: t('role_citizen_badge'),
+      items: lang === 'mr' ? [
+        'एआय साहाय्यकाने लक्षणे व शारीरिक मापदंड तपासा',
+        'सरकारी रुग्णालयात रांगेविना अपॉइंटमेंट बुक करा',
+        'डिजिटल आभा हेल्थ कार्ड व वैद्यकीय इतिहास पहा',
+        'जन औषधी केंद्रांवर स्वस्त जेनेरिक औषधे शोधा'
+      ] : lang === 'hi' ? [
+        'एआई क्लीनिकल ट्राइएज सहायक से लक्षण जांचें',
+        'सरकारी अस्पताल में कतार-मुक्त अपॉइंटमेंट बुक करें',
+        'डिजिटल आभा हेल्थ कार्ड और नुस्खे देखें',
+        'जन औषधि केंद्रों पर सस्ती जेनेरिक दवाएं खोजें'
+      ] : [
         'Check symptoms with AI clinical triage assistant',
         'Book zero-wait appointments at nearest government hospital',
         'Access QR-enabled ABHA Digital Health Card & digital Rx',
         'Search affordable generic medicines at Jan Aushadhi Kendras'
       ],
-      actionLabel: 'Open Citizen Dashboard',
+      actionLabel: lang === 'mr' ? 'नागरिक डॅशबोर्ड उघडा' : lang === 'hi' ? 'नागरिक डैशबोर्ड खोलें' : 'Open Citizen Dashboard',
       actionTab: 'home'
     },
     asha: {
       role: 'asha',
-      title: 'ASHA Field Healthcare Workspace',
-      subtitle: 'Door-to-door village health surveys, high-risk pregnancy ANC, and child immunization tracking',
-      badge: 'ASHA Field Portal',
-      items: [
+      title: t('portal_asha_title'),
+      subtitle: t('portal_asha_subtitle'),
+      badge: t('role_asha_badge'),
+      items: lang === 'mr' ? [
+        'घरोघरी आरोग्य सर्वेक्षण व जोखीम मागोवा',
+        'गरोदर माता (एएनसी/पीएनसी) व तातडीची मदत',
+        'बाल लसीकरण मागोवा व पाठपुरावा',
+        'ग्रामीण व जिल्हा रुग्णालयांसाठी थेट स्मार्ट रेफरल'
+      ] : lang === 'hi' ? [
+        'घर-घर परिवार स्वास्थ्य सर्वेक्षण और जोखिम निगरानी',
+        'उच्च जोखिम गर्भावस्था (एएनसी/पीएनसी) निगरानी',
+        'बाल टीकाकरण ट्रैकिंग और नियमित फॉलो-अप',
+        'उप-जिला और जिला अस्पतालों के लिए सीधा स्मार्ट रेफरल'
+      ] : [
         'Village household health surveys and vulnerability tracking',
         'High-risk pregnancy (ANC/PNC) monitoring & emergency flagging',
         'Child immunization tracking & drop-out recovery',
         'Direct referral submission to Sub-District and Civil Hospitals'
       ],
-      actionLabel: 'Launch ASHA Workspace',
+      actionLabel: lang === 'mr' ? 'आशा कार्यक्षेत्र सुरू करा' : lang === 'hi' ? 'आशा कार्यक्षेत्र खोलें' : 'Launch ASHA Workspace',
       actionTab: 'asha-dashboard'
     },
     doctor: {
       role: 'doctor',
-      title: 'Clinical OPD & Teleconsultation Workspace',
-      subtitle: 'OPD queue management, live telemedicine chamber, and digital prescription issuance',
-      badge: 'Doctor OPD Portal',
-      items: [
+      title: t('portal_doctor_title'),
+      subtitle: t('portal_doctor_subtitle'),
+      badge: t('role_doctor_badge'),
+      items: lang === 'mr' ? [
+        'थेट ओपीडी रुग्ण सल्लामसलत रांग व इतिहास',
+        'वाइटल्ससह थेट ई-संजीवनी व्हिडिओ कक्ष',
+        'जन औषधी जेनेरिक औषध मॅपिंगसह डिजिटल प्रिस्क्रिप्शन',
+        'रेफरल स्वीकृती आणि जिल्हा रुग्णालयाकडे वर्गवारी'
+      ] : lang === 'hi' ? [
+        'वास्तविक समय ओपीडी परामर्श कतार व मरीज इतिहास',
+        'वाइटल्स के साथ लाइव ई-संजीवनी वीडियो परामर्श कक्ष',
+        'जन औषधि जेनेरिक दवाओं के साथ डिजिटल नुस्खा',
+        'आने वाले रेफरल की स्वीकृति और विशेषज्ञ ट्रांसफर'
+      ] : [
         'Real-time outpatient consultation queue and patient history',
         'Live e-Sanjeevani video consultation chamber with vitals HUD',
         'Digital prescription writer with Jan Aushadhi generic mapping',
         'Inward referrals acceptance and tertiary hospital transfers'
       ],
-      actionLabel: 'Launch Doctor Portal',
+      actionLabel: lang === 'mr' ? 'डॉक्टर ओपीडी सुरू करा' : lang === 'hi' ? 'डॉक्टर ओपीडी खोलें' : 'Launch Doctor Portal',
       actionTab: 'doctor-dashboard'
     },
     admin: {
       role: 'admin',
-      title: 'District Command Centre (Govt Admin)',
-      subtitle: 'Statewide epidemiological radar, bed occupancy alerts, and resource allocation',
-      badge: 'District Admin Command',
-      items: [
+      title: t('portal_admin_title'),
+      subtitle: t('portal_admin_subtitle'),
+      badge: t('role_admin_badge'),
+      items: lang === 'mr' ? [
+        'साथरोग रडार व मोसमी आजार इशारा यंत्रणा',
+        'जिल्हाभरातील रिक्त खाटा व ऑक्सिजन/आयसीयू सज्जता',
+        '१०८ रुग्णवाहिका प्रतिसाद वेळ आणि नियंत्रण',
+        'नागरिक तक्रारींचे त्वरित निवारण व पाठपुरावा'
+      ] : lang === 'hi' ? [
+        'रोग निगरानी व मौसमी बीमारी चेतावनी रडार',
+        'राज्यव्यापी खाली बिस्तर गणना और आईसीयू तत्परता',
+        '१०८ एम्बुलेंस प्रतिक्रिया समय ट्रैकिंग',
+        'नागरिक शिकायत समाधान और गुणवत्ता निगरानी'
+      ] : [
         'Real-time disease surveillance & seasonal outbreak radar',
         'Statewide vacant bed census & oxygen/ICU readiness',
         '108 Ambulance response time tracking and dispatch latency',
         'Citizen grievance escalation and resolution tracking'
       ],
-      actionLabel: 'Launch Admin Command Centre',
+      actionLabel: lang === 'mr' ? 'प्रशासन कमान सुरू करा' : lang === 'hi' ? 'प्रशासन कमान खोलें' : 'Launch Admin Command Centre',
       actionTab: 'admin-dashboard'
     }
   };
@@ -175,93 +223,156 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
       id: 'facilities',
       title: 'Find Healthcare Near You',
       marathiTitle: 'जवळचे आरोग्य केंद्र शोधा',
-      desc: 'Locate 350+ verified PHCs, CHCs, Sub-District Hospitals & Civil Hospitals with exact GPS navigation.',
+      hindiTitle: 'नजदीकी स्वास्थ्य केंद्र खोजें',
+      desc: lang === 'mr' 
+        ? '३५०+ शासकीय रुग्णालये, प्राथमिक व ग्रामीण आरोग्य केंद्र थेट जीपीएस नेव्हिगेशनसह शोधा.'
+        : lang === 'hi'
+        ? '३५०+ सरकारी अस्पताल, प्राथमिक व सामुदायिक स्वास्थ्य केंद्र सटीक जीपीएस से खोजें।'
+        : 'Locate 350+ verified PHCs, CHCs, Sub-District Hospitals & Civil Hospitals with exact GPS navigation.',
       badge: 'Interactive GIS Map',
+      hindiBadge: 'इंटरएक्टिव जीआईएस नक्शा',
+      marathiBadge: 'जीआयएस नकाशा',
       badgeColor: '#0D9488',
       icon: <Search size={22} color="#0D9488" />,
-      actionText: 'Explore Facilities'
+      actionText: lang === 'mr' ? 'केंद्रे शोधा' : lang === 'hi' ? 'अस्पताल खोजें' : 'Explore Facilities'
     },
     {
       id: 'screening',
       title: 'AI Clinical Triage & Screening',
-      marathiTitle: 'एआय लक्षण तपासणी',
-      desc: 'Instant decision-support evaluating vitals, red-flag symptoms, and recommended facility level.',
+      marathiTitle: 'एआय लक्षण तपासणी व सल्ला',
+      hindiTitle: 'एआई स्वास्थ्य जांच व ट्राइएज',
+      desc: lang === 'mr'
+        ? 'लक्षणे व शारीरिक मापदंड तपासून योग्य उपचार पातळी आणि त्वरित निर्णय साहाय्य.'
+        : lang === 'hi'
+        ? 'लक्षणों और शारीरिक संकेतों के आधार पर तत्काल क्लीनिकल निर्णय सहायता।'
+        : 'Instant decision-support evaluating vitals, red-flag symptoms, and recommended facility level.',
       badge: 'Clinical Decision Support',
+      hindiBadge: 'क्लीनिकल निर्णय सहायता',
+      marathiBadge: 'वैद्यकीय निर्णय साहाय्य',
       badgeColor: '#8B5CF6',
       icon: <Sparkles size={22} color="#8B5CF6" />,
-      actionText: 'Check Symptoms'
+      actionText: lang === 'mr' ? 'लक्षणे तपासा' : lang === 'hi' ? 'जांच शुरू करें' : 'Check Symptoms'
     },
     {
       id: 'availability',
       title: 'Hospital Availability Census',
       marathiTitle: 'रुग्णालय खाटा व डॉक्टर स्थिती',
-      desc: 'Live census of vacant general/ICU beds, on-duty specialist doctors, and 24x7 emergency readiness.',
+      hindiTitle: 'अस्पताल बिस्तर व डॉक्टर उपलब्धता',
+      desc: lang === 'mr'
+        ? 'सर्वसाधारण व अतिदक्षता (ICU) खाटा, उपस्थित तज्ज्ञ डॉक्टर आणि २४x७ तातडीची सेवा.'
+        : lang === 'hi'
+        ? 'खाली सामान्य व आईसीयू बिस्तर, ड्यूटी पर उपस्थित डॉक्टर और २४x७ आपातकालीन स्थिति।'
+        : 'Live census of vacant general/ICU beds, on-duty specialist doctors, and 24x7 emergency readiness.',
       badge: 'Real-Time Census',
+      hindiBadge: 'लाइव बिस्तर गणना',
+      marathiBadge: 'थेट खाटांची नोंद',
       badgeColor: '#0284C7',
       icon: <Hospital size={22} color="#0284C7" />,
-      actionText: 'View Live Beds'
+      actionText: lang === 'mr' ? 'खाटा पहा' : lang === 'hi' ? 'बिस्तर स्थिति देखें' : 'View Live Beds'
     },
     {
       id: 'book-appointment',
       title: 'Book OPD Consultation',
       marathiTitle: 'ओपीडी अपॉइंटमेंट बुक करा',
-      desc: 'Schedule appointment slots with verified government doctors with zero queue waiting times.',
+      hindiTitle: 'ओपीडी अपॉइंटमेंट बुक करें',
+      desc: lang === 'mr'
+        ? 'सरकारी डॉक्टरांशी भेटीची वेळ निश्चित करा आणि रांगेविना वेळेवर उपचार घ्या.'
+        : lang === 'hi'
+        ? 'सरकारी डॉक्टरों के साथ परामर्श स्लॉट तय करें और बिना कतार समय पर परामर्श लें।'
+        : 'Schedule appointment slots with verified government doctors with zero queue waiting times.',
       badge: 'Zero-Wait Scheduling',
+      hindiBadge: 'कतार-मुक्त बुकिंग',
+      marathiBadge: 'रांगेविना बुकिंग',
       badgeColor: '#10B981',
       icon: <Calendar size={22} color="#10B981" />,
-      actionText: 'Book Slot'
+      actionText: lang === 'mr' ? 'अपॉइंटमेंट घ्या' : lang === 'hi' ? 'स्लॉट बुक करें' : 'Book Slot'
     },
     {
       id: 'telemedicine',
       isTelemed: true,
       title: 'e-Sanjeevani Teleconsultation',
-      marathiTitle: 'ई-संजीवनी टेलिमेडिसिन',
-      desc: 'Direct video consultation with government doctors and specialists from the comfort of home.',
+      marathiTitle: 'ई-संजीवनी टेलिमेडिसिन व्हिडिओ कक्ष',
+      hindiTitle: 'ई-संजीवनी टेलीमेडिसिन वीडियो परामर्श',
+      desc: lang === 'mr'
+        ? 'घरी बसून सरकारी तज्ज्ञ डॉक्टरांशी थेट मोफत व्हिडिओ सल्लामसलत.'
+        : lang === 'hi'
+        ? 'घर बैठे विशेषज्ञ सरकारी डॉक्टरों से निःशुल्क सीधा वीडियो परामर्श।'
+        : 'Direct video consultation with government doctors and specialists from the comfort of home.',
       badge: 'Live Video OPD',
+      hindiBadge: 'लाइव वीडियो ओपीडी',
+      marathiBadge: 'थेट व्हिडिओ ओपीडी',
       badgeColor: '#06B6D4',
       icon: <Video size={22} color="#06B6D4" />,
-      actionText: 'Start Consultation'
+      actionText: lang === 'mr' ? 'सल्ला सुरू करा' : lang === 'hi' ? 'परामर्श शुरू करें' : 'Start Consultation'
     },
     {
       id: 'health-card',
       isHealthCard: true,
       title: 'Digital Health Card (ABHA)',
       marathiTitle: 'डिजिटल हेल्थ कार्ड (आभा)',
-      desc: 'Official QR-enabled digital health identity card with blood group, allergies, and emergency contacts.',
+      hindiTitle: 'डिजिटल हेल्थ कार्ड (आभा)',
+      desc: lang === 'mr'
+        ? 'रक्तगट, ॲलर्जी व आपत्कालीन संपर्कासह अधिकृत डिजिटल आरोग्य प्रवास ओळख.'
+        : lang === 'hi'
+        ? 'रक्त समूह, एलर्जी और आपातकालीन संपर्क सहित आधिकारिक डिजिटल स्वास्थ्य पहचान।'
+        : 'Official QR-enabled digital health identity card with blood group, allergies, and emergency contacts.',
       badge: 'ABHA Identity',
+      hindiBadge: 'आभा डिजिटल पहचान',
+      marathiBadge: 'आभा डिजिटल ओळख',
       badgeColor: '#16A34A',
       icon: <Shield size={22} color="#16A34A" />,
-      actionText: 'View Health Card'
+      actionText: lang === 'mr' ? 'कार्ड पहा' : lang === 'hi' ? 'कार्ड देखें' : 'View Health Card'
     },
     {
       id: 'medicines',
       title: 'Jan Aushadhi & Generic Medicines',
       marathiTitle: 'जन औषधी व जेनेरिक औषधे',
-      desc: 'Search 25+ essential generic medicines saving up to 87% cost and check live inventory at local PHCs.',
+      hindiTitle: 'जन औषधि व जेनेरिक दवाइयां',
+      desc: lang === 'mr'
+        ? '८७% पर्यंत बचत करणारी आवश्यक २५+ जेनेरिक औषधे व स्थानिक केंद्रांमधील साठा तपासा.'
+        : lang === 'hi'
+        ? '८७% तक की बचत करने वाली २५+ आवश्यक जेनेरिक दवाएं और नजदीकी केंद्रों में स्टॉक जांचें।'
+        : 'Search 25+ essential generic medicines saving up to 87% cost and check live inventory at local PHCs.',
       badge: 'Up to 87% Savings',
+      hindiBadge: '८७% तक बचत',
+      marathiBadge: '८७% पर्यंत बचत',
       badgeColor: '#EC4899',
       icon: <Pill size={22} color="#EC4899" />,
-      actionText: 'Search Medicines'
+      actionText: lang === 'mr' ? 'औषधे शोधा' : lang === 'hi' ? 'दवाइयां खोजें' : 'Search Medicines'
     },
     {
       id: 'camps',
       title: 'Rural Health Camps',
       marathiTitle: 'ग्रामीण आरोग्य शिबिरे',
-      desc: 'Upcoming free community health checkup camps for maternal care, diabetes, and eye screenings.',
+      hindiTitle: 'ग्रामीण स्वास्थ्य शिविर',
+      desc: lang === 'mr'
+        ? 'माता-बाल आरोग्य, मधुमेह व नेत्र तपासणीची आगामी मोफत शिबिरे.'
+        : lang === 'hi'
+        ? 'मातृ-शिशु स्वास्थ्य, मधुमेह और नेत्र जांच हेतु आगामी निःशुल्क ग्रामीण शिविर।'
+        : 'Upcoming free community health checkup camps for maternal care, diabetes, and eye screenings.',
       badge: 'Free Community Care',
+      hindiBadge: 'निःशुल्क ग्रामीण सेवा',
+      marathiBadge: 'मोफत ग्रामीण तपासणी',
       badgeColor: '#F59E0B',
       icon: <Activity size={22} color="#F59E0B" />,
-      actionText: 'View Health Camps'
+      actionText: lang === 'mr' ? 'शिबिरे पहा' : lang === 'hi' ? 'शिविर देखें' : 'View Health Camps'
     },
     {
       id: 'complaints',
       title: 'Quality Monitor & Grievances',
       marathiTitle: 'तक्रार निवारण व दर्जा सनियंत्रण',
-      desc: 'Directly report doctor absence, medicine shortages, or facility hygiene to the District Health Officer.',
+      hindiTitle: 'गुणवत्ता निगरानी व शिकायत निवारण',
+      desc: lang === 'mr'
+        ? 'डॉक्टर अनुपस्थिती, औषध तुटवडा किंवा अस्वच्छतेची जिल्हा आरोग्य अधिकाऱ्यांकडे थेट तक्रार.'
+        : lang === 'hi'
+        ? 'डॉक्टर अनुपस्थिति, दवा की कमी या अस्पताल स्वच्छता की जिला स्वास्थ्य अधिकारी को सीधी शिकायत।'
+        : 'Directly report doctor absence, medicine shortages, or facility hygiene to the District Health Officer.',
       badge: 'Direct Redressal',
+      hindiBadge: 'त्वरित शिकायत निवारण',
+      marathiBadge: 'थेट तक्रार निवारण',
       badgeColor: '#D97706',
       icon: <MessageSquare size={22} color="#D97706" />,
-      actionText: 'File Feedback'
+      actionText: lang === 'mr' ? 'तक्रार नोंदवा' : lang === 'hi' ? 'शिकायत दर्ज करें' : 'File Feedback'
     }
   ];
 
@@ -287,7 +398,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
         }}>
           <CheckCircle2 size={18} color="#34D399" />
           <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>
-            Today's IFA dose marked as taken! 100% adherence streak.
+            {t('ifa_adherence_toast')}
           </span>
         </div>
       )}
@@ -344,9 +455,9 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               background: '#10B981',
               boxShadow: '0 0 6px #10B981'
             }} />
-            <span>DISTRICT DEMO VIEW</span>
+            <span>{t('district_demo_view')}</span>
             <span style={{ color: '#52786D', fontWeight: 500, marginLeft: '0.2rem' }}>
-              12 September 2026 · {currentDistrict}
+              {lang === 'hi' ? `१२ सितंबर २०२६ · ${currentDistrict}` : lang === 'mr' ? `१२ सप्टेंबर २०२६ · ${currentDistrict}` : `12 September 2026 · ${currentDistrict}`}
             </span>
           </div>
 
@@ -456,7 +567,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               }}
             >
               <ShieldAlert size={17} />
-              <span>108 Emergency</span>
+              <span>{t('emergency_call')}</span>
             </button>
           </div>
 
@@ -546,7 +657,11 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             lineHeight: 1.35,
             margin: 0
           }}>
-            Based on distance, {snapshotData?.available_beds || 42} beds, {snapshotData?.active_doctors || 18} doctors &amp; medicines in {currentVillage}
+            {lang === 'hi' 
+              ? `दूरी, ${currentVillage} में ${snapshotData?.available_beds || 42} बिस्तर, ${snapshotData?.active_doctors || 18} डॉक्टर व दवाइयों पर आधारित`
+              : lang === 'mr'
+              ? `अंतर, ${currentVillage} मधील ${snapshotData?.available_beds || 42} खाटा, ${snapshotData?.active_doctors || 18} डॉक्टर व औषध साठ्यावर आधारित`
+              : `Based on distance, ${snapshotData?.available_beds || 42} beds, ${snapshotData?.active_doctors || 18} doctors & medicines in ${currentVillage}`}
           </p>
         </div>
 
@@ -646,7 +761,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A' }}>
-                e-Sanjeevani Live Video Consultation Room
+                {t('esanjeevani_room_title')}
               </span>
               <span style={{
                 background: '#166534',
@@ -660,11 +775,11 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                 gap: '0.35rem'
               }}>
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34D399' }} />
-                DOCTOR ONLINE NOW
+                {t('doctor_online_now')}
               </span>
             </div>
             <p style={{ fontSize: '0.86rem', color: '#2B4A3F', margin: 0, lineHeight: 1.4 }}>
-              Direct video consultation with <strong>Dr. Rajesh Deshmukh</strong> (General Medicine &amp; Family Health) · Free government OPD, instant prescription &amp; vitals telemetry.
+              {t('esanjeevani_room_desc')}
             </p>
           </div>
         </div>
@@ -696,7 +811,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
           }}
         >
           <Video size={18} />
-          <span>Start Video Call Now</span>
+          <span>{t('start_video_call_now')}</span>
         </button>
       </div>
 
@@ -794,7 +909,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               </div>
 
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#11322A', marginBottom: '1.2rem' }}>
-                15 Sep 2026
+                {lang === 'hi' ? '१५ सितंबर २०२६' : lang === 'mr' ? '१५ सप्टेंबर २०२६' : '15 Sep 2026'}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
@@ -812,10 +927,10 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                 </div>
                 <div>
                   <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#111827' }}>
-                    {currentVillage} Primary Health Centre
+                    {currentVillage} {lang === 'hi' ? 'प्राथमिक स्वास्थ्य केंद्र' : lang === 'mr' ? 'प्राथमिक आरोग्य केंद्र' : 'Primary Health Centre'}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
-                    Dr. Anjali Patil · 10:30 AM
+                    {lang === 'hi' ? 'डॉ. अंजलि पाटिल · सुबह १०:३० बजे' : lang === 'mr' ? 'डॉ. अंजली पाटील · सकाळी १०:३०' : 'Dr. Anjali Patil · 10:30 AM'}
                   </div>
                 </div>
               </div>
@@ -874,11 +989,11 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               </div>
 
               <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.4rem' }}>
-                Today
+                {lang === 'hi' ? 'आज' : lang === 'mr' ? 'आज' : 'Today'}
               </div>
 
               <div style={{ fontSize: '0.94rem', color: '#D1FAE5', lineHeight: 1.4 }}>
-                Check dizziness &amp; iron therapy
+                {lang === 'hi' ? 'चक्कर आना व आयरन थेरेपी की जांच' : lang === 'mr' ? 'चक्कर व लोहयुक्त गोळ्यांची तपासणी' : 'Check dizziness & iron therapy'}
               </div>
             </div>
 
@@ -919,10 +1034,10 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
       }}>
         <div style={{ marginBottom: '1.25rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            REAL-TIME STATEWIDE TELEMETRY
+            {t('telemetry_tag')}
           </div>
           <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
-            Maharashtra Public Healthcare Infrastructure at a Glance
+            {t('telemetry_title')}
           </h3>
         </div>
 
@@ -933,53 +1048,53 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
         }}>
           <div style={{ background: '#F8FAF9', border: '1px solid #E2ECE5', borderRadius: '16px', padding: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Public Facilities</span>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>{t('public_facilities')}</span>
               <Building2 size={18} color="#0D9488" />
             </div>
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#11322A' }}>
-              350 Verified
+              {t('facilities_count')}
             </div>
             <div style={{ fontSize: '0.78rem', color: '#52786D' }}>
-              PHCs, Sub-Centers, CHCs &amp; Civil Hospitals
+              {t('facilities_desc')}
             </div>
           </div>
 
           <div style={{ background: '#F8FAF9', border: '1px solid #E2ECE5', borderRadius: '16px', padding: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Live Bed Census</span>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>{t('live_bed_census')}</span>
               <Hospital size={18} color="#0284C7" />
             </div>
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0284C7' }}>
-              Real-time Vacancy
+              {t('realtime_vacancy')}
             </div>
             <div style={{ fontSize: '0.78rem', color: '#52786D' }}>
-              General, Maternity &amp; ICU Beds Monitored
+              {t('bed_census_desc')}
             </div>
           </div>
 
           <div style={{ background: '#F8FAF9', border: '1px solid #E2ECE5', borderRadius: '16px', padding: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Doctors on Duty</span>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>{t('doctors_on_duty')}</span>
               <Stethoscope size={18} color="#16A34A" />
             </div>
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#16A34A' }}>
-              520+ Available
+              {t('doctors_count')}
             </div>
             <div style={{ fontSize: '0.78rem', color: '#52786D' }}>
-              General Physicians &amp; Specialists
+              {t('doctors_desc')}
             </div>
           </div>
 
           <div style={{ background: '#F8FAF9', border: '1px solid #E2ECE5', borderRadius: '16px', padding: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Districts Coverage</span>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>{t('districts_coverage')}</span>
               <Award size={18} color="#D97706" />
             </div>
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#D97706' }}>
-              36 Districts
+              {t('districts_count')}
             </div>
             <div style={{ fontSize: '0.78rem', color: '#52786D' }}>
-              From Konkan to Vidarbha Tribal Belts
+              {t('districts_desc')}
             </div>
           </div>
         </div>
@@ -997,13 +1112,13 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
           <div>
             <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              VILLAGE REACHABILITY INDEX
+              {t('village_reachability_tag')}
             </div>
             <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
-              Local Area Reachability: {currentVillage} ({currentDistrict})
+              {lang === 'hi' ? `स्थानीय क्षेत्र पहुंच: ${currentVillage} (${currentDistrict})` : lang === 'mr' ? `स्थानिक क्षेत्र पोहोच: ${currentVillage} (${currentDistrict})` : `Local Area Reachability: ${currentVillage} (${currentDistrict})`}
             </h3>
             <p style={{ fontSize: '0.85rem', color: '#4B5563', margin: '0.2rem 0 0 0' }}>
-              Verified ground distance, road transit times, and 108 ambulance dispatch latency.
+              {t('reachability_desc')}
             </p>
           </div>
 
@@ -1024,7 +1139,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             }}
           >
             <Navigation size={15} />
-            <span>Explore Local GIS Map</span>
+            <span>{t('explore_gis_map')}</span>
             <ArrowRight size={14} />
           </button>
         </div>
@@ -1035,27 +1150,27 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
           gap: '1rem'
         }}>
           <div style={{ background: '#F8FAF9', borderRadius: '14px', padding: '1rem', border: '1px solid #E2ECE5' }}>
-            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>Nearest Sub-Centre</div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0' }}>0.8 km</div>
-            <div style={{ fontSize: '0.75rem', color: '#166534' }}>~12 min walk (Village level)</div>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>{t('nearest_subcentre')}</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0' }}>{t('subcentre_dist')}</div>
+            <div style={{ fontSize: '0.75rem', color: '#166534' }}>{t('subcentre_time')}</div>
           </div>
 
           <div style={{ background: '#F8FAF9', borderRadius: '14px', padding: '1rem', border: '1px solid #E2ECE5' }}>
-            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>Nearest PHC</div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0' }}>1.8 km</div>
-            <div style={{ fontSize: '0.75rem', color: '#166534' }}>~6 min transit (Doctor on duty)</div>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>{t('nearest_phc')}</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0' }}>{t('phc_dist')}</div>
+            <div style={{ fontSize: '0.75rem', color: '#166534' }}>{t('phc_time')}</div>
           </div>
 
           <div style={{ background: '#F8FAF9', borderRadius: '14px', padding: '1rem', border: '1px solid #E2ECE5' }}>
-            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>District Civil Hospital</div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0' }}>14.2 km</div>
-            <div style={{ fontSize: '0.75rem', color: '#0284C7' }}>~25 min ambulance transport</div>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>{t('district_civil_hospital')}</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0' }}>{t('hospital_dist')}</div>
+            <div style={{ fontSize: '0.75rem', color: '#0284C7' }}>{t('hospital_time')}</div>
           </div>
 
           <div style={{ background: '#F8FAF9', borderRadius: '14px', padding: '1rem', border: '1px solid #E2ECE5' }}>
-            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>108 Ambulance Dispatch</div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#DC2626', margin: '0.2rem 0' }}>14 mins ETA</div>
-            <div style={{ fontSize: '0.75rem', color: '#991B1B' }}>GPS tracked toll-free dispatch</div>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>{t('ambulance_dispatch')}</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#DC2626', margin: '0.2rem 0' }}>{t('ambulance_eta')}</div>
+            <div style={{ fontSize: '0.75rem', color: '#991B1B' }}>{t('ambulance_desc')}</div>
           </div>
         </div>
       </div>
@@ -1065,13 +1180,13 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
           <div>
             <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              ROLE WORKSPACES
+              {t('role_workspaces_tag')}
             </div>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
-              Multi-Stakeholder Workspaces
+              {t('role_workspaces_title')}
             </h2>
             <p style={{ fontSize: '0.88rem', color: '#52786D', margin: 0 }}>
-              Seamlessly switch views between Citizens, ASHA Community Workers, Doctors, and District Health Administrators
+              {t('role_workspaces_subtitle')}
             </p>
           </div>
 
@@ -1091,7 +1206,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                 transition: 'all 0.15s ease'
               }}
             >
-              👤 Citizen
+              {t('tab_citizen')}
             </button>
             <button
               onClick={() => setSelectedWorkspaceTab('asha')}
@@ -1107,7 +1222,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                 transition: 'all 0.15s ease'
               }}
             >
-              👩‍⚕️ ASHA Worker
+              {t('tab_asha')}
             </button>
             <button
               onClick={() => setSelectedWorkspaceTab('doctor')}
@@ -1123,7 +1238,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                 transition: 'all 0.15s ease'
               }}
             >
-              🩺 Doctor / MO
+              {t('tab_doctor')}
             </button>
             <button
               onClick={() => setSelectedWorkspaceTab('admin')}
@@ -1139,7 +1254,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                 transition: 'all 0.15s ease'
               }}
             >
-              🏛️ District Admin
+              {t('tab_admin')}
             </button>
           </div>
         </div>
@@ -1210,7 +1325,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                 <ArrowRight size={17} />
               </button>
               <div style={{ fontSize: '0.72rem', color: '#6B7280', textAlign: 'center' }}>
-                1-Click Quick Evaluator Switch
+                {t('quick_evaluator_switch')}
               </div>
             </div>
           </div>
@@ -1221,13 +1336,13 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
       <div style={{ marginBottom: '3.5rem' }}>
         <div style={{ marginBottom: '1.5rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            PUBLIC HEALTHCARE MODULES
+            {t('public_modules_tag')}
           </div>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
-            Official Public Healthcare Services
+            {t('public_modules_title')}
           </h2>
           <p style={{ fontSize: '0.88rem', color: '#52786D', margin: 0 }}>
-            Explore digital health workflows designed for Maharashtra's rural citizens &amp; frontline health workers
+            {t('public_modules_subtitle')}
           </p>
         </div>
 
@@ -1289,16 +1404,18 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                     padding: '3px 8px',
                     borderRadius: '9999px'
                   }}>
-                    {service.badge}
+                    {lang === 'mr' ? service.marathiBadge : lang === 'hi' ? (service.hindiBadge || service.badge) : service.badge}
                   </span>
                 </div>
 
                 <h3 style={{ fontSize: '1.05rem', color: '#111827', fontWeight: 800, marginBottom: '0.2rem' }}>
-                  {service.title}
+                  {lang === 'mr' ? service.marathiTitle : lang === 'hi' ? (service.hindiTitle || service.title) : service.title}
                 </h3>
-                <div style={{ fontSize: '0.78rem', color: '#52786D', marginBottom: '0.65rem', fontWeight: 500 }}>
-                  {service.marathiTitle}
-                </div>
+                {lang === 'en' && (
+                  <div style={{ fontSize: '0.78rem', color: '#52786D', marginBottom: '0.65rem', fontWeight: 500 }}>
+                    {service.marathiTitle}
+                  </div>
+                )}
                 <p style={{ fontSize: '0.82rem', color: '#4B5563', lineHeight: 1.45, margin: '0 0 1rem 0' }}>
                   {service.desc}
                 </p>
@@ -1334,10 +1451,10 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
           <div>
             <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              DISTRICT CLINICAL EPIDEMIOLOGY &amp; MCH
+              {t('surveillance_tag')}
             </div>
             <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#11322A', margin: '0.2rem 0 0 0' }}>
-              Community Surveillance &amp; Maternal Health
+              {t('surveillance_title')}
             </h3>
           </div>
 
@@ -1359,7 +1476,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               }}
             >
               <Flame size={14} color={activeCommunityTab === 'radar' ? '#EF4444' : '#6B7280'} />
-              <span>Disease Outbreak Radar</span>
+              <span>{t('tab_outbreak_radar')}</span>
             </button>
             <button
               onClick={() => setActiveCommunityTab('mch')}
@@ -1378,7 +1495,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               }}
             >
               <Baby size={14} color={activeCommunityTab === 'mch' ? '#2DD4BF' : '#6B7280'} />
-              <span>Maternal &amp; Child Health</span>
+              <span>{t('tab_mch')}</span>
             </button>
           </div>
         </div>
@@ -1418,10 +1535,10 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
           </div>
           <div>
             <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#991B1B' }}>
-              Maharashtra 24x7 Emergency Public Healthcare Helplines
+              {t('helpline_strip_title')}
             </div>
             <div style={{ fontSize: '0.82rem', color: '#7F1D1D' }}>
-              GPS-tracked ambulance dispatch and emergency triage for all 36 districts
+              {t('helpline_strip_subtitle')}
             </div>
           </div>
         </div>
@@ -1443,7 +1560,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               textDecoration: 'none'
             }}
           >
-            <Phone size={14} /> 108 Ambulance
+            <Phone size={14} /> {t('btn_ambulance_108')}
           </a>
 
           <a
@@ -1462,7 +1579,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               textDecoration: 'none'
             }}
           >
-            <Phone size={14} /> 104 Health Helpline
+            <Phone size={14} /> {t('btn_health_104')}
           </a>
 
           <a
@@ -1481,7 +1598,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               textDecoration: 'none'
             }}
           >
-            <Phone size={14} /> 102 Matritva Vahan
+            <Phone size={14} /> {t('btn_matritva_102')}
           </a>
         </div>
       </div>
@@ -1547,30 +1664,30 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               </div>
               <div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#11322A', margin: 0 }}>
-                  Appointment Details
+                  {t('modal_appointment_title')}
                 </h3>
                 <span style={{ fontSize: '0.78rem', color: '#166534', fontWeight: 600 }}>
-                  Token #KHD-2026-0814 · Confirmed
+                  {t('modal_token')}
                 </span>
               </div>
             </div>
 
             <div style={{ background: '#F8FAF9', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid #E2ECE5' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Facility:</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{currentVillage} PHC</span>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{t('modal_facility')}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{currentVillage} {t('modal_phc_suffix')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Medical Officer:</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>Dr. Anjali Patil (MBBS, DGO)</span>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{t('modal_doctor')}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{t('modal_doctor_val')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Scheduled Date:</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>15 Sep 2026</span>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{t('modal_scheduled_date')}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{t('modal_scheduled_date_val')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>OPD Slot:</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10B981' }}>10:30 AM (Zero-Wait Token)</span>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{t('modal_opd_slot')}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10B981' }}>{t('modal_opd_slot_val')}</span>
               </div>
             </div>
 
@@ -1596,7 +1713,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                 }}
               >
                 <Video size={16} />
-                <span>Switch to Live Teleconsultation</span>
+                <span>{t('modal_switch_telemed')}</span>
               </button>
 
               <button
@@ -1615,7 +1732,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                   cursor: 'pointer'
                 }}
               >
-                Reschedule or Change Slot
+                {t('modal_reschedule')}
               </button>
             </div>
           </div>
@@ -1681,26 +1798,26 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
               </div>
               <div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#11322A', margin: 0 }}>
-                  Iron Therapy &amp; Vitals Protocol
+                  {t('modal_iron_title')}
                 </h3>
                 <span style={{ fontSize: '0.78rem', color: '#D97706', fontWeight: 600 }}>
-                  Active Care Plan · Maternal Anemia Care
+                  {t('modal_iron_subtitle')}
                 </span>
               </div>
             </div>
 
             <div style={{ background: '#F8FAF9', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.25rem', border: '1px solid #E2ECE5' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Current Hemoglobin:</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#DC2626' }}>9.8 g/dL (Mild Anemia)</span>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{t('modal_iron_hb')}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#DC2626' }}>{t('modal_iron_hb_val')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Prescribed Dose:</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>1x IFA Tablet (Red) Daily</span>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{t('modal_iron_dose')}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>{t('modal_iron_dose_val')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>Absorption Tip:</span>
-                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#166534' }}>Take with Lemon Water / Orange</span>
+                <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{t('modal_iron_tip')}</span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#166534' }}>{t('modal_iron_tip_val')}</span>
               </div>
             </div>
 
@@ -1715,10 +1832,10 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             }}>
               <div>
                 <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#11322A' }}>
-                  {ifaDoseLogged ? '✓ Today\'s Dose Logged' : 'Log Today\'s IFA Tablet'}
+                  {ifaDoseLogged ? t('modal_iron_logged') : t('modal_iron_log_btn')}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#52786D' }}>
-                  {ifaDoseLogged ? 'Recorded for ASHA Worker Sunita' : 'Tap button to register daily adherence'}
+                  {ifaDoseLogged ? t('modal_iron_asha_note') : t('modal_iron_prompt')}
                 </div>
               </div>
 
@@ -1736,11 +1853,11 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                     cursor: 'pointer'
                   }}
                 >
-                  Log Dose
+                  {t('modal_iron_log_btn')}
                 </button>
               ) : (
                 <div style={{ background: '#10B981', color: '#FFFFFF', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700 }}>
-                  Completed
+                  {t('modal_iron_completed')}
                 </div>
               )}
             </div>
@@ -1763,7 +1880,7 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
                   cursor: 'pointer'
                 }}
               >
-                Run AI Symptom Re-Check
+                {t('modal_iron_recheck')}
               </button>
             </div>
           </div>

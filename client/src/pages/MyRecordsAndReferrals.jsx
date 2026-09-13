@@ -200,14 +200,15 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                 </div>
               ) : (
                 data.referrals.map(ref => {
-                  const statusSteps = ['Pending', 'Accepted', 'Completed'];
-                  const currentIndex = statusSteps.indexOf(ref.status);
+                  const stages = ['Created', 'Patient Reached', 'Consultation', 'Test', 'Treatment', 'Follow-up'];
+                  const currentIndex = stages.indexOf(ref.current_stage || (ref.status === 'Completed' ? 'Follow-up' : ref.status === 'Accepted' ? 'Patient Reached' : 'Created'));
+                  const isStuck = ref.current_stage === 'Stuck - Follow-up Required' || (ref.current_stage === 'Created' && ref.status !== 'Completed');
 
                   return (
-                    <div key={ref.referral_id} className="card" style={{ padding: '1.75rem' }}>
+                    <div key={ref.referral_id} className="card" style={{ padding: '1.75rem', border: isStuck ? '1px solid rgba(239, 68, 68, 0.5)' : '1px solid var(--border-subtle)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem' }}>
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <span className="badge" style={{
                               background: ref.priority === 'Emergency' ? 'rgba(239, 68, 68, 0.2)' : ref.priority === 'Urgent' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(56, 189, 248, 0.2)',
                               color: ref.priority === 'Emergency' ? '#F87171' : ref.priority === 'Urgent' ? '#FBBF24' : '#38BDF8',
@@ -216,8 +217,11 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                             }}>
                               {ref.priority} Priority Referral
                             </span>
+                            <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>
+                              Token: {ref.queue_token || 'Q-DH-042'}
+                            </span>
                             <span className="badge badge-neutral">
-                              Referral #{ref.referral_id}
+                              Ref #{ref.referral_id}
                             </span>
                           </div>
                           <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 700, marginTop: '0.5rem' }}>
@@ -225,8 +229,8 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                           </h3>
                         </div>
 
-                        <span className={`badge ${ref.status === 'Completed' ? 'badge-success' : ref.status === 'Accepted' ? 'badge-info' : 'badge-warning'}`} style={{ fontSize: '0.85rem' }}>
-                          Status: {ref.status}
+                        <span className={`badge ${isStuck ? 'badge-danger' : ref.status === 'Completed' ? 'badge-success' : 'badge-info'}`} style={{ fontSize: '0.85rem' }}>
+                          Stage: {ref.current_stage || ref.status}
                         </span>
                       </div>
 
@@ -239,7 +243,7 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                         background: 'var(--color-bg-primary)',
                         padding: '1.25rem',
                         borderRadius: 'var(--radius-md)',
-                        marginBottom: '1.5rem'
+                        marginBottom: '1.25rem'
                       }}>
                         {/* Source Facility */}
                         <div>
@@ -268,21 +272,33 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                           <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#2DD4BF', marginTop: '2px' }}>
                             {ref.referred_facility_name}
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                            Specialist / Secondary Care
+                          <div style={{ fontSize: '0.78rem', color: '#FBBF24' }}>
+                            {ref.specialist_required || 'Specialist Care'}
                           </div>
                         </div>
                       </div>
 
-                      {/* Visual Referral Lifecycle Progress Bar */}
+                      {/* Diagnostic Tests & Queue Details */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', background: 'rgba(255,255,255,0.03)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.25rem', fontSize: '0.82rem' }}>
+                        <div>
+                          <span style={{ color: 'var(--text-muted)' }}>Required Diagnostic Tests:</span>
+                          <div style={{ color: '#38BDF8', fontWeight: 600 }}>{ref.required_tests || 'None specified'}</div>
+                        </div>
+                        <div>
+                          <span style={{ color: 'var(--text-muted)' }}>Pre-booked OPD Token:</span>
+                          <div style={{ color: '#34D399', fontWeight: 700, fontFamily: 'monospace' }}>{ref.queue_token || 'Q-DH-042'}</div>
+                        </div>
+                      </div>
+
+                      {/* 6-Stage Visual Referral Lifecycle Progress Bar */}
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                          Referral Progression Lifecycle:
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
+                          Six-Stage Inter-Tier Referral Progression:
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-                          <div style={{ position: 'absolute', top: '50%', left: '10%', right: '10%', height: '3px', background: 'var(--border-subtle)', transform: 'translateY(-50%)', zIndex: 1 }} />
+                          <div style={{ position: 'absolute', top: '50%', left: '8%', right: '8%', height: '3px', background: 'var(--border-subtle)', transform: 'translateY(-50%)', zIndex: 1 }} />
                           
-                          {statusSteps.map((stepName, i) => {
+                          {stages.map((stepName, i) => {
                             const isCompleted = i <= currentIndex;
                             const isCurrent = i === currentIndex;
                             return (
@@ -291,19 +307,19 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                                   width: '28px',
                                   height: '28px',
                                   borderRadius: '50%',
-                                  background: isCompleted ? '#0D9488' : 'var(--color-bg-elevated)',
-                                  color: isCompleted ? '#FFFFFF' : 'var(--text-muted)',
+                                  background: isStuck && isCurrent ? '#EF4444' : isCompleted ? '#0D9488' : 'var(--color-bg-elevated)',
+                                  color: '#FFFFFF',
                                   border: isCurrent ? '2px solid #2DD4BF' : '1px solid var(--border-strong)',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  fontSize: '0.8rem',
+                                  fontSize: '0.75rem',
                                   fontWeight: 700,
                                   boxShadow: isCurrent ? '0 0 10px rgba(45, 212, 191, 0.5)' : 'none'
                                 }}>
                                   {isCompleted ? '✓' : i + 1}
                                 </div>
-                                <span style={{ fontSize: '0.75rem', color: isCompleted ? '#FFFFFF' : 'var(--text-muted)', fontWeight: isCurrent ? 700 : 500, marginTop: '4px' }}>
+                                <span style={{ fontSize: '0.72rem', color: isCompleted ? '#FFFFFF' : 'var(--text-muted)', fontWeight: isCurrent ? 700 : 500, marginTop: '4px', textAlign: 'center' }}>
                                   {stepName}
                                 </span>
                               </div>
@@ -311,6 +327,12 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                           })}
                         </div>
                       </div>
+
+                      {isStuck && (
+                        <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #EF4444', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', fontSize: '0.84rem', color: '#F87171', marginBottom: '0.75rem' }}>
+                          <b>⚠️ Referral not completed – follow-up required:</b> {ref.bottleneck_reason || 'You have not reported to the destination hospital yet. Your local ASHA worker has been notified to assist with transit.'}
+                        </div>
+                      )}
 
                       {ref.clinical_summary && (
                         <div style={{ background: 'rgba(255,255,255,0.04)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>

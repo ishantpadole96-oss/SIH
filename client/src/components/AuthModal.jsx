@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Lock, Mail, Phone, X, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { User, Lock, Mail, Phone, X, Sparkles, CheckCircle2, Shield, Stethoscope, HeartPulse, Building2, Users } from 'lucide-react';
 
-export function AuthModal({ isOpen, onClose }) {
+export function AuthModal({ isOpen, onClose, preselectedRole }) {
   const { login, demoLogin, villages } = useAuth();
+  const { t } = useLanguage();
 
   const [mode, setMode] = useState('login'); // 'login' | 'register'
-  const [identifier, setIdentifier] = useState('ramesh@ruralcare.in');
-  const [password, setPassword] = useState('Demo@123');
+  const [identifier, setIdentifier] = useState('demo_user');
+  const [password, setPassword] = useState('demo_password');
   
   // Register state
   const [regName, setRegName] = useState('');
@@ -16,7 +18,7 @@ export function AuthModal({ isOpen, onClose }) {
   const [regAge, setRegAge] = useState('');
   const [regGender, setRegGender] = useState('Male');
   const [regVillage, setRegVillage] = useState(1);
-  const [regPassword, setRegPassword] = useState('Demo@123');
+  const [regPassword, setRegPassword] = useState('demo_password');
 
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -85,58 +87,84 @@ export function AuthModal({ isOpen, onClose }) {
     }
   };
 
+  const roleCards = [
+    { role: 'citizen', icon: <Users size={20} />, label: t('role_citizen_badge') || 'Citizen', color: '#0D9488', bg: '#E8F5EE' },
+    { role: 'asha', icon: <HeartPulse size={20} />, label: t('role_asha_badge') || 'ASHA Worker', color: '#E11D48', bg: '#FFE4E6' },
+    { role: 'doctor', icon: <Stethoscope size={20} />, label: t('role_doctor_badge') || 'Doctor', color: '#2563EB', bg: '#EFF6FF' },
+    { role: 'admin', icon: <Building2 size={20} />, label: t('role_admin_badge') || 'Admin', color: '#D97706', bg: '#FEF3C7' }
+  ];
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
         
         {/* Close Button */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h2 style={{ fontSize: '1.35rem', color: '#FFFFFF', fontWeight: 800 }}>
-            {mode === 'login' ? 'Sign In to RuralCare' : 'Create Citizen Account'}
+            {mode === 'login' ? (t('auth_sign_in') || 'Sign In to RuralCare') : (t('auth_create_account') || 'Create Citizen Account')}
           </h2>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <X size={22} />
           </button>
         </div>
 
-        {/* Quick Demo Login Grid for Evaluators */}
-        <div style={{ background: 'var(--color-bg-primary)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', border: '1px solid var(--border-subtle)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: '#2DD4BF', fontWeight: 700, marginBottom: '0.5rem' }}>
-            <Sparkles size={14} /> 1-CLICK DEMO ACCOUNTS (PASSWORD: Demo@123)
+        {/* ── Universal Demo Credentials Banner ── */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(13,148,136,0.15), rgba(45,212,191,0.1))',
+          padding: '1rem 1.25rem',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: '1.25rem',
+          border: '1px solid rgba(45,212,191,0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+            <Shield size={16} color="#2DD4BF" />
+            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#2DD4BF', letterSpacing: '0.5px' }}>
+              DEMO CREDENTIALS
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem' }}>
+            <div>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Username</span>
+              <div style={{ color: '#FFFFFF', fontWeight: 700, fontFamily: 'monospace', fontSize: '0.95rem' }}>demo_user</div>
+            </div>
+            <div>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Password</span>
+              <div style={{ color: '#FFFFFF', fontWeight: 700, fontFamily: 'monospace', fontSize: '0.95rem' }}>demo_password</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 1-Click Portal Login Grid ── */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Quick Login — Select Portal
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-            <button
-              onClick={() => handleQuickDemoLogin('citizen')}
-              type="button"
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.75rem', justifyContent: 'flex-start' }}
-            >
-              🧑 Ramesh (Citizen)
-            </button>
-            <button
-              onClick={() => handleQuickDemoLogin('asha')}
-              type="button"
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.75rem', justifyContent: 'flex-start' }}
-            >
-              👩‍⚕️ Sunita (ASHA)
-            </button>
-            <button
-              onClick={() => handleQuickDemoLogin('doctor')}
-              type="button"
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.75rem', justifyContent: 'flex-start' }}
-            >
-              🩺 Dr. Rajesh (Doctor)
-            </button>
-            <button
-              onClick={() => handleQuickDemoLogin('admin')}
-              type="button"
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.75rem', justifyContent: 'flex-start' }}
-            >
-              🏛️ Sharma (Admin)
-            </button>
+            {roleCards.map(rc => (
+              <button
+                key={rc.role}
+                onClick={() => handleQuickDemoLogin(rc.role)}
+                type="button"
+                disabled={loading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.7rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: preselectedRole === rc.role ? `2px solid ${rc.color}` : '1px solid var(--border-subtle)',
+                  background: preselectedRole === rc.role ? `${rc.bg}15` : 'var(--color-bg-primary)',
+                  color: rc.color,
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {rc.icon}
+                {rc.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -155,7 +183,7 @@ export function AuthModal({ isOpen, onClose }) {
               cursor: 'pointer'
             }}
           >
-            Password Login
+            {t('auth_password_login') || 'Password Login'}
           </button>
           <button
             onClick={() => setMode('register')}
@@ -170,7 +198,7 @@ export function AuthModal({ isOpen, onClose }) {
               cursor: 'pointer'
             }}
           >
-            New Citizen Sign Up
+            {t('auth_new_signup') || 'New Citizen Sign Up'}
           </button>
         </div>
 
@@ -184,12 +212,12 @@ export function AuthModal({ isOpen, onClose }) {
         {mode === 'login' && (
           <form onSubmit={handleLoginSubmit}>
             <div className="form-group">
-              <label className="form-label">Email Address or Phone Number</label>
+              <label className="form-label">{t('auth_email_phone') || 'Username, Email, or Phone'}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="ramesh@ruralcare.in or 9876543210"
+                  placeholder="demo_user"
                   value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
                   style={{ paddingLeft: '2.5rem' }}
@@ -200,12 +228,12 @@ export function AuthModal({ isOpen, onClose }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Password</label>
+              <label className="form-label">{t('auth_password') || 'Password'}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type="password"
                   className="form-input"
-                  placeholder="Demo@123"
+                  placeholder="demo_password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   style={{ paddingLeft: '2.5rem' }}
@@ -221,7 +249,7 @@ export function AuthModal({ isOpen, onClose }) {
               className="btn btn-primary btn-lg"
               style={{ width: '100%', marginTop: '0.5rem' }}
             >
-              {loading ? 'Authenticating...' : 'Sign In'}
+              {loading ? (t('auth_authenticating') || 'Authenticating...') : (t('auth_sign_in_btn') || 'Sign In')}
             </button>
           </form>
         )}
@@ -230,7 +258,7 @@ export function AuthModal({ isOpen, onClose }) {
         {mode === 'register' && (
           <form onSubmit={handleRegisterSubmit}>
             <div className="form-group">
-              <label className="form-label">Full Name</label>
+              <label className="form-label">{t('auth_full_name') || 'Full Name'}</label>
               <input
                 type="text"
                 className="form-input"
@@ -243,7 +271,7 @@ export function AuthModal({ isOpen, onClose }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div className="form-group">
-                <label className="form-label">Mobile Number</label>
+                <label className="form-label">{t('auth_mobile') || 'Mobile Number'}</label>
                 <input
                   type="tel"
                   className="form-input"
@@ -255,7 +283,7 @@ export function AuthModal({ isOpen, onClose }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Email</label>
+                <label className="form-label">{t('auth_email') || 'Email'}</label>
                 <input
                   type="email"
                   className="form-input"
@@ -269,7 +297,7 @@ export function AuthModal({ isOpen, onClose }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div className="form-group">
-                <label className="form-label">Age</label>
+                <label className="form-label">{t('auth_age') || 'Age'}</label>
                 <input
                   type="number"
                   className="form-input"
@@ -280,7 +308,7 @@ export function AuthModal({ isOpen, onClose }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Village</label>
+                <label className="form-label">{t('auth_village') || 'Village'}</label>
                 <select
                   className="form-select"
                   value={regVillage}
@@ -294,7 +322,7 @@ export function AuthModal({ isOpen, onClose }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Password</label>
+              <label className="form-label">{t('auth_password') || 'Password'}</label>
               <input
                 type="password"
                 className="form-input"
@@ -310,7 +338,7 @@ export function AuthModal({ isOpen, onClose }) {
               className="btn btn-primary btn-lg"
               style={{ width: '100%', marginTop: '0.5rem' }}
             >
-              {loading ? 'Creating Account...' : 'Register Account'}
+              {loading ? (t('auth_creating') || 'Creating Account...') : (t('auth_register_btn') || 'Register Account')}
             </button>
           </form>
         )}

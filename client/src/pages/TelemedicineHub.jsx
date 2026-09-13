@@ -121,12 +121,13 @@ export function TelemedicineHub({ setActiveTab, onOpenTelemed }) {
     return matchesSpecialty && matchesSearch;
   });
 
-  const handleStartCall = (doc) => {
+  const handleStartCall = (doc, mode = 'video') => {
     if (onOpenTelemed) {
       onOpenTelemed({
         doctorName: doc.name,
         specialty: doc.specialty,
-        facility: doc.facility
+        facility: doc.facility,
+        initialMode: mode
       });
     }
   };
@@ -560,23 +561,23 @@ export function TelemedicineHub({ setActiveTab, onOpenTelemed }) {
             </div>
 
             {/* Bottom Actions */}
-            <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid #F3F4F6', paddingTop: '1rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid #F3F4F6', paddingTop: '1rem', flexWrap: 'wrap' }}>
               <button
                 type="button"
-                onClick={() => handleStartCall(doc)}
+                onClick={() => handleStartCall(doc, 'video')}
                 style={{
-                  flex: 1,
+                  flex: '1 1 120px',
                   background: '#1B4D3E',
                   color: '#FFFFFF',
                   border: 'none',
-                  padding: '0.75rem',
+                  padding: '0.7rem 0.8rem',
                   borderRadius: '10px',
                   fontWeight: 700,
-                  fontSize: '0.9rem',
+                  fontSize: '0.85rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem',
+                  gap: '0.4rem',
                   cursor: 'pointer',
                   boxShadow: '0 2px 6px rgba(27,77,62,0.15)',
                   transition: 'background 0.15s ease'
@@ -584,8 +585,34 @@ export function TelemedicineHub({ setActiveTab, onOpenTelemed }) {
                 onMouseEnter={(e) => e.currentTarget.style.background = '#153E32'}
                 onMouseLeave={(e) => e.currentTarget.style.background = '#1B4D3E'}
               >
-                <Video size={16} />
-                <span>Start Video Call</span>
+                <Video size={15} />
+                <span>Video Call</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleStartCall(doc, 'audio')}
+                style={{
+                  flex: '1 1 120px',
+                  background: 'rgba(13, 148, 136, 0.1)',
+                  color: '#0F766E',
+                  border: '1px solid rgba(13, 148, 136, 0.3)',
+                  padding: '0.7rem 0.8rem',
+                  borderRadius: '10px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(13, 148, 136, 0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(13, 148, 136, 0.1)'}
+              >
+                <Phone size={15} />
+                <span>Audio Call</span>
               </button>
 
               <button
@@ -595,10 +622,10 @@ export function TelemedicineHub({ setActiveTab, onOpenTelemed }) {
                   background: '#FFFFFF',
                   color: '#374151',
                   border: '1px solid #E5ECE7',
-                  padding: '0.75rem 0.9rem',
+                  padding: '0.7rem 0.85rem',
                   borderRadius: '10px',
                   fontWeight: 600,
-                  fontSize: '0.85rem',
+                  fontSize: '0.82rem',
                   cursor: 'pointer'
                 }}
                 title="Schedule for another date"

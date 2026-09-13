@@ -3,7 +3,7 @@ import { X, Printer, Shield, HeartPulse, User, MapPin, Phone, AlertCircle, QrCod
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function DigitalHealthCard({ onClose }) {
+export default function DigitalHealthCard({ onClose, onOpenJourney }) {
   const { user } = useAuth();
   const { language } = useLanguage();
   const cardRef = useRef();
@@ -12,9 +12,9 @@ export default function DigitalHealthCard({ onClose }) {
     window.print();
   };
 
-  const healthId = user?.patient_id
-    ? `RC-MH-2026-${String(user.patient_id).padStart(4, '0')}`
-    : 'RC-MH-2026-0001';
+  const healthId = user?.health_journey_id || (user?.patient_id
+    ? `MH-RURAL-2026-${String(user.patient_id).padStart(4, '0')}`
+    : 'MH-RURAL-2026-0001');
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -23,7 +23,7 @@ export default function DigitalHealthCard({ onClose }) {
           <div className="flex items-center gap-2">
             <Shield className="text-teal" size={24} />
             <h2 className="modal-title">
-              {language === 'hi' ? 'ग्रामीण स्वास्थ्य पहचान पत्र' : language === 'mr' ? 'ग्रामीण आरोग्य ओळखपत्र' : 'RuralCare Digital Health Card'}
+              {language === 'hi' ? 'ग्रामीण स्वास्थ्य पहचान पत्र' : language === 'mr' ? 'ग्रामीण आरोग्य ओळखपत्र' : 'RuralCare Digital Health Journey Card'}
             </h2>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Close">
@@ -39,7 +39,7 @@ export default function DigitalHealthCard({ onClose }) {
                 <HeartPulse size={20} className="text-white" />
                 <div>
                   <span className="card-gov-label">GOVT OF MAHARASHTRA • PUBLIC HEALTH</span>
-                  <div className="card-title">RuralCare National Digital Health ID</div>
+                  <div className="card-title">RuralCare Digital Health Journey QR</div>
                 </div>
               </div>
               <div className="card-chip"></div>
@@ -78,7 +78,7 @@ export default function DigitalHealthCard({ onClose }) {
                 </div>
               </div>
 
-              <div className="card-qr-box">
+              <div className="card-qr-box" style={{ cursor: onOpenJourney ? 'pointer' : 'default' }} onClick={() => onOpenJourney && onOpenJourney(healthId)}>
                 <div className="qr-visual">
                   <svg viewBox="0 0 100 100" width="70" height="70" className="qr-svg">
                     <rect width="100" height="100" fill="white" />
@@ -104,27 +104,43 @@ export default function DigitalHealthCard({ onClose }) {
                     <rect x="45" y="75" width="18" height="10" fill="#0f172a" />
                   </svg>
                 </div>
-                <span className="qr-caption">Scan for Records</span>
+                <span className="qr-caption">Scan for Journey</span>
               </div>
             </div>
 
             <div className="card-bottom-footer">
               <span className="card-disclaimer">
-                Non-transferable health credential for rural OPD, Jan Aushadhi subsidy, and emergency triage.
+                Non-transferable health credential for rural OPD, inter-tier hospital transfers, and Jan Aushadhi subsidy.
               </span>
               <span className="card-validity">Valid: Lifelong</span>
             </div>
           </div>
         </div>
 
-        <div className="modal-actions-footer">
-          <button className="btn btn-outline" onClick={onClose}>
-            {language === 'hi' ? 'बंद करें' : language === 'mr' ? 'बंद करा' : 'Close'}
-          </button>
-          <button className="btn btn-primary flex items-center gap-2" onClick={handlePrint}>
-            <Printer size={16} />
-            <span>{language === 'hi' ? 'कार्ड प्रिंट करें' : language === 'mr' ? 'कार्ड प्रिंट करा' : 'Print / Save Card'}</span>
-          </button>
+        <div className="modal-actions-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {onOpenJourney && (
+            <button 
+              className="btn btn-secondary flex items-center gap-2"
+              onClick={() => {
+                onOpenJourney(healthId);
+                onClose();
+              }}
+              style={{ border: '1px solid #2DD4BF', color: '#2DD4BF' }}
+            >
+              <QrCode size={16} />
+              <span>Inspect Health Journey Records</span>
+            </button>
+          )}
+
+          <div style={{ display: 'flex', gap: '0.6rem' }}>
+            <button className="btn btn-outline" onClick={onClose}>
+              {language === 'hi' ? 'बंद करें' : language === 'mr' ? 'बंद करा' : 'Close'}
+            </button>
+            <button className="btn btn-primary flex items-center gap-2" onClick={handlePrint}>
+              <Printer size={16} />
+              <span>{language === 'hi' ? 'कार्ड प्रिंट करें' : language === 'mr' ? 'कार्ड प्रिंट करा' : 'Print / Save Card'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
