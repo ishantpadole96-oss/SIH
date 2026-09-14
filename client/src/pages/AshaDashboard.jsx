@@ -74,6 +74,35 @@ export function AshaDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
   });
   const [medRequestMsg, setMedRequestMsg] = useState(null);
 
+  // ASHA Medicine Dispense to Patient (Requirement 6)
+  const [showDispenseModal, setShowDispenseModal] = useState(false);
+  const [dispenseForm, setDispenseForm] = useState({
+    medicine_id: '',
+    medicine_name: '',
+    unit: 'tablets',
+    quantity: 10,
+    patient_id: '',
+    patient_name: '',
+    notes: 'Routine dose given during home visit'
+  });
+  const [dispenseMsg, setDispenseMsg] = useState(null);
+  const [dispensingLoading, setDispensingLoading] = useState(false);
+
+  // ASHA Medicine Restock / Manual Adjustment (Requirement 6)
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [restockForm, setRestockForm] = useState({
+    medicine_id: '',
+    medicine_name: '',
+    facility_id: 1,
+    quantity: 50,
+    unit: 'tablets',
+    adjustment_type: 'add',
+    notes: 'Received replenishment stock supply from PHC'
+  });
+  const [restockMsg, setRestockMsg] = useState(null);
+  const [restockLoading, setRestockLoading] = useState(false);
+  const [inventoryTransactions, setInventoryTransactions] = useState([]);
+
   // Patient Grievances Desk State (Requirement 4)
   const [complaints, setComplaints] = useState([]);
   const [complaintsLoading, setComplaintsLoading] = useState(false);
@@ -146,6 +175,69 @@ export function AshaDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
         .then(r => r.json())
         .then(d => setMedicineRequests(d.requests || []))
         .catch(err => console.error('Failed to load medicine requests:', err));
+
+      fetch('/api/medicines/transactions', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(r => r.json())
+        .then(d => setInventoryTransactions(d.transactions || []))
+        .catch(err => console.error('Failed to load transactions:', err));
+    }
+  };
+
+  const handleDispenseMedicine = async (e) => {
+    e.preventDefault();
+    setDispensingLoading(true);
+    try {
+      const res = await fetch('/api/medicines/dispense', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(dispenseForm)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to dispense medicine');
+
+      setDispenseMsg(data.message);
+      fetchMedicineData();
+      setTimeout(() => {
+        setShowDispenseModal(false);
+        setDispenseMsg(null);
+      }, 1400);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDispensingLoading(false);
+    }
+  };
+
+  const handleAdjustStock = async (e) => {
+    e.preventDefault();
+    setRestockLoading(true);
+    try {
+      const res = await fetch('/api/medicines/adjust', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(restockForm)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to adjust stock');
+
+      setRestockMsg(data.message);
+      fetchMedicineData();
+      setTimeout(() => {
+        setShowRestockModal(false);
+        setRestockMsg(null);
+      }, 1400);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setRestockLoading(false);
     }
   };
 
@@ -301,8 +393,13 @@ export function AshaDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
     ])
       .then(([patData, riskData, refData]) => {
         const pList = patData.patients || [];
-        setPatients(pList);
-        offlineStorage.cachePatients(pList); // cache locally for offline use
+        // Ensure pending offline and newly added patients never disappear
+        const pendingQueue = offlineStorage.getQueue().patients || [];
+        const existingIds = new Set(pList.map(p => p.patient_id));
+        const unSynced = pendingQueue.filter(p => !existingIds.has(p.patient_id) && !existingIds.has(p.temp_id));
+        const combined = [...unSynced, ...pList];
+        setPatients(combined);
+        offlineStorage.cachePatients(combined); // cache locally for offline persistence
 
         setHighRiskCases(riskData.highRiskCases || []);
         setReferrals(refData.referrals || []);
@@ -385,6 +482,8 @@ export function AshaDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
 
       if (data.patient) {
         setPatients(prev => [data.patient, ...prev.filter(p => p.patient_id !== data.patient.patient_id)]);
+        const cached = offlineStorage.getCachedPatients();
+        offlineStorage.cachePatients([data.patient, ...cached.filter(p => p.patient_id !== data.patient.patient_id)]);
       }
       setRegSuccess(`Patient ${data.patient.name} registered! Health Journey ID: ${data.patient.health_journey_id}`);
       setTimeout(() => {
@@ -402,6 +501,7 @@ export function AshaDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
           emergency_contact_name: '',
           emergency_contact_phone: ''
         });
+        fetchData();
       }, 1200);
     } catch (err) {
       console.warn('Network registration failed, fallback to local offline queue:', err);
@@ -964,29 +1064,87 @@ export function AshaDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                     Category: {m.category || 'Essential Drug List (EDL)'} &bull; {m.dosage_form || 'Tablet'}
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', flexWrap: 'wrap', gap: '0.4rem' }}>
                     <div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Available Stock</div>
                       <span style={{ fontSize: '1.2rem', fontWeight: 800, color: isOut ? '#EF4444' : '#11322A' }}>
                         {m.quantity} {m.unit || 'units'}
                       </span>
                     </div>
-                    <button
-                      onClick={() => {
-                        setMedRequestForm({
-                          medicine_id: m.medicine_id,
-                          medicine_name: m.medicine_name,
-                          quantity_requested: 100,
-                          urgency: isOut ? 'Emergency' : isLow ? 'Urgent' : 'Routine',
-                          notes: `Replenishment requisition for Sub-Centre stock (Current balance: ${m.quantity} ${m.unit || 'units'})`
-                        });
-                        setShowMedRequestModal(true);
-                      }}
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontSize: '0.75rem', padding: '0.2rem 0.55rem' }}
-                    >
-                      Requisition
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => {
+                          setDispenseForm({
+                            medicine_id: m.medicine_id,
+                            medicine_name: m.medicine_name,
+                            unit: m.unit || 'tablets',
+                            quantity: Math.min(m.quantity, 10) || 1,
+                            patient_id: patients[0]?.patient_id || '',
+                            patient_name: patients[0]?.name || '',
+                            notes: 'Dispensed during field visit'
+                          });
+                          setShowDispenseModal(true);
+                        }}
+                        disabled={isOut}
+                        className="btn btn-sm"
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '0.25rem 0.55rem',
+                          background: isOut ? '#E2E8F0' : '#10B981',
+                          color: isOut ? '#94A3B8' : '#FFFFFF',
+                          border: 'none',
+                          cursor: isOut ? 'not-allowed' : 'pointer',
+                          fontWeight: 600
+                        }}
+                        title="Record giving medicine to a patient (auto decreases stock)"
+                      >
+                        Dispense
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setRestockForm({
+                            medicine_id: m.medicine_id,
+                            medicine_name: m.medicine_name,
+                            facility_id: m.facility_id || 1,
+                            quantity: 50,
+                            unit: m.unit || 'tablets',
+                            adjustment_type: 'add',
+                            notes: 'Stock received from PHC'
+                          });
+                          setShowRestockModal(true);
+                        }}
+                        className="btn btn-sm"
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '0.25rem 0.55rem',
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          color: '#0284C7',
+                          border: '1px solid #0284C7',
+                          fontWeight: 600
+                        }}
+                        title="Manually adjust or add received stock"
+                      >
+                        + Stock
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setMedRequestForm({
+                            medicine_id: m.medicine_id,
+                            medicine_name: m.medicine_name,
+                            quantity_requested: 100,
+                            urgency: isOut ? 'Emergency' : isLow ? 'Urgent' : 'Routine',
+                            notes: `Replenishment requisition for Sub-Centre stock (Current balance: ${m.quantity} ${m.unit || 'units'})`
+                          });
+                          setShowMedRequestModal(true);
+                        }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.55rem' }}
+                      >
+                        Requisition
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -1030,6 +1188,56 @@ export function AshaDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
                           </span>
                         </td>
                         <td style={{ padding: '0.6rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>{r.created_at}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Dispensing & Stock Transaction Audit Log (Requirement 6) */}
+          <div className="card" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#11322A', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Activity size={18} color="#10B981" /> Medicine Dispensing &amp; Stock Movement Log
+            </h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Automatic real-time ledger of medicines given to patients and stock replenishment received at this Sub-Centre.
+            </p>
+            {inventoryTransactions.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No dispensing or restock activity logged yet.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: '0.84rem', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '0.5rem' }}>Tx ID</th>
+                      <th style={{ padding: '0.5rem' }}>Medicine</th>
+                      <th style={{ padding: '0.5rem' }}>Type</th>
+                      <th style={{ padding: '0.5rem' }}>Qty</th>
+                      <th style={{ padding: '0.5rem' }}>Balance After</th>
+                      <th style={{ padding: '0.5rem' }}>Recorded By</th>
+                      <th style={{ padding: '0.5rem' }}>Notes / Patient</th>
+                      <th style={{ padding: '0.5rem' }}>Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inventoryTransactions.map(tx => (
+                      <tr key={tx.transaction_id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '0.55rem 0.5rem', fontWeight: 700, color: '#38BDF8' }}>#{tx.transaction_id}</td>
+                        <td style={{ padding: '0.55rem 0.5rem', fontWeight: 600 }}>{tx.medicine_name}</td>
+                        <td style={{ padding: '0.55rem 0.5rem' }}>
+                          <span className={`badge ${tx.transaction_type === 'Dispensed' ? 'badge-info' : 'badge-success'}`} style={{ fontSize: '0.7rem' }}>
+                            {tx.transaction_type}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.55rem 0.5rem', fontWeight: 700, color: tx.transaction_type === 'Dispensed' ? '#EF4444' : '#10B981' }}>
+                          {tx.transaction_type === 'Dispensed' ? `-${tx.quantity}` : `+${tx.quantity}`}
+                        </td>
+                        <td style={{ padding: '0.55rem 0.5rem', fontWeight: 700 }}>{tx.balance_after}</td>
+                        <td style={{ padding: '0.55rem 0.5rem' }}>{tx.actor_name || 'ASHA Worker'}</td>
+                        <td style={{ padding: '0.55rem 0.5rem', color: 'var(--text-secondary)', maxWidth: '240px' }}>{tx.notes}</td>
+                        <td style={{ padding: '0.55rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>{tx.created_at}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1935,6 +2143,214 @@ export function AshaDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dispense Medicine to Patient Modal (Requirement 6) */}
+      {showDispenseModal && (
+        <div className="modal-overlay" onClick={() => setShowDispenseModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Pill size={20} color="#10B981" /> Dispense Medicine to Patient
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Record medicine distribution. Available Sub-Centre stock will automatically decrease.
+                </p>
+              </div>
+              <button onClick={() => setShowDispenseModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {dispenseMsg && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', fontSize: '0.84rem' }}>
+                {dispenseMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleDispenseMedicine}>
+              <div className="form-group">
+                <label className="form-label">Medicine</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={dispenseForm.medicine_name}
+                  disabled
+                  style={{ background: 'rgba(255,255,255,0.05)', fontWeight: 700 }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Recipient Patient</label>
+                <select
+                  className="form-select"
+                  value={dispenseForm.patient_id}
+                  onChange={e => {
+                    const pid = e.target.value;
+                    const pat = patients.find(p => String(p.patient_id) === pid);
+                    setDispenseForm({
+                      ...dispenseForm,
+                      patient_id: pid,
+                      patient_name: pat ? pat.name : ''
+                    });
+                  }}
+                  required
+                >
+                  <option value="">-- Select Patient from Village --</option>
+                  {patients.map(p => (
+                    <option key={p.patient_id} value={p.patient_id}>
+                      {p.name} ({p.age} yrs • {p.gender} • ID: {p.health_journey_id || p.patient_id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Quantity to Dispense</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="form-input"
+                    value={dispenseForm.quantity}
+                    onChange={e => setDispenseForm({ ...dispenseForm, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Unit Type</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={dispenseForm.unit || 'units'}
+                    disabled
+                    style={{ background: 'rgba(255,255,255,0.05)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Instructions / Reason for Giving</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. 1 tab thrice daily after meals for acute fever"
+                  value={dispenseForm.notes}
+                  onChange={e => setDispenseForm({ ...dispenseForm, notes: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+                <button
+                  type="submit"
+                  disabled={dispensingLoading}
+                  className="btn btn-primary"
+                  style={{ flex: 1, background: '#10B981' }}
+                >
+                  {dispensingLoading ? 'Recording...' : 'Confirm & Dispense Medicine'}
+                </button>
+                <button type="button" onClick={() => setShowDispenseModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manually Adjust / Add Stock Modal (Requirement 6) */}
+      {showRestockModal && (
+        <div className="modal-overlay" onClick={() => setShowRestockModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Plus size={20} color="#0284C7" /> Add / Adjust Medicine Stock
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Record newly received medicine supplies or calibrate inventory count.
+                </p>
+              </div>
+              <button onClick={() => setShowRestockModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {restockMsg && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', fontSize: '0.84rem' }}>
+                {restockMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleAdjustStock}>
+              <div className="form-group">
+                <label className="form-label">Medicine Name</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={restockForm.medicine_name}
+                  onChange={e => setRestockForm({ ...restockForm, medicine_name: e.target.value })}
+                  placeholder="e.g. Paracetamol 500mg, Amoxicillin 500mg..."
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Quantity Received</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="form-input"
+                    value={restockForm.quantity}
+                    onChange={e => setRestockForm({ ...restockForm, quantity: parseInt(e.target.value) || 0 })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Packaging Unit</label>
+                  <select
+                    className="form-select"
+                    value={restockForm.unit}
+                    onChange={e => setRestockForm({ ...restockForm, unit: e.target.value })}
+                  >
+                    <option value="tablets">tablets</option>
+                    <option value="strips">strips</option>
+                    <option value="bottles">bottles</option>
+                    <option value="vials">vials</option>
+                    <option value="sachets">sachets</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Source / Supply Notes</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. Received monthly replenishment batch from Khed PHC"
+                  value={restockForm.notes}
+                  onChange={e => setRestockForm({ ...restockForm, notes: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+                <button
+                  type="submit"
+                  disabled={restockLoading}
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                >
+                  {restockLoading ? 'Updating...' : 'Confirm Stock Receipt'}
+                </button>
+                <button type="button" onClick={() => setShowRestockModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

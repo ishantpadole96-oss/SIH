@@ -427,9 +427,155 @@ router.get('/transactions', authenticateToken, requireRoles('admin', 'doctor', '
       params.push(parseInt(facility_id));
     }
     query += ` ORDER BY it.created_at DESC LIMIT 50`;
-    const transactions = db.all(query, params);
-    return res.json({ transactions });
+/**
+ * POST /api/medicines/dispense
+ * ASHA Worker / Doctor: Record giving medicine to a patient
+ * Decreases stock automatically and logs inventory transaction
+ */
+router.post('/dispense', authenticateToken, requireRoles('asha', 'doctor', 'admin'), (req, res) => {
+  try {
+    const { medicine_id, medicine_name, facility_id, quantity = 1, patient_id, patient_name, notes } = req.body;
+    const qty = Math.max(1, parseInt(quantity) || 1);
+
+    // Find medicine stock item
+    let med;
+    if (medicine_id) {
+      med = db.get('SELECT * FROM medicine_stock WHERE medicine_id = ?', [parseInt(medicine_id)]);
+    } else if (facility_id && medicine_name) {
+      med = db.get('SELECT * FROM medicine_stock WHERE facility_id = ? AND LOWER(medicine_name) = LOWER(?)', [parseInt(facility_id), medicine_name.trim()]);
+    } else if (medicine_name) {
+      med = db.get('SELECT * FROM medicine_stock WHERE LOWER(medicine_name) = LOWER(?) LIMIT 1', [medicine_name.trim()]);
+    }
+
+    if (!med) {
+      return res.status(404).json({ error: 'Medicine not found in facility stock inventory.' });
+    }
+
+    if (med.quantity < qty) {
+      return res.status(400).json({ error: `Insufficient stock! Only ${med.quantity} ${med.unit || 'units'} available, but ${qty} requested.` });
+    }
+
+    const newBalance = med.quantity - qty;
+    let newStatus = 'In Stock';
+    if (newBalance === 0) newStatus = 'Out of Stock';
+    else if (newBalance < 20) newStatus = 'Low Stock';
+
+    db.transaction(() => {
+      // 1. Update medicine_stock
+      db.run(`
+        UPDATE medicine_stock
+        SET quantity = ?, stock_status = ?, last_updated = CURRENT_TIMESTAMP
+        WHERE medicine_id = ?
+      `, [newBalance, newStatus, med.medicine_id]);
+
+      // 2. Log inventory transaction
+      const patientInfo = patient_name ? `to patient ${patient_name}` : patient_id ? `to patient #${patient_id}` : 'to field patient';
+      db.run(`
+        INSERT INTO inventory_transactions (facility_id, medicine_id, medicine_name, transaction_type, quantity, balance_after, actor_id, notes)
+        VALUES (?, ?, ?, 'Dispensed', ?, ?, ?, ?)
+      `, [
+        med.facility_id,
+        med.medicine_id,
+        med.medicine_name,
+        qty,
+        newBalance,
+        req.user.user_id,
+        `Dispensed ${qty} ${med.unit || 'units'} ${patientInfo}. Notes: ${notes || 'Field distribution'}`
+      ]);
+    });
+
+    const updatedMed = db.get('SELECT * FROM medicine_stock WHERE medicine_id = ?', [med.medicine_id]);
+
+    return res.json({
+      success: true,
+      message: `Dispensed ${qty} ${med.unit || 'units'} of ${med.medicine_name}. New balance: ${newBalance} ${med.unit || 'units'}.`,
+      medicine: updatedMed,
+      balance_after: newBalance
+    });
   } catch (err) {
+    console.error('Dispense error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/medicines/adjust
+ * ASHA Worker / Admin: Manually adjust/add medicine stock when new supplies are received
+ */
+router.post('/adjust', authenticateToken, requireRoles('asha', 'doctor', 'admin'), (req, res) => {
+  try {
+    const { medicine_id, medicine_name, facility_id, quantity, adjustment_type = 'add', unit, notes } = req.body;
+    const qty = parseInt(quantity);
+    if (isNaN(qty)) {
+      return res.status(400).json({ error: 'Valid quantity number is required.' });
+    }
+
+    let med;
+    if (medicine_id) {
+      med = db.get('SELECT * FROM medicine_stock WHERE medicine_id = ?', [parseInt(medicine_id)]);
+    } else if (facility_id && medicine_name) {
+      med = db.get('SELECT * FROM medicine_stock WHERE facility_id = ? AND LOWER(medicine_name) = LOWER(?)', [parseInt(facility_id), medicine_name.trim()]);
+    } else if (medicine_name) {
+      med = db.get('SELECT * FROM medicine_stock WHERE LOWER(medicine_name) = LOWER(?) LIMIT 1', [medicine_name.trim()]);
+    }
+
+    let newBalance = 0;
+    let targetFacilityId = facility_id ? parseInt(facility_id) : (med ? med.facility_id : 1);
+    let targetMedName = medicine_name || (med ? med.medicine_name : 'Unknown Medicine');
+    let medId = med ? med.medicine_id : null;
+
+    db.transaction(() => {
+      if (med) {
+        if (adjustment_type === 'add') {
+          newBalance = med.quantity + qty;
+        } else {
+          newBalance = Math.max(0, qty);
+        }
+
+        let newStatus = 'In Stock';
+        if (newBalance === 0) newStatus = 'Out of Stock';
+        else if (newBalance < 20) newStatus = 'Low Stock';
+
+        db.run(`
+          UPDATE medicine_stock
+          SET quantity = ?, stock_status = ?, last_updated = CURRENT_TIMESTAMP
+          WHERE medicine_id = ?
+        `, [newBalance, newStatus, med.medicine_id]);
+      } else {
+        newBalance = Math.max(0, qty);
+        let newStatus = newBalance === 0 ? 'Out of Stock' : newBalance < 20 ? 'Low Stock' : 'In Stock';
+        const ins = db.run(`
+          INSERT INTO medicine_stock (facility_id, medicine_name, category, quantity, unit, stock_status)
+          VALUES (?, ?, 'Essential', ?, ?, ?)
+        `, [targetFacilityId, targetMedName, newBalance, unit || 'tablets', newStatus]);
+        medId = Number(ins.lastInsertRowid);
+      }
+
+      db.run(`
+        INSERT INTO inventory_transactions (facility_id, medicine_id, medicine_name, transaction_type, quantity, balance_after, actor_id, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        targetFacilityId,
+        medId,
+        targetMedName,
+        adjustment_type === 'add' ? 'Restock' : 'Adjustment',
+        qty,
+        newBalance,
+        req.user.user_id,
+        notes || (adjustment_type === 'add' ? `Stock received: +${qty} units` : `Stock manually adjusted to ${newBalance} units`)
+      ]);
+    });
+
+    const updatedMed = db.get('SELECT * FROM medicine_stock WHERE medicine_id = ?', [medId]);
+
+    return res.json({
+      success: true,
+      message: `Stock updated successfully. Current balance: ${newBalance} ${updatedMed.unit || 'units'}.`,
+      medicine: updatedMed,
+      balance_after: newBalance
+    });
+  } catch (err) {
+    console.error('Adjust stock error:', err);
     return res.status(500).json({ error: err.message });
   }
 });

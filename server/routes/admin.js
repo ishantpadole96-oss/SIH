@@ -584,37 +584,253 @@ router.get('/audit-logs', authenticateToken, requireRoles('admin'), (req, res) =
 });
 
 /**
+ * GET /api/admin/district-staff
+ * Admin: Get doctors and ASHA workers working in the district, with their village assignments
+ */
+router.get('/district-staff', authenticateToken, requireRoles('admin'), (req, res) => {
+  try {
+    const { district } = req.query;
+    const hasDist = district && district !== 'All';
+
+    // 1. Doctors in district
+    let docSql = `
+      SELECT d.*, f.facility_name, f.facility_type, v.village_name, v.district,
+             u.email, u.phone
+      FROM doctors d
+      JOIN facilities f ON d.facility_id = f.facility_id
+      LEFT JOIN villages v ON f.village_id = v.village_id
+      LEFT JOIN users u ON d.user_id = u.user_id
+      WHERE 1=1
+    `;
+    const docParams = [];
+    if (hasDist) {
+      docSql += ` AND v.district = ?`;
+      docParams.push(district);
+    }
+    docSql += ` ORDER BY d.name ASC`;
+    const doctors = db.all(docSql, docParams);
+
+    // 2. ASHA Workers in district
+    let ashaSql = `
+      SELECT u.user_id, u.name, u.email, u.phone, u.village_id, u.assigned_villages,
+             v.village_name, v.district,
+             (SELECT COUNT(*) FROM patients p WHERE p.user_id IN (SELECT u2.user_id FROM users u2 WHERE u2.village_id = u.village_id)) as village_patients_count,
+             (SELECT f.facility_name FROM facilities f WHERE f.village_id = u.village_id LIMIT 1) as affiliated_facility
+      FROM users u
+      LEFT JOIN villages v ON u.village_id = v.village_id
+      WHERE u.role IN ('asha', 'worker')
+    `;
+    const ashaParams = [];
+    if (hasDist) {
+      ashaSql += ` AND v.district = ?`;
+      ashaParams.push(district);
+    }
+    ashaSql += ` ORDER BY u.name ASC`;
+    const ashaWorkers = db.all(ashaSql, ashaParams);
+
+    // 3. District Villages (for assignment selectors)
+    let vilSql = `SELECT village_id, village_name, district FROM villages WHERE 1=1`;
+    const vilParams = [];
+    if (hasDist) {
+      vilSql += ` AND district = ?`;
+      vilParams.push(district);
+    }
+    vilSql += ` ORDER BY village_name ASC`;
+    const villages = db.all(vilSql, vilParams);
+
+    // 4. District Facilities (for doctor appointment)
+    let facSql = `
+      SELECT f.facility_id, f.facility_name, f.facility_type, v.village_name, v.district
+      FROM facilities f
+      LEFT JOIN villages v ON f.village_id = v.village_id
+      WHERE 1=1
+    `;
+    const facParams = [];
+    if (hasDist) {
+      facSql += ` AND v.district = ?`;
+      facParams.push(district);
+    }
+    facSql += ` ORDER BY f.facility_name ASC`;
+    const facilities = db.all(facSql, facParams);
+
+    return res.json({
+      district: district || 'All',
+      total_doctors: doctors.length,
+      total_asha: ashaWorkers.length,
+      doctors,
+      asha_workers: ashaWorkers,
+      villages,
+      facilities
+    });
+  } catch (err) {
+    console.error('District staff error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/admin/district-inventory
+ * Admin: Complete district-wide medicine stock overview across all Health Centres & Sub-Centres
+ */
+router.get('/district-inventory', authenticateToken, requireRoles('admin'), (req, res) => {
+  try {
+    const { district, facility_id, stock_status, search } = req.query;
+    const hasDist = district && district !== 'All';
+
+    let query = `
+      SELECT m.*, f.facility_name, f.facility_type, v.village_name, v.district,
+             COALESCE((
+               SELECT SUM(ABS(it.quantity)) 
+               FROM inventory_transactions it 
+               WHERE it.facility_id = m.facility_id 
+                 AND (it.medicine_id = m.medicine_id OR LOWER(it.medicine_name) = LOWER(m.medicine_name))
+                 AND it.transaction_type = 'Dispensed'
+             ), 0) as total_dispensed
+      FROM medicine_stock m
+      JOIN facilities f ON m.facility_id = f.facility_id
+      LEFT JOIN villages v ON f.village_id = v.village_id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (hasDist) {
+      query += ` AND v.district = ?`;
+      params.push(district);
+    }
+    if (facility_id) {
+      query += ` AND m.facility_id = ?`;
+      params.push(parseInt(facility_id));
+    }
+    if (stock_status && stock_status !== 'All') {
+      query += ` AND m.stock_status = ?`;
+      params.push(stock_status);
+    }
+    if (search) {
+      query += ` AND (m.medicine_name LIKE ? OR m.category LIKE ? OR f.facility_name LIKE ?)`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    query += ` ORDER BY CASE m.stock_status WHEN 'Out of Stock' THEN 1 WHEN 'Low Stock' THEN 2 ELSE 3 END, m.medicine_name ASC`;
+    const medicines = db.all(query, params);
+
+    // Inventory KPIs for this district
+    let kpiSql = `
+      SELECT 
+        COUNT(*) as total_records,
+        COALESCE(SUM(m.quantity), 0) as total_units,
+        COUNT(DISTINCT m.facility_id) as facilities_count,
+        SUM(CASE WHEN m.stock_status = 'Out of Stock' THEN 1 ELSE 0 END) as out_of_stock_count,
+        SUM(CASE WHEN m.stock_status = 'Low Stock' THEN 1 ELSE 0 END) as low_stock_count,
+        SUM(CASE WHEN m.stock_status = 'In Stock' THEN 1 ELSE 0 END) as in_stock_count
+      FROM medicine_stock m
+      JOIN facilities f ON m.facility_id = f.facility_id
+      LEFT JOIN villages v ON f.village_id = v.village_id
+      WHERE 1=1
+    `;
+    const kpiParams = [];
+    if (hasDist) {
+      kpiSql += ` AND v.district = ?`;
+      kpiParams.push(district);
+    }
+    const kpis = db.get(kpiSql, kpiParams);
+
+    // Recent stock movement transactions in this district
+    let txSql = `
+      SELECT it.*, f.facility_name, f.facility_type, v.district, u.name as actor_name
+      FROM inventory_transactions it
+      JOIN facilities f ON it.facility_id = f.facility_id
+      LEFT JOIN villages v ON f.village_id = v.village_id
+      LEFT JOIN users u ON it.actor_id = u.user_id
+      WHERE 1=1
+    `;
+    const txParams = [];
+    if (hasDist) {
+      txSql += ` AND v.district = ?`;
+      txParams.push(district);
+    }
+    txSql += ` ORDER BY it.created_at DESC LIMIT 30`;
+    const transactions = db.all(txSql, txParams);
+
+    return res.json({
+      district: district || 'All',
+      kpis: {
+        total_records: kpis.total_records || 0,
+        total_units: kpis.total_units || 0,
+        facilities_count: kpis.facilities_count || 0,
+        out_of_stock_count: kpis.out_of_stock_count || 0,
+        low_stock_count: kpis.low_stock_count || 0,
+        in_stock_count: kpis.in_stock_count || 0
+      },
+      medicines,
+      transactions
+    });
+  } catch (err) {
+    console.error('District inventory error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * POST /api/admin/staff/doctor
- * Admin: Add verified Doctor account (Section 36.1)
+ * Admin: Add verified Doctor account with village assignment (Requirement 2 & 3)
  */
 router.post('/staff/doctor', authenticateToken, requireRoles('admin'), (req, res) => {
   try {
     const bcrypt = require('bcryptjs');
-    const { name, email, phone, specialization, facility_id, mmc_reg_no = 'MMC-2026-9901' } = req.body;
+    const { 
+      name, 
+      email, 
+      phone, 
+      specialization, 
+      facility_id, 
+      assigned_villages = 'Shivapur, Khedgaon',
+      working_days = 'Mon-Sat',
+      working_hours = '09:00 AM - 05:00 PM',
+      mmc_reg_no = 'MMC-2026-9901' 
+    } = req.body;
 
-    if (!name || !email || !facility_id) {
-      return res.status(400).json({ error: 'Name, email, and facility_id are required' });
+    if (!name || !facility_id) {
+      return res.status(400).json({ error: 'Doctor name and facility_id are required' });
     }
+
+    const cleanEmail = (email && email.trim()) || `dr.${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.${Date.now().toString().slice(-4)}@ruralcare.in`;
+    const cleanPhone = (phone && phone.trim()) || `98${Math.floor(10000000 + Math.random() * 90000000)}`;
 
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync('demo_password', salt);
 
     let docRecord;
     db.transaction(() => {
-      const userRes = db.run(`
-        INSERT INTO users (name, email, phone, role, password_hash)
-        VALUES (?, ?, ?, 'doctor', ?)
-      `, [name, email, phone || '9822000000', passwordHash]);
+      let user = db.get('SELECT user_id FROM users WHERE email = ? OR phone = ?', [cleanEmail, cleanPhone]);
+      let userId;
+      if (!user) {
+        const userRes = db.run(`
+          INSERT INTO users (name, email, phone, role, password_hash)
+          VALUES (?, ?, ?, 'doctor', ?)
+        `, [name, cleanEmail, cleanPhone, passwordHash]);
+        userId = Number(userRes.lastInsertRowid);
+      } else {
+        userId = user.user_id;
+        db.run('UPDATE users SET role = "doctor" WHERE user_id = ?', [userId]);
+      }
 
-      const userId = Number(userRes.lastInsertRowid);
+      const assignedStr = Array.isArray(assigned_villages) ? assigned_villages.join(', ') : assigned_villages;
 
       const docRes = db.run(`
-        INSERT INTO doctors (user_id, facility_id, name, specialization, availability_status)
-        VALUES (?, ?, ?, ?, 'Available')
-      `, [userId, parseInt(facility_id), name, specialization || 'General Medicine']);
+        INSERT INTO doctors (user_id, facility_id, name, specialization, availability_status, working_days, working_hours, assigned_villages)
+        VALUES (?, ?, ?, ?, 'Available', ?, ?, ?)
+      `, [userId, parseInt(facility_id), name, specialization || 'General Medicine', working_days, working_hours, assignedStr]);
 
       const staffId = Number(docRes.lastInsertRowid);
-      docRecord = { staff_id: staffId, user_id: userId, name, specialization, facility_id, mmc_reg_no };
+      docRecord = { 
+        staff_id: staffId, 
+        user_id: userId, 
+        name, 
+        specialization: specialization || 'General Medicine', 
+        facility_id: parseInt(facility_id), 
+        assigned_villages: assignedStr,
+        mmc_reg_no 
+      };
 
       const { logAuditEvent } = require('../services/auditLogger');
       logAuditEvent({
@@ -623,12 +839,12 @@ router.post('/staff/doctor', authenticateToken, requireRoles('admin'), (req, res
         action: 'DOCTOR_ACCOUNT_CREATED',
         resource_type: 'doctor',
         resource_id: staffId,
-        details: { name, specialization, facility_id }
+        details: { name, specialization, facility_id, assigned_villages: assignedStr }
       });
     });
 
     return res.status(201).json({
-      message: 'Verified Doctor account created successfully',
+      message: `Doctor Dr. ${name} appointed and assigned to: ${docRecord.assigned_villages}`,
       doctor: docRecord
     });
   } catch (err) {
@@ -638,12 +854,12 @@ router.post('/staff/doctor', authenticateToken, requireRoles('admin'), (req, res
 
 /**
  * POST /api/admin/staff/worker
- * Admin: Add verified Health Worker (ASHA / ANM) (Section 36.2)
+ * Admin: Add verified Health Worker (ASHA / ANM) with village assignment (Requirement 2)
  */
 router.post('/staff/worker', authenticateToken, requireRoles('admin'), (req, res) => {
   try {
     const bcrypt = require('bcryptjs');
-    const { name, email, phone, village_id } = req.body;
+    const { name, email, phone, village_id, assigned_villages } = req.body;
 
     if (!name || !phone || !village_id) {
       return res.status(400).json({ error: 'Name, phone, and village_id are required' });
@@ -651,11 +867,12 @@ router.post('/staff/worker', authenticateToken, requireRoles('admin'), (req, res
 
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync('demo_password', salt);
+    const assignedStr = assigned_villages || 'Shivapur Jurisdiction';
 
     const userRes = db.run(`
-      INSERT INTO users (name, email, phone, village_id, role, password_hash)
-      VALUES (?, ?, ?, ?, 'asha', ?)
-    `, [name, email || `asha.${phone}@ruralcare.in`, phone, parseInt(village_id), passwordHash]);
+      INSERT INTO users (name, email, phone, village_id, role, password_hash, assigned_villages)
+      VALUES (?, ?, ?, ?, 'asha', ?, ?)
+    `, [name, email || `asha.${phone.replace(/\D/g, '')}@ruralcare.in`, phone, parseInt(village_id), passwordHash, assignedStr]);
 
     const userId = Number(userRes.lastInsertRowid);
 
@@ -666,12 +883,12 @@ router.post('/staff/worker', authenticateToken, requireRoles('admin'), (req, res
       action: 'HEALTH_WORKER_CREATED',
       resource_type: 'user',
       resource_id: userId,
-      details: { name, phone, village_id }
+      details: { name, phone, village_id, assigned_villages: assignedStr }
     });
 
     return res.status(201).json({
-      message: 'Verified ASHA Health Worker created successfully',
-      worker: { user_id: userId, name, phone, village_id, role: 'asha' }
+      message: `ASHA Health Worker ${name} onboarded and assigned to: ${assignedStr}`,
+      worker: { user_id: userId, name, phone, village_id, assigned_villages: assignedStr, role: 'asha' }
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });

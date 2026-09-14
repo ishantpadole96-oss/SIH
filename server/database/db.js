@@ -197,7 +197,11 @@ function runMigrations() {
         details TEXT,
         ip_address TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    );`
+    );`,
+
+    // Doctor & Staff Village Assignments (District Management)
+    "ALTER TABLE doctors ADD COLUMN assigned_villages TEXT;",
+    "ALTER TABLE users ADD COLUMN assigned_villages TEXT;"
   ];
 
   for (const sql of migrations) {
@@ -206,6 +210,30 @@ function runMigrations() {
     } catch (e) {
       // Column already exists or table not ready, safely ignore
     }
+  }
+
+  // Seed default village assignments for doctors and ASHA workers
+  try {
+    db.exec(`
+      UPDATE doctors 
+      SET assigned_villages = CASE 
+            WHEN staff_id = 1 THEN 'Shivapur, Khedgaon, Saswad'
+            WHEN staff_id = 2 THEN 'Bhor, Shirwal, Shirur'
+            WHEN staff_id = 3 THEN 'Velhe, Nasrapur'
+            ELSE 'Shivapur, Khedgaon'
+          END
+      WHERE assigned_villages IS NULL OR assigned_villages = '';
+
+      UPDATE users
+      SET assigned_villages = CASE
+            WHEN role = 'asha' AND user_id = 2 THEN 'Shivapur, Khedgaon Sub-Centre'
+            WHEN role = 'asha' THEN 'Shivapur Village Jurisdiction'
+            ELSE assigned_villages
+          END
+      WHERE role IN ('asha', 'worker') AND (assigned_villages IS NULL OR assigned_villages = '');
+    `);
+  } catch (e) {
+    console.warn('Migration warning (assigned_villages):', e.message);
   }
 
   // Populate default health_journey_id for existing patients

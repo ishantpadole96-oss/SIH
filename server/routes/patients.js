@@ -73,7 +73,7 @@ router.post('/register', authenticateToken, requireRoles('asha', 'doctor', 'admi
 
     const cleanPhone = phone.trim();
 
-    // Enforce Section 6 & 44: Maximum 3 active patient accounts per mobile number
+    // Rural family household support: Allow household members under a shared mobile number
     const activeAccountsCount = db.get(`
       SELECT COUNT(p.patient_id) as count
       FROM users u
@@ -88,12 +88,6 @@ router.post('/register', authenticateToken, requireRoles('asha', 'doctor', 'admi
       JOIN patients p ON u.user_id = p.user_id
       WHERE u.phone = ? AND LOWER(u.name) = LOWER(?)
     `, [cleanPhone, name.trim()]);
-
-    if (!exactExisting && activeAccountsCount && activeAccountsCount.count >= 3) {
-      return res.status(400).json({
-        error: `Maximum limit of 3 patient accounts linked to mobile number ${cleanPhone} reached (Family Household Account Limit per Specification Section 6).`
-      });
-    }
 
     const cleanEmail = (email && email.trim()) || `patient.${cleanPhone.replace(/\D/g, '')}.${Date.now().toString().slice(-4)}@ruralcare.in`;
     const targetVillageId = village_id ? parseInt(village_id) : (req.user?.village_id || 1);

@@ -34,6 +34,11 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
     diet_lifestyle: 'Drink warm fluids, high protein and green leafy vegetable diet, adequate rest.'
   });
   const [selectedMedToAdd, setSelectedMedToAdd] = useState('Tab Amoxicillin 500mg');
+  const [medInputMode, setMedInputMode] = useState('type'); // 'type' | 'formulary'
+  const [customMedName, setCustomMedName] = useState('');
+  const [customDosage, setCustomDosage] = useState('1 tablet');
+  const [customFrequency, setCustomFrequency] = useState('Twice daily (BD)');
+  const [customDuration, setCustomDuration] = useState('5 days');
   const [rxGeneratedMsg, setRxGeneratedMsg] = useState(null);
 
   // Consultation Modal
@@ -562,39 +567,172 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Add Medicine from PHC Formulary</label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <select
-                    className="form-select"
-                    value={selectedMedToAdd}
-                    onChange={e => setSelectedMedToAdd(e.target.value)}
-                  >
-                    <option value="Tab Paracetamol 500mg">Tab Paracetamol 500mg (Antipyretic / Analgesic)</option>
-                    <option value="Tab Amoxicillin 500mg">Tab Amoxicillin 500mg (Antibiotic)</option>
-                    <option value="Tab Metformin 500mg">Tab Metformin 500mg (Anti-diabetic)</option>
-                    <option value="Tab Amlodipine 5mg">Tab Amlodipine 5mg (Anti-hypertensive)</option>
-                    <option value="Tab Cetirizine 10mg">Tab Cetirizine 10mg (Anti-allergic)</option>
-                    <option value="Tab Iron & Folic Acid (IFA)">Tab Iron &amp; Folic Acid (IFA)</option>
-                    <option value="Oral Rehydration Salts (ORS)">Oral Rehydration Salts (ORS sachet)</option>
-                    <option value="Tab Azithromycin 500mg">Tab Azithromycin 500mg (Antibiotic)</option>
-                    <option value="Cap Omeprazole 20mg">Cap Omeprazole 20mg (Antacid)</option>
-                    <option value="Syrup Cough Relief 100ml">Syrup Cough Relief 100ml</option>
-                  </select>
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    onClick={() => {
-                      setRxForm({
-                        ...rxForm,
-                        medicines: [
-                          ...rxForm.medicines,
-                          { name: selectedMedToAdd, dosage: '1 unit', frequency: 'Twice daily (BD)', duration: '5 days' }
-                        ]
-                      });
-                    }}
-                  >
-                    <Plus size={14} /> Add
-                  </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                  <label className="form-label" style={{ marginBottom: 0 }}>
+                    Prescribe Medicine (Search, Select or Type Any Medicine)
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.35rem', fontSize: '0.75rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setMedInputMode('type')}
+                      style={{
+                        background: medInputMode === 'type' ? '#0D9488' : 'transparent',
+                        color: medInputMode === 'type' ? '#fff' : 'var(--text-secondary)',
+                        border: '1px solid #0D9488',
+                        borderRadius: '4px',
+                        padding: '2px 8px',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 600
+                      }}
+                    >
+                      Type / Search Any Medicine
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMedInputMode('formulary')}
+                      style={{
+                        background: medInputMode === 'formulary' ? '#0D9488' : 'transparent',
+                        color: medInputMode === 'formulary' ? '#fff' : 'var(--text-secondary)',
+                        border: '1px solid #0D9488',
+                        borderRadius: '4px',
+                        padding: '2px 8px',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 600
+                      }}
+                    >
+                      Pick Formulary
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  {medInputMode === 'type' ? (
+                    <div>
+                      <input
+                        type="text"
+                        className="form-input"
+                        list="phc-formulary-datalist"
+                        placeholder="Type any medicine name or search formulary (e.g. Tab Telmisartan 40mg, Inj Ceftriaxone 1g)..."
+                        value={customMedName}
+                        onChange={e => setCustomMedName(e.target.value)}
+                      />
+                      <datalist id="phc-formulary-datalist">
+                        <option value="Tab Paracetamol 500mg" />
+                        <option value="Tab Amoxicillin 500mg" />
+                        <option value="Tab Metformin 500mg" />
+                        <option value="Tab Amlodipine 5mg" />
+                        <option value="Tab Telmisartan 40mg" />
+                        <option value="Tab Atorvastatin 10mg" />
+                        <option value="Tab Cetirizine 10mg" />
+                        <option value="Tab Pantoprazole 40mg" />
+                        <option value="Cap Omeprazole 20mg" />
+                        <option value="Tab Azithromycin 500mg" />
+                        <option value="Tab Ciprofloxacin 500mg" />
+                        <option value="Tab Ibuprofen 400mg" />
+                        <option value="Tab Iron & Folic Acid (IFA)" />
+                        <option value="Oral Rehydration Salts (ORS)" />
+                        <option value="Syrup Cough Relief 100ml" />
+                        <option value="Syrup Paracetamol 120mg/5ml" />
+                        <option value="Ointment Betamethasone 15g" />
+                        <option value="Inj Dextrose 5% 500ml" />
+                        <option value="Inj Normal Saline 0.9% 500ml" />
+                      </datalist>
+                    </div>
+                  ) : (
+                    <select
+                      className="form-select"
+                      value={selectedMedToAdd}
+                      onChange={e => {
+                        setSelectedMedToAdd(e.target.value);
+                        setCustomMedName(e.target.value);
+                      }}
+                    >
+                      <option value="Tab Paracetamol 500mg">Tab Paracetamol 500mg (Antipyretic / Analgesic)</option>
+                      <option value="Tab Amoxicillin 500mg">Tab Amoxicillin 500mg (Antibiotic)</option>
+                      <option value="Tab Metformin 500mg">Tab Metformin 500mg (Anti-diabetic)</option>
+                      <option value="Tab Amlodipine 5mg">Tab Amlodipine 5mg (Anti-hypertensive)</option>
+                      <option value="Tab Telmisartan 40mg">Tab Telmisartan 40mg (Anti-hypertensive)</option>
+                      <option value="Tab Cetirizine 10mg">Tab Cetirizine 10mg (Anti-allergic)</option>
+                      <option value="Tab Iron & Folic Acid (IFA)">Tab Iron &amp; Folic Acid (IFA)</option>
+                      <option value="Oral Rehydration Salts (ORS)">Oral Rehydration Salts (ORS sachet)</option>
+                      <option value="Tab Azithromycin 500mg">Tab Azithromycin 500mg (Antibiotic)</option>
+                      <option value="Cap Omeprazole 20mg">Cap Omeprazole 20mg (Antacid)</option>
+                      <option value="Syrup Cough Relief 100ml">Syrup Cough Relief 100ml</option>
+                    </select>
+                  )}
+
+                  {/* Dosage, Frequency, Duration, and Add Button */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr 1fr auto', gap: '0.5rem', alignItems: 'end' }}>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Dose / Strength</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        style={{ padding: '0.4rem 0.5rem', fontSize: '0.82rem' }}
+                        placeholder="1 tablet"
+                        value={customDosage}
+                        onChange={e => setCustomDosage(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Frequency</label>
+                      <select
+                        className="form-select"
+                        style={{ padding: '0.4rem 0.5rem', fontSize: '0.82rem' }}
+                        value={customFrequency}
+                        onChange={e => setCustomFrequency(e.target.value)}
+                      >
+                        <option value="Once daily (OD)">Once daily (OD)</option>
+                        <option value="Twice daily (BD)">Twice daily (BD)</option>
+                        <option value="Three times daily (TDS)">Three times daily (TDS)</option>
+                        <option value="Four times daily (QID)">Four times daily (QID)</option>
+                        <option value="SOS / As needed">SOS / As needed</option>
+                        <option value="At bedtime (HS)">At bedtime (HS)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Duration</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        style={{ padding: '0.4rem 0.5rem', fontSize: '0.82rem' }}
+                        placeholder="5 days"
+                        value={customDuration}
+                        onChange={e => setCustomDuration(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        style={{ padding: '0.45rem 0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        onClick={() => {
+                          const medName = (medInputMode === 'type' ? customMedName : selectedMedToAdd || customMedName).trim();
+                          if (!medName) {
+                            alert('Please enter or select a medicine name first.');
+                            return;
+                          }
+                          setRxForm({
+                            ...rxForm,
+                            medicines: [
+                              ...rxForm.medicines,
+                              { 
+                                name: medName, 
+                                dosage: customDosage || '1 unit', 
+                                frequency: customFrequency || 'Twice daily (BD)', 
+                                duration: customDuration || '5 days' 
+                              }
+                            ]
+                          });
+                          setCustomMedName('');
+                        }}
+                      >
+                        <Plus size={14} /> Add to Rx
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
