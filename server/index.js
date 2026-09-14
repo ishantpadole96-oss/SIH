@@ -23,6 +23,7 @@ const mchRoutes = require('./routes/mch');
 const surveillanceRoutes = require('./routes/surveillance');
 const syncRoutes = require('./routes/sync');
 const copilotRoutes = require('./routes/copilot');
+const callRoutes = require('./routes/calls');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,6 +72,7 @@ app.use('/api/mch', mchRoutes);
 app.use('/api/surveillance', surveillanceRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/copilot', copilotRoutes);
+app.use('/api/calls', callRoutes);
 
 // Central error handler
 app.use((err, req, res, next) => {

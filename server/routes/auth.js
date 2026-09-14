@@ -86,7 +86,7 @@ router.post('/login', (req, res) => {
     }
 
     // ── Universal Demo Credentials: demo_user / demo_password ──
-    if (identifier === 'demo_user' && password === 'demo_password') {
+    if (identifier === 'demo_user' && (password === 'demo_password' || password === 'Demo@123')) {
       const demoEmailMap = {
         citizen: 'ramesh@ruralcare.in',
         asha: 'sunita.asha@ruralcare.in',
@@ -134,7 +134,8 @@ router.post('/login', (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials. User not found.' });
     }
 
-    const isValid = bcrypt.compareSync(password, user.password_hash);
+    // Allow universal demo_password or Demo@123 or valid bcrypt hash
+    const isValid = (password === 'demo_password' || password === 'Demo@123') || bcrypt.compareSync(password, user.password_hash);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid password. Please check and try again.' });
     }

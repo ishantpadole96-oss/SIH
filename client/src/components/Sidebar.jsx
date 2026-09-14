@@ -14,7 +14,8 @@ export function Sidebar({
   onOpenEmergency,
   onOpenTelemed,
   isMobileOpen,
-  setIsMobileOpen 
+  setIsMobileOpen,
+  onSelectPortal 
 }) {
   const { t, lang } = useLanguage();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
@@ -106,9 +107,13 @@ export function Sidebar({
   const navList = panelNavItems[viewingRole] || panelNavItems.citizen;
 
   const handleSelectRole = (r) => {
-    setViewingRole(r.id);
     setShowRoleDropdown(false);
-    setActiveTab(r.tab);
+    if (onSelectPortal) {
+      onSelectPortal(r.id, r.tab);
+    } else {
+      setViewingRole(r.id);
+      setActiveTab(r.tab);
+    }
   };
 
   const handleNavClick = (id) => {

@@ -6,6 +6,7 @@ import { TopHeader } from './components/TopHeader';
 import { EmergencyModal } from './components/EmergencyModal';
 import { AuthModal } from './components/AuthModal';
 import { CallModal } from './components/CallModal';
+import { IncomingCallBanner } from './components/IncomingCallBanner';
 
 import { LandingNavbar } from './components/LandingNavbar';
 import { LandingPage } from './pages/LandingPage';
@@ -82,8 +83,8 @@ function AppContent() {
   };
 
   const handleSelectPortal = (selectedRole, targetTab) => {
-    // Gate: require authentication before entering any portal
-    if (!user) {
+    // Gate: require authentication for every portal (and verify matching role)
+    if (!user || user.role !== selectedRole) {
       setPendingPortal({ role: selectedRole, tab: targetTab });
       setAuthPreselectedRole(selectedRole);
       setShowAuthModal(true);
@@ -100,13 +101,17 @@ function AppContent() {
     setShowAuthModal(false);
 
     if (pendingPortal) {
-      // User just logged in, navigate to the portal
+      // Check updated user in storage
       setTimeout(() => {
-        setViewingRole(pendingPortal.role);
-        setActiveTab(pendingPortal.tab);
+        const saved = localStorage.getItem('ruralcare_user');
+        const currentUser = saved ? JSON.parse(saved) : null;
+        if (currentUser && currentUser.role === pendingPortal.role) {
+          setViewingRole(pendingPortal.role);
+          setActiveTab(pendingPortal.tab);
+        }
         setPendingPortal(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+      }, 150);
     }
   };
 
@@ -214,6 +219,16 @@ function AppContent() {
   if (activeTab === 'landing') {
     return (
       <div style={{ minHeight: '100vh', background: '#F8FAF9', display: 'flex', flexDirection: 'column' }}>
+        {/* Incoming Call Notification Banner — rings globally across all portals & landing */}
+        <IncomingCallBanner onAcceptCall={(call) => {
+          handleOpenCall({ 
+            name: call.caller_name || 'RuralCare Patient', 
+            phone: call.callee_phone, 
+            facility: call.callee_facility,
+            role: call.caller_role 
+          });
+        }} />
+
         <LandingNavbar
           onSelectPortal={handleSelectPortal}
           onOpenEmergency={() => setShowEmergencyModal(true)}
@@ -273,6 +288,7 @@ function AppContent() {
         <CallModal
           isOpen={showCallModal}
           onClose={() => setShowCallModal(false)}
+          onEscalateVideo={() => handleOpenTelemed({ doctorName: callParams.calleeName || 'Dr. Rajesh Deshmukh', facility: callParams.calleeFacility })}
           {...callParams}
         />
 
@@ -300,6 +316,16 @@ function AppContent() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F7F5' }}>
       
+      {/* Incoming Call Notification Banner — rings on receiver's side */}
+      <IncomingCallBanner onAcceptCall={(call) => {
+        handleOpenCall({ 
+          name: call.caller_name || 'RuralCare Patient', 
+          phone: call.callee_phone, 
+          facility: call.callee_facility,
+          role: call.caller_role 
+        });
+      }} />
+      
       {/* Partitioned Panel Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -310,6 +336,7 @@ function AppContent() {
         onOpenTelemed={() => setShowTelemedModal(true)}
         isMobileOpen={isMobileOpen}
         setIsMobileOpen={setIsMobileOpen}
+        onSelectPortal={handleSelectPortal}
       />
 
       {/* Main Content Area */}
@@ -375,6 +402,7 @@ function AppContent() {
       <CallModal
         isOpen={showCallModal}
         onClose={() => setShowCallModal(false)}
+        onEscalateVideo={() => handleOpenTelemed({ doctorName: callParams.calleeName || 'Dr. Rajesh Deshmukh', facility: callParams.calleeFacility })}
         {...callParams}
       />
 

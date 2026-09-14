@@ -69,7 +69,8 @@ async function seed() {
       { id: 3, name: 'Mangal Bhosale', age: 31, gender: 'Female', phone: '9876543212', email: 'mangal@ruralcare.in', vid: 4, role: 'citizen' },
       { id: 4, name: 'Sunita Bai', age: 36, gender: 'Female', phone: '9876543220', email: 'sunita.asha@ruralcare.in', vid: 1, role: 'asha' },
       { id: 5, name: 'Kavita Shinde', age: 34, gender: 'Female', phone: '9876543221', email: 'kavita.asha@ruralcare.in', vid: 4, role: 'asha' },
-      { id: 6, name: 'District Officer Sharma', age: 52, gender: 'Male', phone: '9876543240', email: 'admin@ruralcare.in', vid: 2, role: 'admin' }
+      { id: 6, name: 'District Officer Sharma', age: 52, gender: 'Male', phone: '9876543240', email: 'admin@ruralcare.in', vid: 2, role: 'admin' },
+      { id: 7, name: 'Dr. Rajesh Deshmukh', age: 42, gender: 'Male', phone: '9876543230', email: 'dr.rajesh@ruralcare.in', vid: 1, role: 'doctor' }
     ];
 
     const userStmt = db.db.prepare(`
@@ -84,6 +85,7 @@ async function seed() {
       INSERT INTO doctors (staff_id, user_id, facility_id, name, specialization, availability_status, working_days, working_hours)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
+    docStmt.run(9999, 7, 1, 'Dr. Rajesh Deshmukh', 'General Medicine & Family Health', 'Available', 'Mon-Sat', '09:00 - 17:00');
 
     // Dynamically staff facilities with realistic medical officers and specialists across Maharashtra
     const doctorSpecializations = [
