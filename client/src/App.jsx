@@ -113,14 +113,42 @@ function AppContent() {
     doctorName: 'Dr. Rajesh Deshmukh',
     specialty: 'General Medicine & Family Health',
     facility: 'Govt PHC Khedgaon • Pune District Civil Hospital',
-    patientName: ''
+    patientName: '',
+    callId: null,
+    vitals: null
   });
 
   const handleOpenTelemed = (params = {}) => {
-    if (params && typeof params === 'object') {
-      setTelemedParams(prev => ({ ...prev, ...params }));
-    }
+    const updated = { ...telemedParams, ...params };
+    setTelemedParams(updated);
     setShowTelemedModal(true);
+
+    // If caller is citizen or asha, initiate ringing call to doctor on backend
+    if (!params.skipInitiate && (!user || user.role === 'citizen' || user.role === 'asha')) {
+      fetch('/api/calls/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caller_name: params.patientName || user?.name || (user?.role === 'asha' ? `ASHA Worker (${user?.name})` : 'RuralCare Citizen'),
+          caller_role: user?.role || 'citizen',
+          caller_portal: user?.role === 'asha' ? 'ASHA Field Health Worker Console' : 'Citizen Health Portal',
+          callee_name: params.doctorName || 'Dr. Rajesh Deshmukh',
+          callee_facility: params.facility || 'Govt PHC Khedgaon',
+          callee_role: 'doctor',
+          call_type: 'video',
+          patient_id: params.patientId || (user?.role === 'citizen' ? user?.patient_id : null),
+          vitals: params.vitals || null,
+          reason: params.reason || 'Live e-Sanjeevani Teleconsultation'
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.call_id) {
+            setTelemedParams(prev => ({ ...prev, callId: data.call_id }));
+          }
+        })
+        .catch(err => console.warn('Could not initiate video call alert on server:', err));
+    }
   };
 
   const handleOpenCall = (params = {}) => {
@@ -133,7 +161,7 @@ function AppContent() {
     setShowCallModal(true);
   };
 
-  // Citizen Navigation Tabs
+  // Citizen Navigation Tabs (Complaints / Grievances moved to ASHA portal per requirement)
   const citizenNavItems = [
     { id: 'home', label: t('nav_overview'), icon: <Home size={16} /> },
     { id: 'facilities', label: 'Find Hospitals & Map', icon: <MapPin size={16} /> },
@@ -143,8 +171,7 @@ function AppContent() {
     { id: 'book-appointment', label: 'Book OPD Slot', icon: <Calendar size={16} /> },
     { id: 'records-referrals', label: 'ABHA & Health Records', icon: <FileText size={16} /> },
     { id: 'medicines', label: 'Jan Aushadhi Generic Medicines', icon: <Pill size={16} /> },
-    { id: 'camps', label: 'Health Camps', icon: <Activity size={16} /> },
-    { id: 'complaints', label: 'Grievances', icon: <MessageSquare size={16} /> }
+    { id: 'camps', label: 'Health Camps', icon: <Activity size={16} /> }
   ];
 
   const renderCitizenContent = () => {
@@ -348,12 +375,23 @@ function AppContent() {
     return (
       <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
         <IncomingCallBanner onAcceptCall={(call) => {
-          handleOpenCall({ 
-            name: call.caller_name || 'RuralCare Patient', 
-            phone: call.callee_phone, 
-            facility: call.callee_facility,
-            role: call.caller_role 
-          });
+          if (call.call_type === 'video') {
+            handleOpenTelemed({
+              doctorName: user?.name || call.callee_name || 'Dr. Rajesh Deshmukh',
+              patientName: call.caller_name || 'RuralCare Patient',
+              facility: call.callee_facility || 'Govt PHC Khedgaon',
+              callId: call.call_id,
+              vitals: call.vitals,
+              skipInitiate: true
+            });
+          } else {
+            handleOpenCall({ 
+              name: call.caller_name || 'RuralCare Patient', 
+              phone: call.callee_phone, 
+              facility: call.callee_facility,
+              role: call.caller_role 
+            });
+          }
         }} />
 
         {/* Dedicated Doctor Top Header */}
@@ -540,6 +578,7 @@ function AppContent() {
         <main style={{ flex: 1 }}>
           <AshaDashboard
             setActiveTab={navigatePortal}
+            onOpenTelemed={handleOpenTelemed}
             onOpenCall={handleOpenCall}
           />
         </main>

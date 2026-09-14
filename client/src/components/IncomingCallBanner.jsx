@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PhoneIncoming, Phone, PhoneOff, User, MapPin, Building2, Stethoscope, HeartPulse } from 'lucide-react';
+import { PhoneIncoming, Phone, PhoneOff, User, MapPin, Building2, Stethoscope, HeartPulse, Video } from 'lucide-react';
 
 /**
  * IncomingCallBanner — live incoming call detection and ringing alert.
@@ -142,16 +142,20 @@ export function IncomingCallBanner({ onAcceptCall }) {
               animation: 'ringShake 0.6s ease-in-out infinite',
               flexShrink: 0
             }}>
-              <PhoneIncoming size={26} color="#10B981" />
+              {call.call_type === 'video' ? (
+                <Video size={26} color="#0D9488" />
+              ) : (
+                <PhoneIncoming size={26} color="#10B981" />
+              )}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                color: '#10B981', fontSize: '0.72rem', fontWeight: 800,
+                color: call.call_type === 'video' ? '#2DD4BF' : '#10B981', fontSize: '0.72rem', fontWeight: 800,
                 textTransform: 'uppercase', letterSpacing: '0.8px',
                 display: 'flex', alignItems: 'center', gap: '0.4rem'
               }}>
-                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', animation: 'pulseDot 1s infinite' }} />
-                Incoming Telehealth Call
+                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: call.call_type === 'video' ? '#2DD4BF' : '#10B981', animation: 'pulseDot 1s infinite' }} />
+                {call.call_type === 'video' ? '📹 Incoming Live Video Consult' : '📞 Incoming Telehealth Call'}
               </div>
               <div style={{ color: '#F8FAFC', fontSize: '1.05rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {call.caller_name || 'RuralCare Patient'}
@@ -161,6 +165,26 @@ export function IncomingCallBanner({ onAcceptCall }) {
               </div>
             </div>
           </div>
+
+          {call.vitals && (
+            <div style={{
+              background: 'rgba(13, 148, 136, 0.15)',
+              border: '1px solid rgba(45, 212, 191, 0.3)',
+              borderRadius: '8px',
+              padding: '0.45rem 0.75rem',
+              marginBottom: '0.75rem',
+              fontSize: '0.74rem',
+              color: '#5EEAD4',
+              display: 'flex',
+              gap: '0.75rem',
+              flexWrap: 'wrap'
+            }}>
+              <span>💓 HR: <b>{call.vitals.heart_rate || call.vitals.pulse || 76} bpm</b></span>
+              <span>🌡️ Temp: <b>{call.vitals.temperature || call.vitals.temp || '98.6'}°F</b></span>
+              <span>🫀 BP: <b>{call.vitals.bp || '120/80'}</b></span>
+              {call.vitals.spo2 && <span>🫁 SpO₂: <b>{call.vitals.spo2}%</b></span>}
+            </div>
+          )}
 
           <div style={{
             background: 'rgba(255,255,255,0.04)',
@@ -181,7 +205,7 @@ export function IncomingCallBanner({ onAcceptCall }) {
               onClick={() => handleAccept(call)}
               style={{
                 flex: 1, padding: '0.75rem', borderRadius: '12px',
-                background: 'linear-gradient(135deg, #10B981, #059669)',
+                background: call.call_type === 'video' ? 'linear-gradient(135deg, #0D9488, #047857)' : 'linear-gradient(135deg, #10B981, #059669)',
                 border: 'none', color: '#FFF', fontWeight: 800, fontSize: '0.85rem',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
                 boxShadow: '0 4px 14px rgba(16,185,129,0.4)',
@@ -190,7 +214,7 @@ export function IncomingCallBanner({ onAcceptCall }) {
               onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <Phone size={17} /> Accept Call
+              {call.call_type === 'video' ? <Video size={17} /> : <Phone size={17} />} {call.call_type === 'video' ? 'Answer Video Consult' : 'Accept Call'}
             </button>
             <button
               onClick={() => handleDecline(call)}

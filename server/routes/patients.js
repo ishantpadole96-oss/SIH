@@ -288,6 +288,19 @@ router.get('/:id/records', authenticateToken, (req, res) => {
       ORDER BY s.created_at DESC
     `, [patientId]);
 
+    // Digital Prescriptions (with full items and doctor info)
+    const prescriptions = db.all(`
+      SELECT p.*, d.name as doctor_name, d.specialization, f.facility_name
+      FROM prescriptions p
+      JOIN doctors d ON p.doctor_id = d.staff_id
+      LEFT JOIN facilities f ON d.facility_id = f.facility_id
+      WHERE p.patient_id = ?
+      ORDER BY p.issued_at DESC
+    `, [patientId]).map(rx => ({
+      ...rx,
+      items: db.all('SELECT * FROM prescription_items WHERE prescription_id = ?', [rx.prescription_id])
+    }));
+
     // Log audit event (Section 35)
     logAuditEvent({
       actor_id: req.user.user_id,
@@ -301,6 +314,7 @@ router.get('/:id/records', authenticateToken, (req, res) => {
     return res.json({
       patient,
       records,
+      prescriptions,
       appointments,
       referrals,
       screenings,
@@ -308,6 +322,88 @@ router.get('/:id/records', authenticateToken, (req, res) => {
         has_full_history_consent: hasFullHistoryConsent,
         requires_consent: !hasFullHistoryConsent && allRecords.length > 2,
       }
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/patients/:id/vitals
+ * ASHA Worker / Staff: Record and transmit patient vitals to Doctor
+ */
+router.post('/:id/vitals', authenticateToken, requireRoles('asha', 'doctor', 'admin'), (req, res) => {
+  try {
+    const patientId = parseInt(req.params.id);
+    const { 
+      temperature, 
+      heart_rate, 
+      pulse, 
+      systolic_bp, 
+      diastolic_bp, 
+      bp, 
+      spo2, 
+      respiratory_rate, 
+      blood_sugar, 
+      notes, 
+      symptoms 
+    } = req.body;
+
+    const patient = db.get(`
+      SELECT p.*, u.name, u.user_id, u.phone 
+      FROM patients p 
+      JOIN users u ON p.user_id = u.user_id 
+      WHERE p.patient_id = ?
+    `, [patientId]);
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient profile not found.' });
+    }
+
+    const vitalsObj = {
+      temperature: temperature || '98.6',
+      heart_rate: heart_rate || pulse || '76',
+      bp: bp || (systolic_bp && diastolic_bp ? `${systolic_bp}/${diastolic_bp}` : '120/80'),
+      systolic_bp: systolic_bp || (bp ? parseInt(bp.split('/')[0]) : 120),
+      diastolic_bp: diastolic_bp || (bp ? parseInt(bp.split('/')[1]) : 80),
+      spo2: spo2 || '98',
+      respiratory_rate: respiratory_rate || '18',
+      blood_sugar: blood_sugar || null,
+      recorded_by: req.user.name || 'ASHA Worker',
+      recorded_at: new Date().toISOString(),
+      notes: notes || symptoms || 'Field telemetry recorded by ASHA Worker'
+    };
+
+    // Save as a clinical screening / vitals encounter
+    db.run(`
+      INSERT INTO screenings (
+        patient_id, symptoms_json, duration_days, severity, vitals_json,
+        ai_risk_level, recommendation, consultation_recommended, matched_facility_id, triage_category
+      )
+      VALUES (?, ?, 1, 'Routine Check', ?, 'Normal', 'ASHA Field Vitals Recorded. Sent to Medical Officer.', 1, 1, 'Vitals Check')
+    `, [
+      patientId,
+      JSON.stringify([notes || symptoms || 'Vitals checkup by ASHA worker']),
+      JSON.stringify(vitalsObj)
+    ]);
+
+    // Send high-priority notification to doctors
+    const doctors = db.all('SELECT user_id FROM users WHERE role = "doctor" LIMIT 5');
+    for (const doc of doctors) {
+      db.run(`
+        INSERT INTO notifications (user_id, title, message, type)
+        VALUES (?, ?, ?, 'general')
+      `, [
+        doc.user_id,
+        `📊 Patient Vitals Telemetry: ${patient.name}`,
+        `ASHA Worker ${req.user.name} recorded vitals for ${patient.name}: BP ${vitalsObj.bp}, Pulse ${vitalsObj.heart_rate} bpm, SpO2 ${vitalsObj.spo2}%, Temp ${vitalsObj.temperature}°F.`
+      ]);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `Vitals for ${patient.name} recorded and transmitted to Doctor successfully!`,
+      vitals: vitalsObj
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });

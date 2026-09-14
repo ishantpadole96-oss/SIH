@@ -2,18 +2,30 @@ const express = require('express');
 const db = require('../database/db');
 const { authenticateToken, requireRoles } = require('../middleware/auth');
 
+const { calculateDistance } = require('../services/accessibilityScore');
+
 const router = express.Router();
 
 /**
  * GET /api/medicines
- * Search medicines across government healthcare facilities
+ * Search medicines across government healthcare facilities with proximity & district filtering
  */
 router.get('/', (req, res) => {
   try {
-    const { search, facility_id, stock_status, category } = req.query;
+    const { 
+      search, 
+      facility_id, 
+      stock_status, 
+      category,
+      district,
+      village_id,
+      user_lat,
+      user_lng,
+      max_distance
+    } = req.query;
 
     let query = `
-      SELECT m.*, f.facility_name, f.facility_type, f.contact as facility_contact,
+      SELECT m.*, f.facility_name, f.facility_type, f.latitude, f.longitude, f.contact as facility_contact,
              v.village_name, v.district
       FROM medicine_stock m
       JOIN facilities f ON m.facility_id = f.facility_id
@@ -32,6 +44,11 @@ router.get('/', (req, res) => {
       params.push(parseInt(facility_id));
     }
 
+    if (district && district !== 'All') {
+      query += ` AND v.district = ?`;
+      params.push(district);
+    }
+
     if (stock_status) {
       query += ` AND m.stock_status = ?`;
       params.push(stock_status);
@@ -46,9 +63,36 @@ router.get('/', (req, res) => {
 
     const medicines = db.all(query, params);
 
+    // Origin coordinates for distance calculation
+    let originLat = user_lat ? parseFloat(user_lat) : null;
+    let originLng = user_lng ? parseFloat(user_lng) : null;
+
+    if ((!originLat || !originLng) && village_id) {
+      const v = db.get('SELECT latitude, longitude FROM villages WHERE village_id = ?', [parseInt(village_id)]);
+      if (v) {
+        originLat = v.latitude;
+        originLng = v.longitude;
+      }
+    }
+
+    // Fallback default coordinates if district is Pune and no coords given (PHC Khedgaon)
+    if (!originLat && (!district || district === 'Pune')) {
+      originLat = 18.2851;
+      originLng = 73.8824;
+    }
+
     // Grouping by unique medicine name to show cross-facility summary for citizens
     const groupedByName = {};
     for (const item of medicines) {
+      let distanceKm = null;
+      if (originLat && originLng && item.latitude && item.longitude) {
+        distanceKm = calculateDistance(originLat, originLng, item.latitude, item.longitude);
+      }
+
+      if (max_distance && distanceKm !== null && distanceKm > parseFloat(max_distance)) {
+        continue;
+      }
+
       if (!groupedByName[item.medicine_name]) {
         groupedByName[item.medicine_name] = {
           medicine_name: item.medicine_name,
@@ -57,20 +101,34 @@ router.get('/', (req, res) => {
           facilities: []
         };
       }
+
       groupedByName[item.medicine_name].facilities.push({
         medicine_id: item.medicine_id,
         facility_id: item.facility_id,
         facility_name: item.facility_name,
         facility_type: item.facility_type,
         village_name: item.village_name,
+        district: item.district,
         quantity: item.quantity,
         stock_status: item.stock_status,
-        last_updated: item.last_updated
+        last_updated: item.last_updated,
+        distanceKm: distanceKm !== null ? Math.round(distanceKm * 10) / 10 : null
+      });
+    }
+
+    // Sort facilities in each group nearest first
+    for (const medName in groupedByName) {
+      groupedByName[medName].facilities.sort((a, b) => {
+        if (a.distanceKm !== null && b.distanceKm !== null) return a.distanceKm - b.distanceKm;
+        if (a.distanceKm !== null) return -1;
+        if (b.distanceKm !== null) return 1;
+        return 0;
       });
     }
 
     return res.json({
       medicines,
+      user_location_used: originLat && originLng ? { lat: originLat, lng: originLng } : null,
       groupedByMedicine: Object.values(groupedByName)
     });
   } catch (err) {

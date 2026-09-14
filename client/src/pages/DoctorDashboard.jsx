@@ -131,9 +131,67 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
       });
   };
 
+  const [incomingCalls, setIncomingCalls] = useState([]);
+
   useEffect(() => {
     fetchDoctorData();
   }, [token]);
+
+  // Poll for incoming video consultations for doctor
+  useEffect(() => {
+    let active = true;
+    const pollCalls = async () => {
+      try {
+        const res = await fetch('/api/calls/incoming');
+        const data = await res.json();
+        if (active && data.incoming_calls) {
+          setIncomingCalls(data.incoming_calls);
+        }
+      } catch (e) {}
+    };
+    pollCalls();
+    const timer = setInterval(pollCalls, 2000);
+    return () => { active = false; clearInterval(timer); };
+  }, []);
+
+  const handleDispatchPrescription = async () => {
+    try {
+      const matchedApt = appointments.find(a => `${a.patient_name} (${a.patient_age} yrs, ${a.patient_gender})` === rxForm.patient_name);
+      const patientId = matchedApt ? matchedApt.patient_id : 1;
+
+      const res = await fetch('/api/prescriptions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          patient_id: patientId,
+          diagnosis: rxForm.diagnosis,
+          diet_lifestyle: rxForm.diet_lifestyle,
+          instructions: 'Take medications on time as prescribed. Return to PHC if fever or symptoms persist.',
+          follow_up: 'Review at PHC OPD in 7 days',
+          medicines: rxForm.medicines.map(m => ({
+            medicine_name: m.name,
+            strength: m.dosage || 'Standard dose',
+            dose: m.dosage || '1 dose',
+            frequency: m.frequency || 'Twice daily',
+            duration: m.duration || '5 days',
+            route: 'Oral',
+            instructions: 'Take with warm water after meals'
+          }))
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to issue prescription');
+
+      setRxGeneratedMsg(`✅ Digital Prescription #${data.prescription?.prescription_id || 'Rx-NEW'} signed & delivered to Patient Portal & ABHA Health Locker!`);
+      setTimeout(() => setRxGeneratedMsg(null), 5000);
+      fetchDoctorData();
+    } catch (err) {
+      alert('Error issuing prescription: ' + err.message);
+    }
+  };
 
   const handleCompleteConsultation = async (e) => {
     e.preventDefault();
@@ -268,6 +326,57 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
           Khed Primary Health Centre (PHC) • OPD Consultation Desk & Inter-Facility Referrals
         </p>
       </div>
+
+      {/* Live Incoming Call Alert for Doctor */}
+      {incomingCalls.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #0F766E 0%, #064E3B 100%)',
+          border: '2px solid #2DD4BF',
+          borderRadius: '16px',
+          padding: '1.25rem 1.75rem',
+          marginBottom: '2rem',
+          color: '#FFFFFF',
+          boxShadow: '0 10px 35px rgba(13, 148, 136, 0.4)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#134E4A', color: '#5EEAD4', padding: '0.2rem 0.65rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+              <Video size={13} /> LIVE INCOMING CALL ({incomingCalls.length})
+            </div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+              {incomingCalls[0].caller_name} is calling for Live Video Consultation
+            </div>
+            <div style={{ fontSize: '0.82rem', color: '#CCFBF1' }}>
+              Portal: {incomingCalls[0].caller_portal} • Status: Ringing now...
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button
+              onClick={() => {
+                if (onOpenTelemed) {
+                  onOpenTelemed({
+                    doctorName: user?.name || 'Dr. Rajesh Deshmukh',
+                    specialty: 'Medical Officer • General OPD',
+                    facility: 'Govt PHC Khedgaon • Pune District Civil Hospital',
+                    patientName: incomingCalls[0].caller_name,
+                    callId: incomingCalls[0].call_id,
+                    vitals: incomingCalls[0].vitals,
+                    skipInitiate: true
+                  });
+                }
+              }}
+              className="btn btn-primary"
+              style={{ background: '#2DD4BF', color: '#0F172A', fontWeight: 800, padding: '0.65rem 1.4rem' }}
+            >
+              <Video size={18} /> Answer Live Video Consultation
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -502,10 +611,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => {
-                  setRxGeneratedMsg('✅ Digital Prescription signed, stored in ABHA health records & sent to Jan Aushadhi Kendra!');
-                  setTimeout(() => setRxGeneratedMsg(null), 4000);
-                }}
+                onClick={handleDispatchPrescription}
               >
                 <CheckCircle2 size={16} /> Sign &amp; Dispatch Digital Prescription
               </button>

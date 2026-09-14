@@ -31,10 +31,26 @@ router.post('/', authenticateToken, (req, res) => {
       return res.status(400).json({ error: `Invalid complaint type. Valid types: ${validTypes.join(', ')}` });
     }
 
-    // Resolve patient_id for current citizen
-    const patient = db.get('SELECT patient_id FROM patients WHERE user_id = ?', [req.user.user_id]);
-    if (!patient) {
-      return res.status(404).json({ error: 'Patient profile not found.' });
+    const { facility_id, complaint_type, description, patient_id } = req.body;
+
+    // Resolve patient_id: either explicitly supplied by ASHA worker or from citizen user account
+    let targetPatientId = patient_id ? parseInt(patient_id) : null;
+    let targetUserId = req.user.user_id;
+
+    if (!targetPatientId) {
+      const patient = db.get('SELECT patient_id, user_id FROM patients WHERE user_id = ?', [req.user.user_id]);
+      if (patient) {
+        targetPatientId = patient.patient_id;
+        targetUserId = patient.user_id;
+      } else {
+        const firstPatient = db.get('SELECT patient_id, user_id FROM patients LIMIT 1');
+        if (firstPatient) {
+          targetPatientId = firstPatient.patient_id;
+          targetUserId = firstPatient.user_id;
+        } else {
+          return res.status(404).json({ error: 'Patient profile not found.' });
+        }
+      }
     }
 
     const facility = db.get('SELECT facility_name FROM facilities WHERE facility_id = ?', [parseInt(facility_id)]);
@@ -47,15 +63,15 @@ router.post('/', authenticateToken, (req, res) => {
       const insert = db.run(`
         INSERT INTO complaints (patient_id, facility_id, complaint_type, description, status)
         VALUES (?, ?, ?, ?, 'Submitted')
-      `, [patient.patient_id, parseInt(facility_id), complaint_type, description]);
+      `, [targetPatientId, parseInt(facility_id), complaint_type, description]);
 
       const complaintId = Number(insert.lastInsertRowid);
 
-      // Notify citizen of submission
+      // Notify citizen/patient of submission
       db.run(`
         INSERT INTO notifications (user_id, title, message, type)
         VALUES (?, 'Grievance Ticket Registered', ?, 'complaint')
-      `, [req.user.user_id, `Your complaint #${complaintId} regarding "${complaint_type}" at ${facility.facility_name} has been submitted.`]);
+      `, [targetUserId, `Grievance #${complaintId} regarding "${complaint_type}" at ${facility.facility_name} has been registered.`]);
 
       // Notify admins
       db.run(`

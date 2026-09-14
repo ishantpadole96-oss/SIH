@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Pill, Search, Hospital, Edit2, AlertCircle, CheckCircle2, Phone, X, Sparkles, TrendingDown, ArrowRight } from 'lucide-react';
+import { Pill, Search, Hospital, Edit2, AlertCircle, CheckCircle2, Phone, X, Sparkles, TrendingDown, ArrowRight, MapPin, Navigation } from 'lucide-react';
 import VoiceReader from '../components/VoiceReader';
+
+const MAHARASHTRA_DISTRICTS = [
+  'Pune', 'Mumbai City', 'Mumbai Suburban', 'Thane', 'Palghar', 'Raigad', 
+  'Ratnagiri', 'Sindhudurg', 'Nashik', 'Dhule', 'Nandurbar', 'Jalgaon', 
+  'Ahmednagar', 'Chhatrapati Sambhajinagar', 'Jalna', 'Parbhani', 'Hingoli', 
+  'Nanded', 'Beed', 'Latur', 'Dharashiv', 'Solapur', 'Satara', 'Kolhapur', 
+  'Sangli', 'Nagpur', 'Wardha', 'Bhandara', 'Gondia', 'Chandrapur', 
+  'Gadchiroli', 'Amravati', 'Akola', 'Yavatmal', 'Buldhana', 'Washim'
+];
 
 export function MedicineSearch() {
   const { user, role, token } = useAuth();
@@ -10,6 +19,11 @@ export function MedicineSearch() {
 
   const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' | 'generics'
   const [search, setSearch] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('Pune');
+  const [userCoords, setUserCoords] = useState({ lat: 18.2851, lng: 73.8824 });
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationStatus, setLocationStatus] = useState('Pune District (Khed Sub-Division)');
+
   const [medicines, setMedicines] = useState([]);
   const [groupedMedicines, setGroupedMedicines] = useState([]);
   const [generics, setGenerics] = useState([]);
@@ -24,7 +38,11 @@ export function MedicineSearch() {
 
   const fetchMedicines = () => {
     setLoading(true);
-    const url = search ? `/api/medicines?search=${encodeURIComponent(search)}` : '/api/medicines';
+    let url = `/api/medicines?district=${encodeURIComponent(selectedDistrict)}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (userCoords?.lat && userCoords?.lng) {
+      url += `&user_lat=${userCoords.lat}&user_lng=${userCoords.lng}`;
+    }
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -63,7 +81,28 @@ export function MedicineSearch() {
     } else {
       fetchGenerics();
     }
-  }, [search, activeTab]);
+  }, [search, activeTab, selectedDistrict, userCoords]);
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocationStatus(`GPS Locked (${pos.coords.latitude.toFixed(2)}°N, ${pos.coords.longitude.toFixed(2)}°E)`);
+        setIsLocating(false);
+      },
+      (err) => {
+        console.warn('Geolocation lookup failed:', err);
+        setIsLocating(false);
+        setLocationStatus('Using Pune District Centroid');
+      },
+      { timeout: 8000 }
+    );
+  };
 
   const handleUpdateStock = async (e) => {
     e.preventDefault();
@@ -153,6 +192,51 @@ export function MedicineSearch() {
           <Sparkles size={18} className={activeTab === 'generics' ? 'text-amber-400 animate-spin-slow' : ''} />
           <span>Jan Aushadhi Generic Savings Finder (Save up to 87%)</span>
         </button>
+      </div>
+
+      {/* Patient Location Filter Bar */}
+      <div style={{
+        background: '#FFFFFF',
+        border: '1.5px solid #0D9488',
+        borderRadius: '12px',
+        padding: '0.85rem 1.25rem',
+        marginBottom: '1.25rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1rem',
+        boxShadow: '0 2px 8px rgba(13, 148, 136, 0.08)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <MapPin size={18} color="#0D9488" />
+          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#11322A' }}>Nearby Medical Stores &amp; Jan Aushadhi In:</span>
+          <select
+            value={selectedDistrict}
+            onChange={e => setSelectedDistrict(e.target.value)}
+            className="form-select"
+            style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontWeight: 700, color: '#0F766E' }}
+          >
+            <option value="All">All Maharashtra</option>
+            {MAHARASHTRA_DISTRICTS.map(d => (
+              <option key={d} value={d}>{d} District</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>
+            📍 {locationStatus}
+          </span>
+          <button
+            type="button"
+            onClick={handleDetectLocation}
+            className="btn btn-sm btn-secondary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+          >
+            <Navigation size={13} color="#0D9488" /> {isLocating ? 'Detecting...' : 'Use My GPS Location'}
+          </button>
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -290,6 +374,31 @@ export function MedicineSearch() {
                     <div style={{ fontSize: '0.8rem', color: '#CBD5E1', background: 'rgba(255, 255, 255, 0.05)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
                       <strong>Common Uses:</strong> {g.common_uses}
                     </div>
+
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{
+                        marginTop: '0.85rem',
+                        width: '100%',
+                        background: '#0D9488',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        padding: '0.5rem'
+                      }}
+                      onClick={() => {
+                        setActiveTab('inventory');
+                        setSearch(g.generic_name.split(' ')[0]);
+                      }}
+                    >
+                      <Hospital size={14} /> Find In Nearby Jan Aushadhi Stores ({selectedDistrict})
+                    </button>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
@@ -360,8 +469,13 @@ export function MedicineSearch() {
                               </span>
                             </div>
 
-                            <div style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '0.5rem' }}>
-                              {fac.facility_type} • {fac.village_name || 'Pune District'}
+                            <div style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
+                              <span>{fac.facility_type} • {fac.village_name || fac.district || 'Pune'}</span>
+                              {fac.distanceKm !== null && (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', background: '#E8F5EE', color: '#0D9488', padding: '0.12rem 0.5rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700 }}>
+                                  <Navigation size={10} /> {fac.distanceKm} km
+                                </span>
+                              )}
                             </div>
 
                             <div style={{ fontSize: '0.9rem', color: '#334155', marginBottom: '0.5rem' }}>

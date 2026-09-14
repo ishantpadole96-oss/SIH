@@ -364,4 +364,87 @@ router.put('/:id/availability', authenticateToken, requireRoles('doctor', 'asha'
   }
 });
 
+/**
+ * POST /api/facilities
+ * Add a new hospital / healthcare facility (Authorized: Admin)
+ */
+router.post('/', authenticateToken, requireRoles('admin'), (req, res) => {
+  try {
+    const {
+      facility_name,
+      facility_type,
+      village_id,
+      address,
+      latitude,
+      longitude,
+      contact,
+      total_beds,
+      available_beds,
+      emergency_available,
+      operating_hours,
+      services,
+      ambulance_phone
+    } = req.body;
+
+    if (!facility_name || !latitude || !longitude) {
+      return res.status(400).json({ error: 'facility_name, latitude, and longitude are required.' });
+    }
+
+    const result = db.run(`
+      INSERT INTO facilities (
+        facility_name, facility_type, village_id, address, latitude, longitude,
+        contact, total_beds, available_beds, emergency_available, operating_hours, current_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Open')
+    `, [
+      facility_name,
+      facility_type || 'Primary Health Centre (PHC)',
+      village_id ? parseInt(village_id) : 1,
+      address || 'Maharashtra',
+      parseFloat(latitude),
+      parseFloat(longitude),
+      contact || '020-26127394',
+      total_beds ? parseInt(total_beds) : 30,
+      available_beds !== undefined ? parseInt(available_beds) : (total_beds ? parseInt(total_beds) : 30),
+      emergency_available ? 1 : 0,
+      operating_hours || '24/7'
+    ]);
+
+    const newFacilityId = result.lastInsertRowid;
+
+    // Optional emergency services
+    if (emergency_available || ambulance_phone) {
+      db.run(`
+        INSERT INTO emergency_services (facility_id, ambulance_available, emergency_contact, ambulance_phone, response_time_minutes)
+        VALUES (?, 1, ?, ?, 15)
+      `, [newFacilityId, contact || '108', ambulance_phone || '108']);
+    }
+
+    // Optional services
+    if (Array.isArray(services) && services.length > 0) {
+      for (const s of services) {
+        db.run(`
+          INSERT INTO services (facility_id, service_name, availability_status)
+          VALUES (?, ?, 'Available')
+        `, [newFacilityId, s]);
+      }
+    }
+
+    const created = db.get(`
+      SELECT f.*, v.village_name, v.district,
+             es.ambulance_available, es.emergency_contact, es.ambulance_phone
+      FROM facilities f
+      LEFT JOIN villages v ON f.village_id = v.village_id
+      LEFT JOIN emergency_services es ON f.facility_id = es.facility_id
+      WHERE f.facility_id = ?
+    `, [newFacilityId]);
+
+    return res.status(201).json({
+      message: 'Hospital successfully registered and plotted on map!',
+      facility: created
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

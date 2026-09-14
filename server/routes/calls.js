@@ -23,20 +23,28 @@ router.post('/initiate', (req, res) => {
       callee_name, 
       callee_phone, 
       callee_facility, 
-      callee_role 
+      callee_role,
+      call_type,
+      patient_id,
+      vitals,
+      reason
     } = req.body;
 
     const callId = `RC-CALL-${Date.now().toString(36).toUpperCase()}-${(++callCounter).toString(36).toUpperCase()}`;
     
     const callRecord = {
       call_id: callId,
+      call_type: call_type || 'video',
       caller_name: caller_name || 'RuralCare Citizen',
       caller_role: caller_role || 'citizen',
       caller_portal: caller_portal || 'Citizen Health Portal',
+      patient_id: patient_id || null,
       callee_name: callee_name || 'Healthcare Facility',
       callee_phone: callee_phone || 'N/A',
       callee_facility: callee_facility || 'Govt PHC Khedgaon',
       callee_role: callee_role || 'doctor',
+      vitals: vitals || null,
+      reason: reason || 'Live Tele-Consultation',
       status: 'ringing',
       initiated_at: new Date().toISOString(),
       connected_at: null,

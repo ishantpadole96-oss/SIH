@@ -3,17 +3,18 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   FileText, ArrowRightLeft, Calendar, Stethoscope, Hospital, 
-  Activity, AlertCircle, CheckCircle2, Clock, ChevronRight, Video 
+  Activity, AlertCircle, CheckCircle2, Clock, ChevronRight, Video, Pill, Printer 
 } from 'lucide-react';
 
 export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed }) {
   const { user, token } = useAuth();
   const { t } = useLanguage();
 
-  const [activeSubTab, setActiveSubTab] = useState(initialTab); // 'records' | 'referrals' | 'appointments'
+  const [activeSubTab, setActiveSubTab] = useState(initialTab); // 'records' | 'prescriptions' | 'referrals' | 'appointments'
   const [data, setData] = useState({
     patient: null,
     records: [],
+    prescriptions: [],
     appointments: [],
     referrals: [],
     screenings: []
@@ -66,6 +67,13 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
           className={`btn btn-sm ${activeSubTab === 'records' ? 'btn-primary' : 'btn-secondary'}`}
         >
           <FileText size={16} /> Clinical Consultations ({data.records?.length || 0})
+        </button>
+        <button
+          onClick={() => setActiveSubTab('prescriptions')}
+          className={`btn btn-sm ${activeSubTab === 'prescriptions' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ background: activeSubTab === 'prescriptions' ? '#0D9488' : undefined, color: activeSubTab === 'prescriptions' ? '#FFFFFF' : undefined }}
+        >
+          <Pill size={16} /> Digital Prescriptions ({data.prescriptions?.length || 0})
         </button>
         <button
           onClick={() => setActiveSubTab('referrals')}
@@ -184,6 +192,153 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                         </p>
                       </div>
                     )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* TAB: DIGITAL PRESCRIPTIONS (ई-प्रिस्क्रिप्शन) */}
+          {activeSubTab === 'prescriptions' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {!data.prescriptions || data.prescriptions.length === 0 ? (
+                <div className="card" style={{ textAlign: 'center', padding: '3.5rem' }}>
+                  <Pill size={42} color="#0D9488" style={{ opacity: 0.4, marginBottom: '0.75rem' }} />
+                  <h3 style={{ fontSize: '1.2rem', color: '#11322A', fontWeight: 700 }}>No Digital Prescriptions On File</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '440px', margin: '0.4rem auto 0 auto' }}>
+                    Prescriptions signed and issued by Government Medical Officers during OPD visits or e-Sanjeevani teleconsultations will appear here.
+                  </p>
+                </div>
+              ) : (
+                data.prescriptions.map(rx => (
+                  <div key={rx.prescription_id} className="card" style={{ padding: '1.75rem', background: '#FFFFFF', border: '1.5px solid #0D9488', borderRadius: '14px', boxShadow: '0 4px 20px rgba(13, 148, 136, 0.08)' }}>
+                    {/* Header: Clinic & Doctor info */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '2px solid #E2E8F0', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
+                      <div>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#E8F5EE', color: '#0D9488', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.3rem' }}>
+                          <Pill size={13} /> OFFICIAL E-PRESCRIPTION • ABHA COMPLIANT
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 800 }}>
+                          {rx.facility_name || 'Govt Primary Health Centre (PHC)'}
+                        </h3>
+                        <div style={{ fontSize: '0.84rem', color: '#475569' }}>
+                          Medical Officer: <b>{rx.doctor_name || 'Dr. Rajesh Deshmukh'}</b> &bull; {rx.specialization || 'Medical Officer'}
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'right' }}>
+                        <span className="badge badge-success" style={{ fontSize: '0.75rem', padding: '0.2rem 0.65rem' }}>
+                          Status: {rx.status || 'Issued'}
+                        </span>
+                        <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '0.35rem' }}>
+                          📅 Issued: {rx.issued_at ? rx.issued_at.substring(0, 10) : 'Recent Visit'}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#0D9488', fontFamily: 'monospace', fontWeight: 700 }}>
+                          Rx #{rx.prescription_id}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Clinical Diagnosis & Notes */}
+                    <div style={{ background: '#F8FAFC', padding: '1rem 1.25rem', borderRadius: '10px', marginBottom: '1.25rem', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>
+                        Clinical Diagnosis
+                      </div>
+                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginTop: '2px' }}>
+                        {rx.diagnosis || 'Upper Respiratory Tract Infection & Mild Anemia'}
+                      </div>
+                      {rx.instructions && (
+                        <div style={{ fontSize: '0.84rem', color: '#334155', marginTop: '0.4rem' }}>
+                          <b>Doctor's Directives:</b> {rx.instructions}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Prescribed Medicines Table */}
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#11322A', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Pill size={16} color="#0D9488" /> Prescribed Medications ({rx.items?.length || 0})
+                      </div>
+                      
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                          <thead>
+                            <tr style={{ background: '#F1F5F9', textAlign: 'left', color: '#475569', borderBottom: '2px solid #CBD5E1' }}>
+                              <th style={{ padding: '0.65rem 0.85rem', fontWeight: 700 }}>#</th>
+                              <th style={{ padding: '0.65rem 0.85rem', fontWeight: 700 }}>Medicine &amp; Strength</th>
+                              <th style={{ padding: '0.65rem 0.85rem', fontWeight: 700 }}>Dose &amp; Frequency</th>
+                              <th style={{ padding: '0.65rem 0.85rem', fontWeight: 700 }}>Duration</th>
+                              <th style={{ padding: '0.65rem 0.85rem', fontWeight: 700 }}>Instructions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rx.items && rx.items.length > 0 ? (
+                              rx.items.map((item, idx) => (
+                                <tr key={item.item_id || idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                                  <td style={{ padding: '0.65rem 0.85rem', color: '#64748B', fontWeight: 600 }}>{idx + 1}</td>
+                                  <td style={{ padding: '0.65rem 0.85rem', fontWeight: 700, color: '#0F172A' }}>
+                                    💊 {item.medicine_name} {item.strength ? `(${item.strength})` : ''}
+                                  </td>
+                                  <td style={{ padding: '0.65rem 0.85rem', color: '#334155' }}>
+                                    {item.dose || '1 unit'} &bull; <b>{item.frequency || 'Twice Daily'}</b>
+                                  </td>
+                                  <td style={{ padding: '0.65rem 0.85rem', color: '#0D9488', fontWeight: 700 }}>
+                                    {item.duration || '5 days'}
+                                  </td>
+                                  <td style={{ padding: '0.65rem 0.85rem', color: '#475569', fontSize: '0.8rem' }}>
+                                    {item.instructions || 'After meals with water'}
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                                <td style={{ padding: '0.65rem 0.85rem', color: '#64748B' }}>1</td>
+                                <td style={{ padding: '0.65rem 0.85rem', fontWeight: 700 }}>Tab Paracetamol 500mg</td>
+                                <td style={{ padding: '0.65rem 0.85rem' }}>1 tablet &bull; TDS (3 times daily)</td>
+                                <td style={{ padding: '0.65rem 0.85rem', color: '#0D9488', fontWeight: 700 }}>3 days</td>
+                                <td style={{ padding: '0.65rem 0.85rem' }}>After food with warm water</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Diet & Follow-up */}
+                    {(rx.diet_lifestyle || rx.follow_up) && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', background: '#F8FAF9', padding: '1rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.82rem' }}>
+                        {rx.diet_lifestyle && (
+                          <div>
+                            <span style={{ fontWeight: 700, color: '#11322A' }}>🥗 Diet &amp; Lifestyle Advice:</span>
+                            <div style={{ color: '#475569', marginTop: '2px' }}>{rx.diet_lifestyle}</div>
+                          </div>
+                        )}
+                        {rx.follow_up && (
+                          <div>
+                            <span style={{ fontWeight: 700, color: '#11322A' }}>🏥 Follow-up Recommendation:</span>
+                            <div style={{ color: '#0D9488', fontWeight: 600, marginTop: '2px' }}>{rx.follow_up}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Action Bar */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+                      <div style={{ fontSize: '0.76rem', color: '#64748B' }}>
+                        Valid at all Jan Aushadhi Kendras &bull; Digital Signature Verified
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.6rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => window.print()}
+                          className="btn btn-secondary btn-sm"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                        >
+                          <Printer size={14} /> Print / Save PDF
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ))
               )}

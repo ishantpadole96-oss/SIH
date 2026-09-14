@@ -8,14 +8,15 @@ import { offlineStorage } from '../services/offlineStorage';
 import { 
   Users, AlertTriangle, ArrowRightLeft, Calendar, UserPlus, 
   Activity, CheckCircle2, Phone, Stethoscope, ChevronRight, X, Heart, Baby,
-  Wifi, WifiOff, RefreshCw, Sparkles, QrCode, Shield, Clock, MapPin, Pill
+  Wifi, WifiOff, RefreshCw, Sparkles, QrCode, Shield, Clock, MapPin, Pill,
+  Video, ShieldAlert, Thermometer, Send, MessageSquare
 } from 'lucide-react';
 
-export function AshaDashboard({ setActiveTab }) {
+export function AshaDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
   const { user, token, selectedVillage, villages } = useAuth();
   const { t } = useLanguage();
 
-  const [ashaSubTab, setAshaSubTab] = useState('triage'); // 'triage' | 'tracking' | 'mch'
+  const [ashaSubTab, setAshaSubTab] = useState('triage'); // 'triage' | 'tracking' | 'mch' | 'pharmacy' | 'grievances'
   const [patients, setPatients] = useState([]);
   const [highRiskCases, setHighRiskCases] = useState([]);
   const [referrals, setReferrals] = useState([]);
@@ -73,10 +74,69 @@ export function AshaDashboard({ setActiveTab }) {
   });
   const [medRequestMsg, setMedRequestMsg] = useState(null);
 
+  // Patient Grievances Desk State (Requirement 4)
+  const [complaints, setComplaints] = useState([]);
+  const [complaintsLoading, setComplaintsLoading] = useState(false);
+  const [showComplaintModal, setShowComplaintModal] = useState(false);
+  const [complaintForm, setComplaintForm] = useState({
+    patient_id: '',
+    complaint_type: 'Medicine Shortage',
+    facility_id: 1,
+    description: '',
+    priority: 'Normal'
+  });
+  const [complaintMsg, setComplaintMsg] = useState(null);
+
+  // Vitals Recording & Telemetry Modal (Requirement 6)
+  const [showVitalsModal, setShowVitalsModal] = useState(false);
+  const [vitalsPatient, setVitalsPatient] = useState(null);
+  const [vitalsForm, setVitalsForm] = useState({
+    temperature: '98.6',
+    heart_rate: '76',
+    bp: '120/80',
+    systolic_bp: '120',
+    diastolic_bp: '80',
+    spo2: '98',
+    respiratory_rate: '18',
+    blood_sugar: '',
+    notes: ''
+  });
+  const [vitalsMsg, setVitalsMsg] = useState(null);
+  const [transmittingVitals, setTransmittingVitals] = useState(false);
+
   const fetchMedicineData = () => {
     fetch('/api/medicines')
       .then(r => r.json())
-      .then(d => setMedicines(d.medicines || []))
+      .then(d => {
+        const rawList = d.medicines || [];
+        const map = new Map();
+        rawList.forEach(m => {
+          const name = (m.medicine_name || '').trim();
+          const key = name.toLowerCase();
+          const qty = Number(m.quantity ?? m.stock_quantity ?? 0);
+          const unit = m.unit || 'strips';
+          if (!map.has(key)) {
+            map.set(key, {
+              ...m,
+              medicine_name: name,
+              quantity: qty,
+              unit: unit,
+              facilities: m.facility_name ? [m.facility_name] : []
+            });
+          } else {
+            const existing = map.get(key);
+            existing.quantity += qty;
+            if (m.facility_name && !existing.facilities.includes(m.facility_name)) {
+              existing.facilities.push(m.facility_name);
+            }
+          }
+        });
+        const aggregated = Array.from(map.values()).map(item => ({
+          ...item,
+          stock_status: item.quantity === 0 ? 'Out of Stock' : item.quantity < 30 ? 'Low Stock' : 'In Stock'
+        }));
+        setMedicines(aggregated);
+      })
       .catch(err => console.error('Failed to load medicines:', err));
 
     if (token) {
@@ -86,6 +146,107 @@ export function AshaDashboard({ setActiveTab }) {
         .then(r => r.json())
         .then(d => setMedicineRequests(d.requests || []))
         .catch(err => console.error('Failed to load medicine requests:', err));
+    }
+  };
+
+  const fetchComplaints = () => {
+    if (!token) return;
+    setComplaintsLoading(true);
+    fetch('/api/complaints', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(d => {
+        setComplaints(d.complaints || []);
+        setComplaintsLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load complaints:', err);
+        setComplaintsLoading(false);
+      });
+  };
+
+  const handleSubmitComplaint = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/complaints', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(complaintForm)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit grievance');
+      setComplaintMsg(`Grievance #${data.complaint?.complaint_id || 'TICKET'} registered successfully on behalf of patient!`);
+      fetchComplaints();
+      setTimeout(() => {
+        setShowComplaintModal(false);
+        setComplaintMsg(null);
+        setComplaintForm({
+          patient_id: '',
+          complaint_type: 'Medicine Shortage',
+          facility_id: 1,
+          description: '',
+          priority: 'Normal'
+        });
+      }, 1500);
+    } catch (err) {
+      setComplaintMsg('Error: ' + err.message);
+    }
+  };
+
+  const handleTransmitVitals = async (launchVideo = false) => {
+    if (!vitalsPatient) return;
+    setTransmittingVitals(true);
+    try {
+      const payload = {
+        ...vitalsForm,
+        temperature: vitalsForm.temperature ? parseFloat(vitalsForm.temperature) : undefined,
+        heart_rate: vitalsForm.heart_rate ? parseInt(vitalsForm.heart_rate) : undefined,
+        spo2: vitalsForm.spo2 ? parseInt(vitalsForm.spo2) : undefined,
+        respiratory_rate: vitalsForm.respiratory_rate ? parseInt(vitalsForm.respiratory_rate) : undefined,
+        blood_sugar: vitalsForm.blood_sugar ? parseFloat(vitalsForm.blood_sugar) : undefined
+      };
+      const res = await fetch(`/api/patients/${vitalsPatient.patient_id}/vitals`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to transmit vitals');
+
+      setVitalsMsg('✅ Vitals recorded and transmitted to Doctor portal successfully!');
+      fetchData();
+
+      if (launchVideo && onOpenTelemed) {
+        setTimeout(() => {
+          setShowVitalsModal(false);
+          setVitalsMsg(null);
+          onOpenTelemed({
+            doctorName: 'Dr. Rajesh Deshmukh',
+            facility: 'District General Hospital',
+            patientId: vitalsPatient.patient_id,
+            patientName: vitalsPatient.name,
+            patientAge: vitalsPatient.age,
+            patientGender: vitalsPatient.gender,
+            incomingVitals: payload
+          });
+        }, 800);
+      } else {
+        setTimeout(() => {
+          setShowVitalsModal(false);
+          setVitalsMsg(null);
+        }, 1500);
+      }
+    } catch (err) {
+      alert('Error transmitting vitals: ' + err.message);
+    } finally {
+      setTransmittingVitals(false);
     }
   };
 
@@ -159,6 +320,7 @@ export function AshaDashboard({ setActiveTab }) {
   useEffect(() => {
     fetchData();
     fetchMedicineData();
+    fetchComplaints();
   }, [token, offlineStatus.isOnline]);
 
   const handleToggleOfflineMode = () => {
@@ -441,6 +603,21 @@ export function AshaDashboard({ setActiveTab }) {
 
         <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <button
+            onClick={() => {
+              if (onOpenTelemed) {
+                onOpenTelemed({
+                  doctorName: 'Dr. Rajesh Deshmukh',
+                  facility: 'District General Hospital'
+                });
+              }
+            }}
+            className="btn btn-secondary"
+            style={{ border: '1px solid #38BDF8', color: '#38BDF8' }}
+          >
+            <Video size={16} /> Video Call Doctor
+          </button>
+
+          <button
             onClick={() => setShowCopilot(true)}
             className="btn btn-secondary"
             style={{ border: '1px solid #A855F7', color: '#C084FC' }}
@@ -532,6 +709,13 @@ export function AshaDashboard({ setActiveTab }) {
           className={`btn btn-sm ${ashaSubTab === 'pharmacy' ? 'btn-primary' : 'btn-secondary'}`}
         >
           <Pill size={16} /> Sub-Centre Pharmacy &amp; Requisitions
+        </button>
+        <button
+          type="button"
+          onClick={() => { setAshaSubTab('grievances'); fetchComplaints(); }}
+          className={`btn btn-sm ${ashaSubTab === 'grievances' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          <ShieldAlert size={16} /> Patient Grievances Desk ({complaints.length})
         </button>
       </div>
 
@@ -767,8 +951,8 @@ export function AshaDashboard({ setActiveTab }) {
           {/* Medicine Stock Cards Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
             {medicines.map(m => {
-              const isLow = m.stock_quantity < 25;
-              const isOut = m.stock_quantity === 0;
+              const isLow = m.quantity < 30;
+              const isOut = m.quantity === 0;
               return (
                 <div key={m.medicine_id} className="card" style={{ padding: '1.25rem', borderLeft: `4px solid ${isOut ? '#EF4444' : isLow ? '#F59E0B' : '#10B981'}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
@@ -781,9 +965,12 @@ export function AshaDashboard({ setActiveTab }) {
                     Category: {m.category || 'Essential Drug List (EDL)'} &bull; {m.dosage_form || 'Tablet'}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: isOut ? '#EF4444' : '#11322A' }}>
-                      {m.stock_quantity} units
-                    </span>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Available Stock</div>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 800, color: isOut ? '#EF4444' : '#11322A' }}>
+                        {m.quantity} {m.unit || 'units'}
+                      </span>
+                    </div>
                     <button
                       onClick={() => {
                         setMedRequestForm({
@@ -791,7 +978,7 @@ export function AshaDashboard({ setActiveTab }) {
                           medicine_name: m.medicine_name,
                           quantity_requested: 100,
                           urgency: isOut ? 'Emergency' : isLow ? 'Urgent' : 'Routine',
-                          notes: `Replenishment requisition for Sub-Centre stock (Current balance: ${m.stock_quantity})`
+                          notes: `Replenishment requisition for Sub-Centre stock (Current balance: ${m.quantity} ${m.unit || 'units'})`
                         });
                         setShowMedRequestModal(true);
                       }}
@@ -843,6 +1030,88 @@ export function AshaDashboard({ setActiveTab }) {
                           </span>
                         </td>
                         <td style={{ padding: '0.6rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>{r.created_at}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : ashaSubTab === 'grievances' ? (
+        /* TAB 5: PATIENT GRIEVANCE REDRESSAL DESK (Requirement 4) */
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h2 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <ShieldAlert size={22} color="#FBBF24" /> Patient Grievance Registration &amp; Management Desk
+              </h2>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                ASHA Health Workers can log and track patient grievances regarding facilities, care quality, medicine availability, and staff conduct.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowComplaintModal(true)}
+              className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <ShieldAlert size={16} /> Lodge Patient Grievance
+            </button>
+          </div>
+
+          <div className="card" style={{ padding: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#11322A', marginBottom: '1rem' }}>
+              Registered Village Grievance Tickets
+            </h3>
+            {complaintsLoading ? (
+              <p style={{ color: 'var(--text-muted)' }}>Loading grievance tickets...</p>
+            ) : complaints.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2.5rem' }}>
+                <CheckCircle2 size={36} color="#34D399" style={{ margin: '0 auto 0.5rem auto' }} />
+                <p style={{ color: 'var(--text-muted)' }}>No grievances registered yet. Use the button above to lodge an issue on behalf of a villager.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: '0.84rem', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '0.6rem 0.5rem' }}>Ticket ID</th>
+                      <th style={{ padding: '0.6rem 0.5rem' }}>Patient Name</th>
+                      <th style={{ padding: '0.6rem 0.5rem' }}>Type</th>
+                      <th style={{ padding: '0.6rem 0.5rem' }}>Facility / Jurisdiction</th>
+                      <th style={{ padding: '0.6rem 0.5rem' }}>Description</th>
+                      <th style={{ padding: '0.6rem 0.5rem' }}>Priority</th>
+                      <th style={{ padding: '0.6rem 0.5rem' }}>Status</th>
+                      <th style={{ padding: '0.6rem 0.5rem' }}>Administrative Response</th>
+                      <th style={{ padding: '0.6rem 0.5rem' }}>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {complaints.map(c => (
+                      <tr key={c.complaint_id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '0.6rem 0.5rem', fontWeight: 700, color: '#38BDF8' }}>#{c.complaint_id}</td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontWeight: 600 }}>{c.patient_name || c.user_name || 'Village Patient'}</td>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>{c.complaint_type}</td>
+                        <td style={{ padding: '0.6rem 0.5rem', color: 'var(--text-secondary)' }}>{c.facility_name || 'Sub-Centre / PHC'}</td>
+                        <td style={{ padding: '0.6rem 0.5rem', maxWidth: '280px' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>{c.description}</span>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>
+                          <span className={`badge ${c.priority === 'High' || c.priority === 'Urgent' ? 'badge-danger' : 'badge-neutral'}`} style={{ fontSize: '0.7rem' }}>
+                            {c.priority || 'Normal'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>
+                          <span className={`badge ${c.status === 'Resolved' ? 'badge-success' : c.status === 'In Progress' ? 'badge-warning' : 'badge-info'}`} style={{ fontSize: '0.7rem' }}>
+                            {c.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', maxWidth: '200px', fontSize: '0.78rem', color: c.admin_response ? '#34D399' : 'var(--text-muted)' }}>
+                          {c.admin_response || 'Pending District Review'}
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                          {c.created_at ? c.created_at.substring(0, 10) : 'Recent'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -913,13 +1182,47 @@ export function AshaDashboard({ setActiveTab }) {
                       {c.recommendation}
                     </p>
 
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => {
+                          setVitalsPatient({
+                            patient_id: c.patient_id || c.user_id,
+                            name: c.patient_name,
+                            age: c.patient_age,
+                            gender: c.patient_gender
+                          });
+                          setShowVitalsModal(true);
+                        }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ border: '1px solid #10B981', color: '#10B981', fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        <Activity size={13} /> Send Vitals
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (onOpenTelemed) {
+                            onOpenTelemed({
+                              doctorName: 'Dr. Rajesh Deshmukh',
+                              facility: 'District General Hospital',
+                              patientId: c.patient_id || c.user_id,
+                              patientName: c.patient_name,
+                              patientAge: c.patient_age,
+                              patientGender: c.patient_gender,
+                              incomingVitals: c.vitals
+                            });
+                          }
+                        }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ border: '1px solid #38BDF8', color: '#38BDF8', fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        <Video size={13} /> Video Call
+                      </button>
                       <a
                         href={`tel:${c.patient_phone}`}
                         className="btn btn-secondary btn-sm"
-                        style={{ flex: 1, textDecoration: 'none' }}
+                        style={{ textDecoration: 'none', fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                       >
-                        <Phone size={14} /> Call Patient
+                        <Phone size={13} /> Call
                       </a>
                       <button
                         onClick={() => {
@@ -933,9 +1236,9 @@ export function AshaDashboard({ setActiveTab }) {
                           setShowReferralModal(true);
                         }}
                         className="btn btn-primary btn-sm"
-                        style={{ flex: 1 }}
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
                       >
-                        <ArrowRightLeft size={14} /> Create Smart Referral
+                        <ArrowRightLeft size={13} /> Smart Refer
                       </button>
                     </div>
                   </div>
@@ -958,7 +1261,7 @@ export function AshaDashboard({ setActiveTab }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {patients.map(p => (
                 <div key={p.patient_id || p.temp_id} className="card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <h3 style={{ fontSize: '1.1rem', color: '#11322A', fontWeight: 700 }}>
@@ -981,17 +1284,49 @@ export function AshaDashboard({ setActiveTab }) {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => {
+                          setVitalsPatient(p);
+                          setShowVitalsModal(true);
+                        }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.5rem', border: '1px solid #10B981', color: '#10B981' }}
+                        title="Record & send vitals to doctor"
+                      >
+                        <Activity size={12} /> Vitals
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (onOpenTelemed) {
+                            onOpenTelemed({
+                              doctorName: 'Dr. Rajesh Deshmukh',
+                              facility: 'District General Hospital',
+                              patientId: p.patient_id,
+                              patientName: p.name,
+                              patientAge: p.age,
+                              patientGender: p.gender
+                            });
+                          }
+                        }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.5rem', border: '1px solid #38BDF8', color: '#38BDF8' }}
+                        title="Connect video call with doctor"
+                      >
+                        <Video size={12} /> Call
+                      </button>
+
                       <button
                         onClick={() => {
                           setSelectedJourneyId(p.health_journey_id || `MH-RURAL-2026-${String(p.patient_id).padStart(4, '0')}`);
                           setShowQRJourney(true);
                         }}
                         className="btn btn-secondary btn-sm"
-                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.5rem' }}
                         title="View Authorized Health Journey"
                       >
-                        <QrCode size={13} /> Journey
+                        <QrCode size={12} /> Journey
                       </button>
 
                       <button
@@ -1000,7 +1335,7 @@ export function AshaDashboard({ setActiveTab }) {
                           setShowReferralModal(true);
                         }}
                         className="btn btn-primary btn-sm"
-                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.5rem' }}
                       >
                         Smart Refer
                       </button>
@@ -1279,7 +1614,7 @@ export function AshaDashboard({ setActiveTab }) {
                 >
                   {medicines.map(m => (
                     <option key={m.medicine_id} value={m.medicine_id}>
-                      {m.medicine_name} (Current Stock: {m.stock_quantity})
+                      {m.medicine_name} (Current Stock: {m.quantity} {m.unit || 'units'})
                     </option>
                   ))}
                 </select>
@@ -1331,6 +1666,275 @@ export function AshaDashboard({ setActiveTab }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Patient Grievance Registration Modal (Requirement 4) */}
+      {showComplaintModal && (
+        <div className="modal-overlay" onClick={() => setShowComplaintModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 800 }}>
+                  Lodge Patient Grievance
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Record official public healthcare grievance on behalf of a rural patient
+                </p>
+              </div>
+              <button onClick={() => setShowComplaintModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {complaintMsg && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', fontSize: '0.84rem' }}>
+                {complaintMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitComplaint}>
+              <div className="form-group">
+                <label className="form-label">Select Patient</label>
+                <select
+                  className="form-select"
+                  value={complaintForm.patient_id}
+                  onChange={e => setComplaintForm({ ...complaintForm, patient_id: e.target.value })}
+                  required
+                >
+                  <option value="">-- Choose Villager / Patient --</option>
+                  {patients.map(p => (
+                    <option key={p.patient_id} value={p.patient_id}>
+                      {p.name} ({p.age} Y • {p.gender} • ID: {p.health_journey_id || p.patient_id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Grievance Category</label>
+                  <select
+                    className="form-select"
+                    value={complaintForm.complaint_type}
+                    onChange={e => setComplaintForm({ ...complaintForm, complaint_type: e.target.value })}
+                    required
+                  >
+                    <option value="Medicine Shortage">Medicine Stock-out / Shortage</option>
+                    <option value="Staff Behavior">Doctor / Staff Conduct</option>
+                    <option value="Cleanliness">Facility Hygiene &amp; Sanitation</option>
+                    <option value="Denial of Service">Denial of Emergency / OPD Care</option>
+                    <option value="Overcharging">Overcharging / Unofficial Fee</option>
+                    <option value="Delay in Care">Excessive Waiting / Delay in Care</option>
+                    <option value="Ambulance Delay">Ambulance 108 Transit Delay</option>
+                    <option value="Diagnostic Failure">Lab / Equipment Non-Functional</option>
+                    <option value="Other">Other Operational Grievance</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Urgency / Severity</label>
+                  <select
+                    className="form-select"
+                    value={complaintForm.priority}
+                    onChange={e => setComplaintForm({ ...complaintForm, priority: e.target.value })}
+                  >
+                    <option value="Normal">🟢 Routine / Normal</option>
+                    <option value="High">🟠 High Priority</option>
+                    <option value="Urgent">🔴 Urgent Emergency</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Healthcare Facility / Center</label>
+                <select
+                  className="form-select"
+                  value={complaintForm.facility_id}
+                  onChange={e => setComplaintForm({ ...complaintForm, facility_id: parseInt(e.target.value) })}
+                >
+                  <option value="1">Khed Primary Health Centre (PHC)</option>
+                  <option value="2">Pune District General Hospital</option>
+                  <option value="3">Manchar Community Health Centre (CHC)</option>
+                  <option value="4">Shirur Sub-District Hospital</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Detailed Grievance Description</label>
+                <textarea
+                  className="form-textarea"
+                  rows="3"
+                  placeholder="Describe the incident, issue encountered by the patient, date/time, and impact..."
+                  value={complaintForm.description}
+                  onChange={e => setComplaintForm({ ...complaintForm, description: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  Submit Official Grievance
+                </button>
+                <button type="button" onClick={() => setShowComplaintModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Record & Transmit Patient Vitals Modal (Requirement 6) */}
+      {showVitalsModal && (
+        <div className="modal-overlay" onClick={() => setShowVitalsModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '580px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Activity size={20} color="#10B981" /> Record &amp; Transmit Patient Vitals
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Patient: <b>{vitalsPatient?.name}</b> ({vitalsPatient?.age} yrs • {vitalsPatient?.gender})
+                </p>
+              </div>
+              <button onClick={() => setShowVitalsModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {vitalsMsg && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', fontSize: '0.84rem' }}>
+                {vitalsMsg}
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="form-group">
+                <label className="form-label">Body Temperature (°F)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  className="form-input"
+                  placeholder="e.g. 98.6"
+                  value={vitalsForm.temperature}
+                  onChange={e => setVitalsForm({ ...vitalsForm, temperature: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Heart / Pulse Rate (BPM)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="e.g. 76"
+                  value={vitalsForm.heart_rate}
+                  onChange={e => setVitalsForm({ ...vitalsForm, heart_rate: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Blood Pressure (Systolic / Diastolic)</label>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    className="form-input"
+                    placeholder="120"
+                    value={vitalsForm.systolic_bp}
+                    onChange={e => {
+                      const sys = e.target.value;
+                      setVitalsForm({ ...vitalsForm, systolic_bp: sys, bp: `${sys}/${vitalsForm.diastolic_bp}` });
+                    }}
+                  />
+                  <span style={{ color: 'var(--text-muted)' }}>/</span>
+                  <input
+                    type="number"
+                    className="form-input"
+                    placeholder="80"
+                    value={vitalsForm.diastolic_bp}
+                    onChange={e => {
+                      const dia = e.target.value;
+                      setVitalsForm({ ...vitalsForm, diastolic_bp: dia, bp: `${vitalsForm.systolic_bp}/${dia}` });
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Oxygen Saturation - SpO₂ (%)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="e.g. 98"
+                  value={vitalsForm.spo2}
+                  onChange={e => setVitalsForm({ ...vitalsForm, spo2: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Respiratory Rate (breaths/min)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="e.g. 18"
+                  value={vitalsForm.respiratory_rate}
+                  onChange={e => setVitalsForm({ ...vitalsForm, respiratory_rate: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Blood Glucose (mg/dL - Optional)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="e.g. 110"
+                  value={vitalsForm.blood_sugar}
+                  onChange={e => setVitalsForm({ ...vitalsForm, blood_sugar: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginTop: '0.75rem' }}>
+              <label className="form-label">Field Clinical Observations / Symptoms</label>
+              <textarea
+                className="form-textarea"
+                rows="2"
+                placeholder="Observed pallor, shortness of breath, dehydration, active complaints..."
+                value={vitalsForm.notes}
+                onChange={e => setVitalsForm({ ...vitalsForm, notes: e.target.value })}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                disabled={transmittingVitals}
+                onClick={() => handleTransmitVitals(false)}
+                className="btn btn-secondary"
+                style={{ flex: 1, border: '1px solid #10B981', color: '#10B981' }}
+              >
+                💾 Save &amp; Transmit Vitals
+              </button>
+
+              <button
+                type="button"
+                disabled={transmittingVitals}
+                onClick={() => handleTransmitVitals(true)}
+                className="btn btn-primary"
+                style={{ flex: 1.2, background: 'linear-gradient(135deg, #0D9488 0%, #0284C7 100%)' }}
+              >
+                <Video size={16} /> Transmit &amp; Video Call Doctor
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowVitalsModal(false)}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -356,23 +356,6 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
       badgeColor: '#F59E0B',
       icon: <Activity size={22} color="#F59E0B" />,
       actionText: lang === 'mr' ? 'शिबिरे पहा' : lang === 'hi' ? 'शिविर देखें' : 'View Health Camps'
-    },
-    {
-      id: 'complaints',
-      title: 'Quality Monitor & Grievances',
-      marathiTitle: 'तक्रार निवारण व दर्जा सनियंत्रण',
-      hindiTitle: 'गुणवत्ता निगरानी व शिकायत निवारण',
-      desc: lang === 'mr'
-        ? 'डॉक्टर अनुपस्थिती, औषध तुटवडा किंवा अस्वच्छतेची जिल्हा आरोग्य अधिकाऱ्यांकडे थेट तक्रार.'
-        : lang === 'hi'
-        ? 'डॉक्टर अनुपस्थिति, दवा की कमी या अस्पताल स्वच्छता की जिला स्वास्थ्य अधिकारी को सीधी शिकायत।'
-        : 'Directly report doctor absence, medicine shortages, or facility hygiene to the District Health Officer.',
-      badge: 'Direct Redressal',
-      hindiBadge: 'त्वरित शिकायत निवारण',
-      marathiBadge: 'थेट तक्रार निवारण',
-      badgeColor: '#D97706',
-      icon: <MessageSquare size={22} color="#D97706" />,
-      actionText: lang === 'mr' ? 'तक्रार नोंदवा' : lang === 'hi' ? 'शिकायत दर्ज करें' : 'File Feedback'
     }
   ];
 
