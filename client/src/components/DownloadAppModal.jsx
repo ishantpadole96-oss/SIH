@@ -263,7 +263,7 @@ export function DownloadAppModal({ isOpen, onClose }) {
                 {text.direct_hint}
               </a>
               <span style={{ margin: '0 0.5rem', opacity: 0.5 }}>•</span>
-              <span>Android 7.0+ (Nougat to 14)</span>
+              <span>Android 7.0+ (Nougat to 15) • 5.9 MB</span>
             </div>
           </div>
 

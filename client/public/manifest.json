@@ -1,0 +1,22 @@
+{
+  "short_name": "RuralCare",
+  "name": "RuralCare — Maharashtra Public Healthcare",
+  "icons": [
+    {
+      "src": "/ruralcare-mark.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ruralcare-logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#11322A",
+  "theme_color": "#195B48",
+  "display": "standalone",
+  "orientation": "portrait"
+}

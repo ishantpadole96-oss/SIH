@@ -26,3 +26,13 @@ Thumbs.db
 .idea
 *.log
 npm-debug.log*
+
+# Android build outputs & local SDK
+android-sdk/
+.gradle/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.iml
+
