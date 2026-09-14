@@ -37,11 +37,18 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
   const [openNow, setOpenNow] = useState(false);
   const [maxDistance, setMaxDistance] = useState('');
 
+  // Sync district with user's selected village/district
+  useEffect(() => {
+    if (selectedVillage?.district) {
+      setSelectedDistrict(selectedVillage.district);
+    }
+  }, [selectedVillage]);
+
   const fetchFacilities = () => {
     setLoading(true);
     const params = new URLSearchParams();
     if (searchTerm) params.append('search', searchTerm);
-    if (selectedDistrict !== 'All') params.append('district', selectedDistrict);
+    if (selectedDistrict && selectedDistrict !== 'All') params.append('district', selectedDistrict);
     if (facilityType !== 'All') params.append('facility_type', facilityType);
     if (selectedService !== 'All') params.append('service', selectedService);
     if (emergencyOnly) params.append('emergency_only', 'true');
@@ -50,9 +57,11 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
 
     if (selectedVillage) {
       params.append('village_id', selectedVillage.village_id);
-      if (selectedVillage.latitude && selectedVillage.longitude) {
-        params.append('user_lat', selectedVillage.latitude);
-        params.append('user_lng', selectedVillage.longitude);
+      const uLat = selectedVillage.latitude || selectedVillage.lat;
+      const uLng = selectedVillage.longitude || selectedVillage.lng;
+      if (uLat && uLng) {
+        params.append('user_lat', uLat);
+        params.append('user_lng', uLng);
       }
     }
 
@@ -269,6 +278,7 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
             <InteractiveMap
               facilities={facilities}
               selectedFacility={selectedFacility}
+              currentLocation={selectedVillage}
               onFacilitySelect={(fac) => handleSelectFacility(fac, true)}
               height="100%"
             />

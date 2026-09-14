@@ -23,6 +23,15 @@ class OfflineStorageEngine {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => this.handleNetworkChange());
       window.addEventListener('offline', () => this.handleNetworkChange());
+
+      if (!localStorage.getItem(STORAGE_KEYS.CACHED_PATIENTS)) {
+        const defaultCached = [
+          { patient_id: 1, name: 'Sunita Patil', age: 28, gender: 'Female', phone: '9822012345', village_name: 'Shivapur', health_journey_id: 'MH-RURAL-2026-1042', existing_conditions: 'Pregnant 24 wks, Mild Anemia' },
+          { patient_id: 2, name: 'Ramesh Jadhav', age: 52, gender: 'Male', phone: '9822054321', village_name: 'Khedgaon', health_journey_id: 'MH-RURAL-2026-2189', existing_conditions: 'Type 2 Diabetes, Hypertension' },
+          { patient_id: 3, name: 'Kavita Shinde', age: 34, gender: 'Female', phone: '9822098765', village_name: 'Bhor', health_journey_id: 'MH-RURAL-2026-3401', existing_conditions: 'Asthma' }
+        ];
+        this.cachePatients(defaultCached);
+      }
     }
   }
 
@@ -45,6 +54,12 @@ class OfflineStorageEngine {
     if (typeof window === 'undefined') return;
     localStorage.setItem(STORAGE_KEYS.SIMULATED_OFFLINE, val ? 'true' : 'false');
     this.notify();
+  }
+
+  toggleSimulatedOffline() {
+    const nextState = !this.isSimulatedOffline();
+    this.setSimulatedOffline(nextState);
+    return nextState;
   }
 
   isOnline() {
@@ -222,6 +237,13 @@ class OfflineStorageEngine {
       synced: pendingCount.total,
       details: data
     };
+  }
+
+  async syncPendingRecords(token) {
+    if (!token && typeof window !== 'undefined') {
+      token = localStorage.getItem('ruralcare_token') || 'demo_token';
+    }
+    return this.syncWithServer(token);
   }
 }
 

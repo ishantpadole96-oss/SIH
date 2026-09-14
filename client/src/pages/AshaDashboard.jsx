@@ -139,6 +139,18 @@ export function AshaDashboard({ setActiveTab }) {
       setTimeout(() => {
         setShowRegisterModal(false);
         setRegSuccess(null);
+        setRegForm({
+          name: '',
+          age: '',
+          gender: 'Female',
+          phone: '',
+          village_id: selectedVillage?.village_id || 1,
+          blood_group: 'Unknown',
+          allergies: 'None',
+          existing_conditions: 'None',
+          emergency_contact_name: '',
+          emergency_contact_phone: ''
+        });
       }, 1500);
       return;
     }
@@ -155,14 +167,47 @@ export function AshaDashboard({ setActiveTab }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Registration failed');
 
+      if (data.patient) {
+        setPatients(prev => [data.patient, ...prev.filter(p => p.patient_id !== data.patient.patient_id)]);
+      }
       setRegSuccess(`Patient ${data.patient.name} registered! Health Journey ID: ${data.patient.health_journey_id}`);
-      fetchData();
       setTimeout(() => {
         setShowRegisterModal(false);
         setRegSuccess(null);
+        setRegForm({
+          name: '',
+          age: '',
+          gender: 'Female',
+          phone: '',
+          village_id: selectedVillage?.village_id || 1,
+          blood_group: 'Unknown',
+          allergies: 'None',
+          existing_conditions: 'None',
+          emergency_contact_name: '',
+          emergency_contact_phone: ''
+        });
       }, 1200);
     } catch (err) {
-      alert(err.message);
+      console.warn('Network registration failed, fallback to local offline queue:', err);
+      const offlinePat = offlineStorage.saveOfflinePatient(regForm);
+      setPatients(prev => [offlinePat, ...prev]);
+      setRegSuccess(`Saved to Offline Queue (No Server Connection): ${offlinePat.name} (${offlinePat.health_journey_id})`);
+      setTimeout(() => {
+        setShowRegisterModal(false);
+        setRegSuccess(null);
+        setRegForm({
+          name: '',
+          age: '',
+          gender: 'Female',
+          phone: '',
+          village_id: selectedVillage?.village_id || 1,
+          blood_group: 'Unknown',
+          allergies: 'None',
+          existing_conditions: 'None',
+          emergency_contact_name: '',
+          emergency_contact_phone: ''
+        });
+      }, 1500);
     }
   };
 

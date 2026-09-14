@@ -5,6 +5,7 @@ export function InteractiveMap({
   villages = [],
   facilities = [],
   selectedFacility = null,
+  currentLocation = null,
   center = [19.7515, 75.7139],
   zoom = 7,
   onFacilitySelect,
@@ -25,13 +26,20 @@ export function InteractiveMap({
         zoomControl: true
       });
 
-      // OpenStreetMap Tile layer (Free, open source, zero watermark)
+      // OpenStreetMap Tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
       }).addTo(map);
 
       mapInstanceRef.current = map;
+
+      // Fix tile cut-off when rendering in flex/grid container
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 250);
     }
   }, []);
 
@@ -204,12 +212,62 @@ export function InteractiveMap({
       bounds.extend([f.latitude, f.longitude]);
     });
 
-    // Fit map bounds only if no specific facility is currently selected
-    if (!selectedFacility && bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 13 });
+    // Add User Current Location Marker if provided
+    const userLat = currentLocation?.latitude || currentLocation?.lat;
+    const userLng = currentLocation?.longitude || currentLocation?.lng;
+    if (userLat && userLng) {
+      const userLocIcon = L.divIcon({
+        html: `
+          <div style="
+            background: #DC2626;
+            border: 3px solid #FFFFFF;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 16px rgba(220, 38, 38, 0.8);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            animation: markerPulse 1.5s infinite;
+          ">
+            📍
+          </div>
+        `,
+        className: 'user-location-marker',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+
+      const userMarker = L.marker([userLat, userLng], { icon: userLocIcon }).addTo(map);
+      userMarker.bindPopup(`
+        <div style="font-family: 'Outfit', sans-serif; min-width: 180px; color: #111827; padding: 4px;">
+          <div style="font-size: 0.72rem; text-transform: uppercase; color: #0D9488; font-weight: 700;">Selected Location</div>
+          <div style="font-size: 1.05rem; font-weight: 800; color: #11322A; margin: 2px 0;">
+            ${currentLocation.village_name || currentLocation.district || 'Your Location'}
+          </div>
+          <div style="font-size: 0.8rem; color: #4B5563;">
+            District: <b>${currentLocation.district || 'Maharashtra'}</b>
+          </div>
+        </div>
+      `);
+      bounds.extend([userLat, userLng]);
     }
 
-  }, [villages, facilities, selectedFacility]);
+    // Fit map bounds only if no specific facility is currently selected
+    if (!selectedFacility && bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+    }
+
+    setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    }, 200);
+
+  }, [villages, facilities, selectedFacility, currentLocation]);
 
   // When selectedFacility changes, smoothly pan/fly to its coordinates and open popup
   useEffect(() => {

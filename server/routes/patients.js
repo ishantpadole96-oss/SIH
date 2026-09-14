@@ -48,7 +48,7 @@ router.get('/', authenticateToken, requireRoles('asha', 'doctor', 'admin'), (req
  * POST /api/patients/register
  * ASHA / Doctor: Register a new patient directly in field
  */
-router.post('/register', authenticateToken, requireRoles('asha', 'doctor', 'admin'), (req, res) => {
+router.post('/register', authenticateToken, requireRoles('asha', 'doctor', 'admin', 'citizen'), (req, res) => {
   try {
     const {
       name,
@@ -70,52 +70,92 @@ router.post('/register', authenticateToken, requireRoles('asha', 'doctor', 'admi
       return res.status(400).json({ error: 'Patient name and contact phone number are required' });
     }
 
-    const genEmail = email || `patient.${phone.replace(/\D/g, '')}@ruralcare.in`;
-
-    const existing = db.get('SELECT user_id FROM users WHERE phone = ? OR email = ?', [phone, genEmail]);
-    if (existing) {
-      return res.status(409).json({ error: 'A patient with this phone or email is already registered.' });
-    }
+    const cleanPhone = phone.trim();
+    const cleanEmail = (email && email.trim()) || `patient.${cleanPhone.replace(/\D/g, '')}.${Date.now().toString().slice(-4)}@ruralcare.in`;
+    const targetVillageId = village_id ? parseInt(village_id) : (req.user?.village_id || 1);
 
     const salt = bcrypt.genSaltSync(10);
     const defaultPassword = bcrypt.hashSync('Demo@123', salt);
 
     let createdPatient;
     db.transaction(() => {
-      const userRes = db.run(`
-        INSERT INTO users (name, age, gender, phone, email, village_id, role, password_hash)
-        VALUES (?, ?, ?, ?, ?, ?, 'citizen', ?)
-      `, [name, age ? parseInt(age) : null, gender || 'Other', phone, genEmail, village_id ? parseInt(village_id) : req.user.village_id, defaultPassword]);
+      // Check if user already exists
+      let userRecord = db.get('SELECT user_id, name FROM users WHERE phone = ?', [cleanPhone]);
 
-      const userId = Number(userRes.lastInsertRowid);
+      let userId;
+      if (!userRecord) {
+        const userRes = db.run(`
+          INSERT INTO users (name, age, gender, phone, email, village_id, role, password_hash)
+          VALUES (?, ?, ?, ?, ?, ?, 'citizen', ?)
+        `, [
+          name.trim(),
+          age ? parseInt(age) : null,
+          gender || 'Female',
+          cleanPhone,
+          cleanEmail,
+          targetVillageId,
+          defaultPassword
+        ]);
+        userId = Number(userRes.lastInsertRowid);
+      } else {
+        userId = userRecord.user_id;
+        // Update user record with latest age/gender/village if provided
+        db.run(`
+          UPDATE users SET name = ?, age = COALESCE(?, age), gender = COALESCE(?, gender), village_id = COALESCE(?, village_id)
+          WHERE user_id = ?
+        `, [name.trim(), age ? parseInt(age) : null, gender || null, targetVillageId, userId]);
+      }
 
-      // Create unique Health Journey ID (e.g. MH-RURAL-2026-XXXX)
-      const journeyId = `MH-RURAL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      // Check if patient profile already exists for this user
+      let patientRecord = db.get('SELECT patient_id, health_journey_id FROM patients WHERE user_id = ?', [userId]);
 
-      const patRes = db.run(`
-        INSERT INTO patients (user_id, health_journey_id, blood_group, height_cm, weight_kg, allergies, existing_conditions, emergency_contact_name, emergency_contact_phone)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        userId,
-        journeyId,
-        blood_group || 'Unknown',
-        height_cm ? parseFloat(height_cm) : null,
-        weight_kg ? parseFloat(weight_kg) : null,
-        allergies || 'None',
-        existing_conditions || 'None',
-        emergency_contact_name || null,
-        emergency_contact_phone || null
-      ]);
+      let patientId;
+      if (patientRecord) {
+        patientId = patientRecord.patient_id;
+        // Update existing patient conditions
+        db.run(`
+          UPDATE patients 
+          SET blood_group = COALESCE(?, blood_group),
+              existing_conditions = ?,
+              allergies = COALESCE(?, allergies),
+              emergency_contact_name = COALESCE(?, emergency_contact_name),
+              emergency_contact_phone = COALESCE(?, emergency_contact_phone)
+          WHERE patient_id = ?
+        `, [
+          blood_group || null,
+          existing_conditions || 'None',
+          allergies || null,
+          emergency_contact_name || null,
+          emergency_contact_phone || null,
+          patientId
+        ]);
+      } else {
+        // Create unique Health Journey ID (e.g. MH-RURAL-2026-XXXX)
+        const journeyId = `MH-RURAL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+        const patRes = db.run(`
+          INSERT INTO patients (user_id, health_journey_id, blood_group, height_cm, weight_kg, allergies, existing_conditions, emergency_contact_name, emergency_contact_phone)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          userId,
+          journeyId,
+          blood_group || 'Unknown',
+          height_cm ? parseFloat(height_cm) : null,
+          weight_kg ? parseFloat(weight_kg) : null,
+          allergies || 'None',
+          existing_conditions || 'None',
+          emergency_contact_name || null,
+          emergency_contact_phone || null
+        ]);
+        patientId = Number(patRes.lastInsertRowid);
 
-      const patientId = Number(patRes.lastInsertRowid);
-
-      db.run(`
-        INSERT INTO notifications (user_id, title, message, type)
-        VALUES (?, 'Registered by Healthcare Worker', ?, 'general')
-      `, [userId, `You were registered in RuralCare with Digital Health Journey ID: ${journeyId}. Default password: Demo@123`]);
+        db.run(`
+          INSERT INTO notifications (user_id, title, message, type)
+          VALUES (?, 'Registered by Healthcare Worker', ?, 'general')
+        `, [userId, `You were registered in RuralCare with Digital Health Journey ID: ${journeyId}. Default password: Demo@123`]);
+      }
 
       createdPatient = db.get(`
-        SELECT p.*, u.name, u.age, u.gender, u.phone, u.email, v.village_name
+        SELECT p.*, u.name, u.age, u.gender, u.phone, u.email, v.village_name, v.district
         FROM patients p
         JOIN users u ON p.user_id = u.user_id
         LEFT JOIN villages v ON u.village_id = v.village_id
@@ -128,6 +168,7 @@ router.post('/register', authenticateToken, requireRoles('asha', 'doctor', 'admi
       patient: createdPatient
     });
   } catch (err) {
+    console.error('Patient register error:', err);
     return res.status(500).json({ error: err.message });
   }
 });

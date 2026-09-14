@@ -550,6 +550,47 @@ export function CitizenHome({ setActiveTab, onOpenEmergency, onOpenTelemed, onOp
             </button>
 
             <button
+              onClick={() => {
+                if (onOpenTelemed) {
+                  onOpenTelemed({
+                    doctorName: 'Dr. Rajesh Deshmukh',
+                    specialty: 'Govt Medical Officer • OPD Telemedicine',
+                    facility: `${currentVillage} PHC Telehealth Desk`,
+                    patientName: user?.name || 'Citizen'
+                  });
+                } else {
+                  setActiveTab('telemedicine');
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.55rem',
+                background: '#0D9488',
+                color: '#FFFFFF',
+                padding: '0.82rem 1.6rem',
+                borderRadius: '9999px',
+                fontSize: '0.94rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(13, 148, 136, 0.25)',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = '#0B7A70';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = '#0D9488';
+                e.currentTarget.style.transform = 'none';
+              }}
+            >
+              <Video size={17} />
+              <span>{lang === 'mr' ? 'व्हिडिओ डॉक्टर सल्ला' : lang === 'hi' ? 'वीडियो डॉक्टर परामर्श' : 'Consult Doctor (Video Call)'}</span>
+            </button>
+
+            <button
               onClick={onOpenEmergency}
               style={{
                 display: 'inline-flex',
