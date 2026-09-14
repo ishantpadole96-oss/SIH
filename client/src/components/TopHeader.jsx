@@ -567,6 +567,7 @@ export function TopHeader({ onToggleMobileSidebar, onOpenAuth, onOpenJourneyScan
                 onClick={() => {
                   logout();
                   setShowUserDropdown(false);
+                  window.location.hash = '#/landing';
                 }}
                 style={{
                   width: '100%',

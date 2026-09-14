@@ -12,8 +12,8 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
   const { t } = useLanguage();
 
   const [activeMode, setActiveMode] = useState('login'); // 'login' | 'register' (citizen only)
-  const [identifier, setIdentifier] = useState('demo_user');
-  const [password, setPassword] = useState('demo_password');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
   // Registration fields for citizens
@@ -23,7 +23,7 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
   const [regAge, setRegAge] = useState('');
   const [regGender, setRegGender] = useState('Female');
   const [regVillage, setRegVillage] = useState(1);
-  const [regPassword, setRegPassword] = useState('demo_password');
+  const [regPassword, setRegPassword] = useState('');
 
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -80,9 +80,20 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    if (!identifier || !identifier.trim()) {
+      setError('Username / Official ID is required.');
+      return;
+    }
+
+    if (!password || !password.trim()) {
+      setError('Password is required! Please enter your password or demo_password.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await login(identifier, password, portalRole);
+      await login(identifier.trim(), password.trim(), portalRole);
       if (onLoginSuccess) onLoginSuccess();
     } catch (err) {
       setError(err.message || 'Login failed. Please verify your credentials.');
@@ -91,9 +102,21 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
     }
   };
 
+  const handleFillDemo = () => {
+    setIdentifier('demo_user');
+    setPassword('demo_password');
+    setError(null);
+  };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    if (!regPassword || !regPassword.trim()) {
+      setError('Please create a password for your account.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/auth/register', {
@@ -119,19 +142,6 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
       if (onLoginSuccess) onLoginSuccess();
     } catch (err) {
       setError(err.message || 'Registration failed.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      await demoLogin(portalRole);
-      if (onLoginSuccess) onLoginSuccess();
-    } catch (err) {
-      setError(err.message || 'Demo access failed');
     } finally {
       setLoading(false);
     }
@@ -321,34 +331,32 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
               marginBottom: '1.5rem',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '0.78rem', color: '#4B5563', marginBottom: '0.5rem' }}>
-                Quick Evaluation Mode (Universal SIH Demo Passcode)
+              <div style={{ fontSize: '0.78rem', color: '#4B5563', marginBottom: '0.5rem', fontWeight: 600 }}>
+                Demo Credentials (Required Password Verification)
               </div>
               <button
                 type="button"
-                onClick={handleDemoLogin}
-                disabled={loading}
+                onClick={handleFillDemo}
                 style={{
                   width: '100%',
-                  background: config.color,
-                  color: '#FFFFFF',
-                  border: 'none',
+                  background: '#F1F5F9',
+                  color: '#0F172A',
+                  border: '1.5px dashed #94A3B8',
                   padding: '0.65rem 1rem',
                   borderRadius: '8px',
-                  fontSize: '0.9rem',
+                  fontSize: '0.86rem',
                   fontWeight: 700,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.08)'
+                  cursor: 'pointer'
                 }}
               >
-                <Sparkles size={16} /> 1-Click Instant Demo Login as {portalRole.toUpperCase()}
+                <Sparkles size={16} color="#0D9488" /> Auto-Fill Demo Credentials (demo_user / demo_password)
               </button>
               <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '0.4rem' }}>
-                Uses User: <b>demo_user</b> &bull; Password: <b>demo_password</b>
+                Fills <b>demo_user</b> &amp; <b>demo_password</b> into the form fields. Click "Sign In with Password" to verify.
               </div>
             </div>
 

@@ -77,6 +77,16 @@ function AppContent() {
   }, []);
 
   const navigatePortal = (targetRole, defaultTab = null) => {
+    // If navigating to landing, clear session so re-entering any portal strictly asks for password
+    if (targetRole === 'landing') {
+      logout();
+    } else if (['citizen', 'doctor', 'asha', 'admin'].includes(targetRole)) {
+      const isCitizenRole = user && (user.role === 'citizen' || user.role === 'patient');
+      const isMatching = user && (targetRole === 'citizen' ? isCitizenRole : user.role === targetRole);
+      if (user && !isMatching) {
+        logout();
+      }
+    }
     window.location.hash = `#/${targetRole}`;
     setCurrentPortal(targetRole);
     if (targetRole === 'citizen' && defaultTab) {
@@ -264,9 +274,13 @@ function AppContent() {
         }} />
 
         <LandingNavbar
-          onSelectPortal={(roleToOpen) => navigatePortal(roleToOpen)}
+          onSelectPortal={(roleToOpen, targetTab) => {
+            logout();
+            navigatePortal(roleToOpen, targetTab);
+          }}
           onOpenEmergency={() => setShowEmergencyModal(true)}
           onOpenAuth={() => {
+            logout();
             setLoginPortalRole('citizen');
             setCurrentPortal('login');
           }}
@@ -274,7 +288,10 @@ function AppContent() {
         
         <main style={{ flex: 1 }}>
           <LandingPage
-            onSelectPortal={(roleToOpen) => navigatePortal(roleToOpen)}
+            onSelectPortal={(roleToOpen, targetTab) => {
+              logout();
+              navigatePortal(roleToOpen, targetTab);
+            }}
             onOpenEmergency={() => setShowEmergencyModal(true)}
             onOpenJourneyScanner={() => {
               setJourneyIdForModal('MH-RURAL-2026-0001');
@@ -391,7 +408,10 @@ function AppContent() {
               </button>
 
               <button
-                onClick={() => navigatePortal('landing')}
+                onClick={() => {
+                  logout();
+                  navigatePortal('landing');
+                }}
                 className="btn btn-sm btn-secondary"
                 style={{ background: '#334155', color: '#F1F5F9', border: 'none' }}
               >
@@ -493,7 +513,10 @@ function AppContent() {
               </div>
 
               <button
-                onClick={() => navigatePortal('landing')}
+                onClick={() => {
+                  logout();
+                  navigatePortal('landing');
+                }}
                 className="btn btn-sm"
                 style={{ background: '#BE123C', color: '#FFFFFF', border: 'none' }}
               >
@@ -594,7 +617,10 @@ function AppContent() {
               </div>
 
               <button
-                onClick={() => navigatePortal('landing')}
+                onClick={() => {
+                  logout();
+                  navigatePortal('landing');
+                }}
                 className="btn btn-sm"
                 style={{ background: '#B45309', color: '#FFFFFF', border: 'none' }}
               >
@@ -628,6 +654,16 @@ function AppContent() {
   // =========================================================================
   // 6. CITIZEN & PATIENT PORTAL PAGE (Dedicated View)
   // =========================================================================
+  if (!user || (user.role !== 'citizen' && user.role !== 'patient')) {
+    return (
+      <PortalLoginPage
+        portalRole="citizen"
+        onLoginSuccess={() => navigatePortal('citizen')}
+        onBackToLanding={() => navigatePortal('landing')}
+      />
+    );
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#F4F7F5', display: 'flex', flexDirection: 'column' }}>
       <IncomingCallBanner onAcceptCall={(call) => {
@@ -727,7 +763,10 @@ function AppContent() {
             </button>
 
             <button
-              onClick={() => navigatePortal('landing')}
+              onClick={() => {
+                logout();
+                navigatePortal('landing');
+              }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
