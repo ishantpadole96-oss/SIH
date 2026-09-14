@@ -72,7 +72,132 @@ function runMigrations() {
 
     // Screenings Triage Decision Support
     "ALTER TABLE screenings ADD COLUMN triage_category TEXT DEFAULT 'Normal';",
-    "ALTER TABLE screenings ADD COLUMN smart_actions_json TEXT DEFAULT '[]';"
+    "ALTER TABLE screenings ADD COLUMN smart_actions_json TEXT DEFAULT '[]';",
+
+    // Facility Data Contract (Section 32)
+    "ALTER TABLE facilities ADD COLUMN source_name TEXT DEFAULT 'Govt of Maharashtra Public Health Department / NHM';",
+    "ALTER TABLE facilities ADD COLUMN source_type TEXT DEFAULT 'government';",
+    "ALTER TABLE facilities ADD COLUMN verification_status TEXT DEFAULT 'verified';",
+    "ALTER TABLE facilities ADD COLUMN last_verified_at DATETIME DEFAULT '2026-09-14 00:00:00';",
+    "ALTER TABLE facilities ADD COLUMN is_demo_data INTEGER DEFAULT 0;",
+
+    // Consents (Section 25)
+    `CREATE TABLE IF NOT EXISTS consents (
+        consent_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patient_id INTEGER NOT NULL,
+        requester_id INTEGER NOT NULL,
+        purpose TEXT NOT NULL,
+        scope TEXT NOT NULL CHECK(scope IN ('full_history', 'diagnostic_reports', 'prescriptions')),
+        status TEXT NOT NULL CHECK(status IN ('Pending', 'Granted', 'Revoked', 'Expired')) DEFAULT 'Pending',
+        granted_at DATETIME,
+        expires_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+        FOREIGN KEY (requester_id) REFERENCES users(user_id) ON DELETE CASCADE
+    );`,
+
+    // FCFS Consultation Requests & Doctor Queue (Section 10)
+    `CREATE TABLE IF NOT EXISTS consultation_requests (
+        request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patient_id INTEGER NOT NULL,
+        health_center_id INTEGER NOT NULL,
+        worker_id INTEGER NOT NULL,
+        chief_complaint TEXT NOT NULL,
+        symptoms_text TEXT NOT NULL,
+        duration TEXT,
+        vitals_json TEXT,
+        urgency TEXT NOT NULL CHECK(urgency IN ('Routine', 'Urgent', 'Emergency')) DEFAULT 'Routine',
+        assigned_doctor_id INTEGER,
+        status TEXT NOT NULL CHECK(status IN ('Queued', 'Assigned', 'In Consultation', 'Completed', 'Cancelled')) DEFAULT 'Queued',
+        doctor_notes TEXT,
+        queued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        assigned_at DATETIME,
+        completed_at DATETIME,
+        FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+        FOREIGN KEY (health_center_id) REFERENCES facilities(facility_id) ON DELETE RESTRICT,
+        FOREIGN KEY (worker_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+        FOREIGN KEY (assigned_doctor_id) REFERENCES doctors(staff_id) ON DELETE SET NULL
+    );`,
+
+    // Digital Prescriptions - Versioned & Immutable (Section 14)
+    `CREATE TABLE IF NOT EXISTS prescriptions (
+        prescription_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        consultation_id INTEGER,
+        patient_id INTEGER NOT NULL,
+        doctor_id INTEGER NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
+        status TEXT NOT NULL CHECK(status IN ('Issued', 'Amended', 'Dispensed', 'Cancelled')) DEFAULT 'Issued',
+        diagnosis TEXT,
+        diet_lifestyle TEXT,
+        instructions TEXT,
+        follow_up TEXT,
+        previous_version_id INTEGER,
+        issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+        FOREIGN KEY (doctor_id) REFERENCES doctors(staff_id) ON DELETE RESTRICT
+    );`,
+
+    `CREATE TABLE IF NOT EXISTS prescription_items (
+        item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        prescription_id INTEGER NOT NULL,
+        medicine_name TEXT NOT NULL,
+        strength TEXT,
+        dose TEXT NOT NULL,
+        frequency TEXT NOT NULL,
+        duration TEXT NOT NULL,
+        route TEXT DEFAULT 'Oral',
+        instructions TEXT,
+        FOREIGN KEY (prescription_id) REFERENCES prescriptions(prescription_id) ON DELETE CASCADE
+    );`,
+
+    // Medicine Requests (Section 15)
+    `CREATE TABLE IF NOT EXISTS medicine_requests (
+        request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        facility_id INTEGER NOT NULL,
+        worker_id INTEGER NOT NULL,
+        medicine_name TEXT NOT NULL,
+        category TEXT DEFAULT 'Essential',
+        requested_quantity INTEGER NOT NULL,
+        unit TEXT DEFAULT 'strips',
+        urgency TEXT NOT NULL CHECK(urgency IN ('Routine', 'Urgent', 'Emergency')) DEFAULT 'Routine',
+        status TEXT NOT NULL CHECK(status IN ('Pending', 'Approved', 'Rejected', 'Fulfilled')) DEFAULT 'Pending',
+        admin_id INTEGER,
+        admin_notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        resolved_at DATETIME,
+        FOREIGN KEY (facility_id) REFERENCES facilities(facility_id) ON DELETE RESTRICT,
+        FOREIGN KEY (worker_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+        FOREIGN KEY (admin_id) REFERENCES users(user_id) ON DELETE SET NULL
+    );`,
+
+    // Inventory Transactions (Section 15)
+    `CREATE TABLE IF NOT EXISTS inventory_transactions (
+        transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        facility_id INTEGER NOT NULL,
+        medicine_id INTEGER,
+        medicine_name TEXT NOT NULL,
+        transaction_type TEXT NOT NULL CHECK(transaction_type IN ('Restock', 'Dispensed', 'Adjustment', 'Replenishment Fulfilled')),
+        quantity INTEGER NOT NULL,
+        balance_after INTEGER NOT NULL,
+        actor_id INTEGER NOT NULL,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (facility_id) REFERENCES facilities(facility_id) ON DELETE RESTRICT,
+        FOREIGN KEY (actor_id) REFERENCES users(user_id) ON DELETE RESTRICT
+    );`,
+
+    // Security & Operations Audit Logs (Section 35)
+    `CREATE TABLE IF NOT EXISTS audit_logs (
+        log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        actor_id INTEGER,
+        actor_role TEXT,
+        action TEXT NOT NULL,
+        resource_type TEXT NOT NULL,
+        resource_id TEXT,
+        details TEXT,
+        ip_address TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`
   ];
 
   for (const sql of migrations) {

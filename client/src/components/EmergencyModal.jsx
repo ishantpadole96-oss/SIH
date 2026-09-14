@@ -53,44 +53,78 @@ export function EmergencyModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* 108 Emergency Banner */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.3) 100%)',
-          border: '1px solid #EF4444',
-          borderRadius: 'var(--radius-md)',
-          padding: '1.25rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1.25rem'
-        }}>
-          <div>
-            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#F87171', fontWeight: 700 }}>
-              National Ambulance Service
-            </span>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#FFFFFF' }}>
-              DIAL 108
+        {/* Dual Emergency Helplines: 112 ERSS & 108 MEMS */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          {/* 112 Pan-India ERSS */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.25) 0%, rgba(153, 27, 27, 0.3) 100%)',
+            border: '1px solid #DC2626',
+            borderRadius: 'var(--radius-md)',
+            padding: '1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#FCA5A5', fontWeight: 700 }}>
+                Pan-India Emergency (ERSS)
+              </span>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFFFFF', margin: '0.2rem 0' }}>
+                DIAL 112
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#FECACA', marginBottom: '0.75rem' }}>
+                Unified single emergency number for Medical, Ambulance & Police
+              </p>
             </div>
-            <p style={{ fontSize: '0.82rem', color: '#FECACA' }}>
-              Free 24x7 emergency medical response for rural areas
-            </p>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <a
+                href="tel:112"
+                className="btn btn-emergency btn-sm"
+                style={{ flex: 1, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontSize: '0.8rem' }}
+              >
+                <Phone size={14} /> Call 112
+              </a>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={() => setShowCallSimulator(true)}
-              className="btn btn-emergency btn-lg"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)' }}
-            >
-              <Radio size={18} className="animate-pulse" /> Live 108 Voice Call
-            </button>
-            <a
-              href="tel:108"
-              className="btn btn-secondary"
-              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.75rem 1rem' }}
-            >
-              <Phone size={16} /> Dial 108
-            </a>
+
+          {/* 108 MEMS Ambulance */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.3) 100%)',
+            border: '1px solid #EF4444',
+            borderRadius: 'var(--radius-md)',
+            padding: '1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#F87171', fontWeight: 700 }}>
+                Maharashtra MEMS Ambulance
+              </span>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFFFFF', margin: '0.2rem 0' }}>
+                DIAL 108
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#FECACA', marginBottom: '0.75rem' }}>
+                Free 24x7 rural emergency medical ambulance dispatch
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowCallSimulator(true)}
+                className="btn btn-emergency btn-sm"
+                style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontSize: '0.8rem' }}
+              >
+                <Radio size={14} className="animate-pulse" /> Live Call
+              </button>
+              <a
+                href="tel:108"
+                className="btn btn-secondary btn-sm"
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.3rem 0.6rem' }}
+              >
+                <Phone size={14} />
+              </a>
+            </div>
           </div>
         </div>
 
@@ -160,9 +194,9 @@ export function EmergencyModal({ isOpen, onClose }) {
                 </div>
               </div>
               <div style={{ background: 'var(--color-bg-primary)', padding: '0.6rem', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Available Beds</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Registered Beds</div>
                 <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#38BDF8' }}>
-                  {emergencyData.available_beds} / {emergencyData.total_beds}
+                  {emergencyData.total_beds || 'N/A'}
                 </div>
               </div>
               <div style={{ background: 'var(--color-bg-primary)', padding: '0.6rem', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
@@ -171,6 +205,11 @@ export function EmergencyModal({ isOpen, onClose }) {
                   {emergencyData.trauma_care_level || 'Level 1'}
                 </div>
               </div>
+            </div>
+
+            {/* Anti-Fabrication & Provenance Notice (Master Spec Sec 2.1 & 33) */}
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-sm)', marginBottom: '0.75rem', borderLeft: '2px solid #38BDF8' }}>
+              <strong>Data Provenance:</strong> Facility verified via Public Health Dept / NHM Maharashtra. <em>Live bed census is not real-time telemetry — call hospital directly to confirm current bed availability.</em>
             </div>
 
             {/* Action buttons */}

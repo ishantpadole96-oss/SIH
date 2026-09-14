@@ -23,6 +23,29 @@ export function AdminDashboard() {
   const [interventionSuccess, setInterventionSuccess] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Master Spec: Medicine Requests & Audit Logs
+  const [medicineRequests, setMedicineRequests] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+
+  // Staff Onboarding State
+  const [staffTab, setStaffTab] = useState('doctor'); // 'doctor' | 'worker'
+  const [doctorForm, setDoctorForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    specialty: 'General Medicine',
+    registration_number: '',
+    facility_id: 1
+  });
+  const [workerForm, setWorkerForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    facility_id: 1,
+    assigned_villages: 'Khedgaon, Nimgaon'
+  });
+  const [staffSuccess, setStaffSuccess] = useState(null);
+
   // Complaint resolution modal
   const [resolvingComplaint, setResolvingComplaint] = useState(null);
   const [resolutionStatus, setResolutionStatus] = useState('In Progress');
@@ -39,21 +62,91 @@ export function AdminDashboard() {
       fetch('/api/admin/analytics/quality', { headers }).then(r => r.json()),
       fetch('/api/admin/analytics/accessibility', { headers }).then(r => r.json()),
       fetch('/api/complaints', { headers }).then(r => r.json()),
-      fetch('/api/admin/analytics/bottlenecks', { headers }).then(r => r.json())
+      fetch('/api/admin/analytics/bottlenecks', { headers }).then(r => r.json()),
+      fetch('/api/medicines/requests', { headers }).then(r => r.json()).catch(() => ({ requests: [] })),
+      fetch('/api/admin/audit-logs', { headers }).then(r => r.json()).catch(() => ({ logs: [] }))
     ])
-      .then(([ov, gis, qual, acc, comp, btn]) => {
+      .then(([ov, gis, qual, acc, comp, btn, medReqs, audits]) => {
         setOverview(ov.overview);
         setGisData(gis);
         setQualityData(qual);
         setAccessibilityData(acc);
         setComplaints(comp.complaints || []);
         setBottlenecksData(btn);
+        setMedicineRequests(medReqs.requests || []);
+        setAuditLogs(audits.logs || []);
         setLoading(false);
       })
       .catch(err => {
         console.error('Failed to load admin analytics:', err);
         setLoading(false);
       });
+  };
+
+  const handleUpdateMedRequest = async (requestId, status) => {
+    try {
+      const res = await fetch(`/api/medicines/requests/${requestId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status,
+          admin_notes: `Processed and marked as ${status} by District Administrative Officer.`
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update requisition');
+      alert(`Requisition #${requestId} updated to ${status}! Stock updated automatically.`);
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleCreateDoctor = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/staff/doctor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(doctorForm)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create doctor account');
+      setStaffSuccess(`Medical Officer ${doctorForm.name} onboarded! Credentials sent.`);
+      setDoctorForm({ name: '', email: '', phone: '', specialty: 'General Medicine', registration_number: '', facility_id: 1 });
+      setTimeout(() => setStaffSuccess(null), 3000);
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleCreateWorker = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/staff/worker', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(workerForm)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create health worker account');
+      setStaffSuccess(`Health Worker ${workerForm.name} onboarded! Assigned to Sub-Centre.`);
+      setWorkerForm({ name: '', email: '', phone: '', facility_id: 1, assigned_villages: 'Khedgaon, Nimgaon' });
+      setTimeout(() => setStaffSuccess(null), 3000);
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   useEffect(() => {
@@ -205,6 +298,24 @@ export function AdminDashboard() {
           className={`btn btn-sm ${activeAdminTab === 'surveillance' ? 'btn-primary' : 'btn-secondary'}`}
         >
           <Flame size={16} className="text-red-400" /> Disease Surveillance Radar
+        </button>
+        <button
+          onClick={() => setActiveAdminTab('medicines')}
+          className={`btn btn-sm ${activeAdminTab === 'medicines' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          <Pill size={16} /> Medicine Requisitions ({medicineRequests.filter(r => r.status === 'Pending').length})
+        </button>
+        <button
+          onClick={() => setActiveAdminTab('staff')}
+          className={`btn btn-sm ${activeAdminTab === 'staff' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          <Users size={16} /> Staff Onboarding
+        </button>
+        <button
+          onClick={() => setActiveAdminTab('audit')}
+          className={`btn btn-sm ${activeAdminTab === 'audit' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          <ShieldAlert size={16} /> Security Audit Logs ({auditLogs.length})
         </button>
       </div>
 
@@ -707,6 +818,339 @@ export function AdminDashboard() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* TAB: MEDICINE REQUISITION & DISPATCH DESK (Master Spec Sec 15 & 24) */}
+          {activeAdminTab === 'medicines' && (
+            <div className="card" style={{ padding: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Pill size={20} color="#2DD4BF" /> Central Medicine Requisitions &amp; Dispensary Replenishment Desk
+                  </h3>
+                  <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                    Review stock demands submitted by Health Workers, authorize bulk dispatches, and trigger immutable inventory transactions.
+                  </p>
+                </div>
+                <span className="badge badge-info">{medicineRequests.length} Total Demands</span>
+              </div>
+
+              {medicineRequests.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  No medicine replenishment requests currently recorded in district system.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', fontSize: '0.84rem', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
+                        <th style={{ padding: '0.6rem 0.5rem' }}>Req ID</th>
+                        <th style={{ padding: '0.6rem 0.5rem' }}>Facility / Requester</th>
+                        <th style={{ padding: '0.6rem 0.5rem' }}>Medicine Required</th>
+                        <th style={{ padding: '0.6rem 0.5rem' }}>Quantity</th>
+                        <th style={{ padding: '0.6rem 0.5rem' }}>Urgency</th>
+                        <th style={{ padding: '0.6rem 0.5rem' }}>Status</th>
+                        <th style={{ padding: '0.6rem 0.5rem' }}>Date</th>
+                        <th style={{ padding: '0.6rem 0.5rem', textAlign: 'right' }}>Admin Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {medicineRequests.map(r => (
+                        <tr key={r.request_id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: '#38BDF8' }}>#{r.request_id}</td>
+                          <td style={{ padding: '0.75rem 0.5rem' }}>
+                            <div style={{ fontWeight: 600 }}>{r.facility_name || 'Sub-Centre Khed'}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>By: {r.requester_name || 'Health Worker'}</div>
+                          </td>
+                          <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>{r.medicine_name}</td>
+                          <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.95rem', fontWeight: 700 }}>{r.quantity_requested}</td>
+                          <td style={{ padding: '0.75rem 0.5rem' }}>
+                            <span className={`badge ${r.urgency === 'Emergency' ? 'badge-danger' : r.urgency === 'Urgent' ? 'badge-warning' : 'badge-info'}`} style={{ fontSize: '0.72rem' }}>
+                              {r.urgency}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem 0.5rem' }}>
+                            <span className={`badge ${r.status === 'Fulfilled' ? 'badge-success' : r.status === 'Approved' ? 'badge-info' : r.status === 'Rejected' ? 'badge-danger' : 'badge-neutral'}`} style={{ fontSize: '0.72rem' }}>
+                              {r.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>{r.created_at}</td>
+                          <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>
+                            <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                              {r.status === 'Pending' && (
+                                <>
+                                  <button
+                                    onClick={() => handleUpdateMedRequest(r.request_id, 'Approved')}
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem' }}
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateMedRequest(r.request_id, 'Fulfilled')}
+                                    className="btn btn-primary btn-sm"
+                                    style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem' }}
+                                    title="Dispatches stock and triggers atomic inventory transaction"
+                                  >
+                                    Fulfill Stock
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateMedRequest(r.request_id, 'Rejected')}
+                                    className="btn btn-outline btn-sm"
+                                    style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', color: '#F87171' }}
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                              {r.status === 'Approved' && (
+                                <button
+                                  onClick={() => handleUpdateMedRequest(r.request_id, 'Fulfilled')}
+                                  className="btn btn-primary btn-sm"
+                                  style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem' }}
+                                >
+                                  Complete Fulfillment
+                                </button>
+                              )}
+                              {r.status === 'Fulfilled' && (
+                                <span style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 600 }}>✓ Inventory Credited</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: STAFF ONBOARDING & CREDENTIALS ISSUANCE (Master Spec Sec 36) */}
+          {activeAdminTab === 'staff' && (
+            <div className="card" style={{ padding: '2rem', maxWidth: '720px', margin: '0 auto' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Users size={20} color="#38BDF8" /> Verified Healthcare Staff Onboarding
+                </h3>
+                <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                  Enforces administrative control (Master Spec Sec 0 &amp; 36): Only Authorized Administrators may create Doctor and Health Worker accounts.
+                </p>
+              </div>
+
+              {staffSuccess && (
+                <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+                  {staffSuccess}
+                </div>
+              )}
+
+              {/* Toggle Staff Type */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: 'var(--color-bg-primary)', padding: '4px', borderRadius: 'var(--radius-sm)' }}>
+                <button
+                  type="button"
+                  onClick={() => setStaffTab('doctor')}
+                  className={`btn btn-sm ${staffTab === 'doctor' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ flex: 1 }}
+                >
+                  Onboard Medical Officer (Doctor)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStaffTab('worker')}
+                  className={`btn btn-sm ${staffTab === 'worker' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ flex: 1 }}
+                >
+                  Onboard Health Worker (ASHA / ANM)
+                </button>
+              </div>
+
+              {staffTab === 'doctor' ? (
+                <form onSubmit={handleCreateDoctor}>
+                  <div className="form-group">
+                    <label className="form-label">Full Doctor Name (with Title)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Dr. Rajesh Deshmukh"
+                      value={doctorForm.name}
+                      onChange={e => setDoctorForm({ ...doctorForm, name: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                      <label className="form-label">Official Email</label>
+                      <input
+                        type="email"
+                        className="form-input"
+                        placeholder="doctor@phd.maharashtra.gov.in"
+                        value={doctorForm.email}
+                        onChange={e => setDoctorForm({ ...doctorForm, email: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Mobile Number</label>
+                      <input
+                        type="tel"
+                        className="form-input"
+                        placeholder="9876543210"
+                        value={doctorForm.phone}
+                        onChange={e => setDoctorForm({ ...doctorForm, phone: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                      <label className="form-label">Clinical Specialty</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. General Medicine / Pediatrics"
+                        value={doctorForm.specialty}
+                        onChange={e => setDoctorForm({ ...doctorForm, specialty: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Medical Council Reg. No. (MCI / MMC)</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="MMC-2018-09874"
+                        value={doctorForm.registration_number}
+                        onChange={e => setDoctorForm({ ...doctorForm, registration_number: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
+                    Issue Verified Doctor Account &amp; Assign to Center
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleCreateWorker}>
+                  <div className="form-group">
+                    <label className="form-label">Health Worker Full Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Sunita Suresh Patil"
+                      value={workerForm.name}
+                      onChange={e => setWorkerForm({ ...workerForm, name: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                      <label className="form-label">Official Email / ID</label>
+                      <input
+                        type="email"
+                        className="form-input"
+                        placeholder="worker@ruralhealth.org"
+                        value={workerForm.email}
+                        onChange={e => setWorkerForm({ ...workerForm, email: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Mobile Number</label>
+                      <input
+                        type="tel"
+                        className="form-input"
+                        placeholder="9876543210"
+                        value={workerForm.phone}
+                        onChange={e => setWorkerForm({ ...workerForm, phone: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Assigned Village Jurisdiction / Hamlet Scope</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Khedgaon, Nimgaon, Chakan Wadi"
+                      value={workerForm.assigned_villages}
+                      onChange={e => setWorkerForm({ ...workerForm, assigned_villages: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
+                    Issue Health Worker Account &amp; Map Scope
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* TAB: CENTRAL SECURITY AUDIT LOG VIEWER (Master Spec Sec 27 & 35) */}
+          {activeAdminTab === 'audit' && (
+            <div className="card" style={{ padding: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldAlert size={20} color="#34D399" /> Central Security &amp; Compliance Audit Ledger
+                  </h3>
+                  <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                    Immutable trace of all logins, record views, consent changes, prescription issuances, and administrative updates (DPDP Section 26 &amp; 35).
+                  </p>
+                </div>
+                <span className="badge badge-success">{auditLogs.length} Events Recorded</span>
+              </div>
+
+              {auditLogs.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  No security audit events recorded yet.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', fontSize: '0.82rem', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
+                        <th style={{ padding: '0.5rem' }}>ID</th>
+                        <th style={{ padding: '0.5rem' }}>Timestamp</th>
+                        <th style={{ padding: '0.5rem' }}>Actor</th>
+                        <th style={{ padding: '0.5rem' }}>Role</th>
+                        <th style={{ padding: '0.5rem' }}>Action</th>
+                        <th style={{ padding: '0.5rem' }}>Resource</th>
+                        <th style={{ padding: '0.5rem' }}>Details</th>
+                        <th style={{ padding: '0.5rem' }}>IP Address</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogs.map(log => (
+                        <tr key={log.log_id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <td style={{ padding: '0.6rem 0.5rem', fontWeight: 700, color: 'var(--text-muted)' }}>#{log.log_id}</td>
+                          <td style={{ padding: '0.6rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>{log.timestamp}</td>
+                          <td style={{ padding: '0.6rem 0.5rem', fontWeight: 600 }}>{log.actor_name || `User #${log.actor_id}`}</td>
+                          <td style={{ padding: '0.6rem 0.5rem' }}>
+                            <span className="badge badge-info" style={{ fontSize: '0.68rem' }}>{log.actor_role}</span>
+                          </td>
+                          <td style={{ padding: '0.6rem 0.5rem' }}>
+                            <span className={`badge ${log.action.includes('unauthorized') || log.action.includes('fail') ? 'badge-danger' : log.action.includes('create') ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.7rem' }}>
+                              {log.action}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.6rem 0.5rem' }}>{log.resource_type ? `${log.resource_type} #${log.resource_id}` : '—'}</td>
+                          <td style={{ padding: '0.6rem 0.5rem', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.details}>
+                            {log.details || '—'}
+                          </td>
+                          <td style={{ padding: '0.6rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.72rem' }}>{log.ip_address || '127.0.0.1'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 

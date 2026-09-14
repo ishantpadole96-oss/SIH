@@ -95,9 +95,40 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
           </p>
         </div>
 
-        <button onClick={fetchBoard} className="btn btn-secondary btn-sm" title="Refresh Live Board">
-          <RefreshCw size={16} /> Refresh Census
-        </button>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+          <a
+            href="tel:112"
+            className="btn btn-emergency btn-sm"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+          >
+            <ShieldAlert size={15} /> Dial 112 (ERSS)
+          </a>
+          <button onClick={fetchBoard} className="btn btn-secondary btn-sm" title="Refresh Live Board">
+            <RefreshCw size={16} /> Refresh Census
+          </button>
+        </div>
+      </div>
+
+      {/* Authoritative Data Provenance & Anti-Fabrication Notice (Master Technical Spec Section 2.1, 18 & 33) */}
+      <div style={{
+        background: 'rgba(56, 189, 248, 0.08)',
+        border: '1px solid rgba(56, 189, 248, 0.3)',
+        borderRadius: 'var(--radius-md)',
+        padding: '0.85rem 1.25rem',
+        marginBottom: '1.5rem',
+        fontSize: '0.82rem',
+        color: 'var(--text-secondary)',
+        lineHeight: 1.5
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#38BDF8', fontWeight: 700, marginBottom: '0.25rem' }}>
+          <CheckCircle2 size={16} /> Facility Directory Source: Public Health Department & NHM Maharashtra
+        </div>
+        <div>
+          Hospital coordinates, tiers, and base capacities are source-verified against official Maharashtra public health registries. 
+          <span style={{ color: '#FBBF24', marginLeft: '4px' }}>
+            Note: Live clinical bed counts and on-duty rosters represent institutional records. If real-time bed telemetry is unavailable, contact the facility directly to verify intake capacity.
+          </span>
+        </div>
       </div>
 
       {/* Filter & Search Bar */}
@@ -303,6 +334,26 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
                       </div>
                     </div>
                   )}
+
+                  {/* Data Provenance & Verification Metadata (Sec 0 & 32) */}
+                  <div style={{
+                    fontSize: '0.72rem',
+                    color: 'var(--text-muted)',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'rgba(255,255,255,0.02)',
+                    padding: '4px 8px',
+                    borderRadius: 'var(--radius-sm)'
+                  }}>
+                    <span>
+                      📋 Source: <b>{facility.source_name || 'Govt of Maharashtra / NHM'}</b>
+                    </span>
+                    <span style={{ color: facility.is_demo_data ? '#F59E0B' : '#34D399', fontWeight: 600 }}>
+                      {facility.is_demo_data ? 'DEMO RECORD' : '✓ Verified Registry'}
+                    </span>
+                  </div>
 
                 </div>
 

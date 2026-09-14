@@ -204,4 +204,177 @@ router.post('/', authenticateToken, requireRoles('doctor', 'asha', 'admin'), (re
   }
 });
 
+/**
+ * POST /api/medicines/requests
+ * Health Worker / Staff: Submit a medicine replenishment request to Admin
+ * (Specification Section 15)
+ */
+router.post('/requests', authenticateToken, requireRoles('asha', 'doctor', 'admin'), (req, res) => {
+  try {
+    const { facility_id, medicine_name, category = 'Essential', requested_quantity, unit = 'strips', urgency = 'Routine' } = req.body;
+
+    if (!facility_id || !medicine_name || !requested_quantity) {
+      return res.status(400).json({ error: 'facility_id, medicine_name, and requested_quantity are required' });
+    }
+
+    const ins = db.run(`
+      INSERT INTO medicine_requests (facility_id, worker_id, medicine_name, category, requested_quantity, unit, urgency, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')
+    `, [parseInt(facility_id), req.user.user_id, medicine_name, category, parseInt(requested_quantity), unit, urgency]);
+
+    const reqId = Number(ins.lastInsertRowid);
+
+    // Notify administrators
+    db.run(`
+      INSERT INTO notifications (user_id, title, message, type)
+      SELECT u.user_id, 'New Medicine Replenishment Request', ?, 'general'
+      FROM users u WHERE u.role = 'admin' LIMIT 2
+    `, [`Request #${reqId}: ${req.user.name || 'Health Worker'} requested ${requested_quantity} ${unit} of ${medicine_name} (${urgency} priority).`]);
+
+    const created = db.get('SELECT mr.*, f.facility_name, u.name as worker_name FROM medicine_requests mr JOIN facilities f ON mr.facility_id = f.facility_id JOIN users u ON mr.worker_id = u.user_id WHERE mr.request_id = ?', [reqId]);
+    return res.status(201).json({
+      message: 'Medicine replenishment request dispatched to Directorate Admin',
+      request: created
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/medicines/requests
+ * Worker & Admin: View medicine replenishment requests
+ */
+router.get('/requests', authenticateToken, requireRoles('asha', 'doctor', 'admin'), (req, res) => {
+  try {
+    const { facility_id, status } = req.query;
+    let query = `
+      SELECT mr.*, f.facility_name, u.name as worker_name, admin.name as admin_name
+      FROM medicine_requests mr
+      JOIN facilities f ON mr.facility_id = f.facility_id
+      JOIN users u ON mr.worker_id = u.user_id
+      LEFT JOIN users admin ON mr.admin_id = admin.user_id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (facility_id) {
+      query += ` AND mr.facility_id = ?`;
+      params.push(parseInt(facility_id));
+    }
+    if (status) {
+      query += ` AND mr.status = ?`;
+      params.push(status);
+    }
+
+    query += ` ORDER BY CASE mr.urgency WHEN 'Emergency' THEN 1 WHEN 'Urgent' THEN 2 ELSE 3 END, mr.created_at DESC`;
+    const requests = db.all(query, params);
+    return res.json({ requests });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * PUT /api/medicines/requests/:id/status
+ * Admin: Approve, Reject, or Fulfill a replenishment request
+ * Fulfilling automatically records an inventory_transaction and increments stock (Section 15)
+ */
+router.put('/requests/:id/status', authenticateToken, requireRoles('admin'), (req, res) => {
+  try {
+    const requestId = parseInt(req.params.id);
+    const { status, admin_notes } = req.body;
+
+    if (!['Pending', 'Approved', 'Rejected', 'Fulfilled'].includes(status)) {
+      return res.status(400).json({ error: 'Valid status required (Pending, Approved, Rejected, Fulfilled)' });
+    }
+
+    const reqItem = db.get('SELECT * FROM medicine_requests WHERE request_id = ?', [requestId]);
+    if (!reqItem) return res.status(404).json({ error: 'Replenishment request not found' });
+
+    db.transaction(() => {
+      db.run(`
+        UPDATE medicine_requests
+        SET status = ?, admin_id = ?, admin_notes = ?, resolved_at = CURRENT_TIMESTAMP
+        WHERE request_id = ?
+      `, [status, req.user.user_id, admin_notes || null, requestId]);
+
+      // If fulfilled, automatically update stock through an audited transaction (Section 15, Step 73-74)
+      if (status === 'Fulfilled') {
+        let existingMed = db.get('SELECT * FROM medicine_stock WHERE facility_id = ? AND LOWER(medicine_name) = LOWER(?)', [reqItem.facility_id, reqItem.medicine_name]);
+        let newBalance = reqItem.requested_quantity;
+        let medId = null;
+
+        if (existingMed) {
+          medId = existingMed.medicine_id;
+          newBalance = existingMed.quantity + reqItem.requested_quantity;
+          db.run(`
+            UPDATE medicine_stock
+            SET quantity = ?, stock_status = 'In Stock', last_updated = CURRENT_TIMESTAMP
+            WHERE medicine_id = ?
+          `, [newBalance, medId]);
+        } else {
+          const ins = db.run(`
+            INSERT INTO medicine_stock (facility_id, medicine_name, category, quantity, unit, stock_status)
+            VALUES (?, ?, ?, ?, ?, 'In Stock')
+          `, [reqItem.facility_id, reqItem.medicine_name, reqItem.category, reqItem.requested_quantity, reqItem.unit]);
+          medId = Number(ins.lastInsertRowid);
+        }
+
+        db.run(`
+          INSERT INTO inventory_transactions (facility_id, medicine_id, medicine_name, transaction_type, quantity, balance_after, actor_id, notes)
+          VALUES (?, ?, ?, 'Replenishment Fulfilled', ?, ?, ?, ?)
+        `, [
+          reqItem.facility_id,
+          medId,
+          reqItem.medicine_name,
+          reqItem.requested_quantity,
+          newBalance,
+          req.user.user_id,
+          `Fulfilled from Admin request #${requestId}`
+        ]);
+      }
+
+      // Notify health worker
+      db.run(`
+        INSERT INTO notifications (user_id, title, message, type)
+        VALUES (?, 'Medicine Request Status Update', ?, 'general')
+      `, [reqItem.worker_id, `Your replenishment request for ${reqItem.medicine_name} is now: ${status}. Admin notes: ${admin_notes || 'None'}`]);
+    });
+
+    const updated = db.get('SELECT * FROM medicine_requests WHERE request_id = ?', [requestId]);
+    return res.json({ message: `Request marked as ${status}`, request: updated });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/medicines/transactions
+ * View inventory audit transactions
+ */
+router.get('/transactions', authenticateToken, requireRoles('admin', 'doctor', 'asha'), (req, res) => {
+  try {
+    const { facility_id } = req.query;
+    let query = `
+      SELECT it.*, f.facility_name, u.name as actor_name
+      FROM inventory_transactions it
+      JOIN facilities f ON it.facility_id = f.facility_id
+      JOIN users u ON it.actor_id = u.user_id
+      WHERE 1=1
+    `;
+    const params = [];
+    if (facility_id) {
+      query += ` AND it.facility_id = ?`;
+      params.push(parseInt(facility_id));
+    }
+    query += ` ORDER BY it.created_at DESC LIMIT 50`;
+    const transactions = db.all(query, params);
+    return res.json({ transactions });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
+

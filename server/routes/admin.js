@@ -411,5 +411,129 @@ router.get('/analytics/bottlenecks', authenticateToken, requireRoles('admin', 'd
   }
 });
 
+/**
+ * GET /api/admin/audit-logs
+ * View security and operations audit log (Master Specification Section 35)
+ */
+router.get('/audit-logs', authenticateToken, requireRoles('admin'), (req, res) => {
+  try {
+    const { action, limit = 100 } = req.query;
+    let query = `
+      SELECT al.*, u.name as actor_name, u.email as actor_email
+      FROM audit_logs al
+      LEFT JOIN users u ON al.actor_id = u.user_id
+      WHERE 1=1
+    `;
+    const params = [];
+    if (action) {
+      query += ` AND al.action = ?`;
+      params.push(action);
+    }
+    query += ` ORDER BY al.timestamp DESC LIMIT ?`;
+    params.push(parseInt(limit));
+
+    const logs = db.all(query, params);
+    return res.json({ logs });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/admin/staff/doctor
+ * Admin: Add verified Doctor account (Section 36.1)
+ */
+router.post('/staff/doctor', authenticateToken, requireRoles('admin'), (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const { name, email, phone, specialization, facility_id, mmc_reg_no = 'MMC-2026-9901' } = req.body;
+
+    if (!name || !email || !facility_id) {
+      return res.status(400).json({ error: 'Name, email, and facility_id are required' });
+    }
+
+    const salt = bcrypt.genSaltSync(10);
+    const passwordHash = bcrypt.hashSync('demo_password', salt);
+
+    let docRecord;
+    db.transaction(() => {
+      const userRes = db.run(`
+        INSERT INTO users (name, email, phone, role, password_hash)
+        VALUES (?, ?, ?, 'doctor', ?)
+      `, [name, email, phone || '9822000000', passwordHash]);
+
+      const userId = Number(userRes.lastInsertRowid);
+
+      const docRes = db.run(`
+        INSERT INTO doctors (user_id, facility_id, name, specialization, availability_status)
+        VALUES (?, ?, ?, ?, 'Available')
+      `, [userId, parseInt(facility_id), name, specialization || 'General Medicine']);
+
+      const staffId = Number(docRes.lastInsertRowid);
+      docRecord = { staff_id: staffId, user_id: userId, name, specialization, facility_id, mmc_reg_no };
+
+      const { logAuditEvent } = require('../services/auditLogger');
+      logAuditEvent({
+        actor_id: req.user.user_id,
+        actor_role: req.user.role,
+        action: 'DOCTOR_ACCOUNT_CREATED',
+        resource_type: 'doctor',
+        resource_id: staffId,
+        details: { name, specialization, facility_id }
+      });
+    });
+
+    return res.status(201).json({
+      message: 'Verified Doctor account created successfully',
+      doctor: docRecord
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/admin/staff/worker
+ * Admin: Add verified Health Worker (ASHA / ANM) (Section 36.2)
+ */
+router.post('/staff/worker', authenticateToken, requireRoles('admin'), (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const { name, email, phone, village_id } = req.body;
+
+    if (!name || !phone || !village_id) {
+      return res.status(400).json({ error: 'Name, phone, and village_id are required' });
+    }
+
+    const salt = bcrypt.genSaltSync(10);
+    const passwordHash = bcrypt.hashSync('demo_password', salt);
+
+    const userRes = db.run(`
+      INSERT INTO users (name, email, phone, village_id, role, password_hash)
+      VALUES (?, ?, ?, ?, 'asha', ?)
+    `, [name, email || `asha.${phone}@ruralcare.in`, phone, parseInt(village_id), passwordHash]);
+
+    const userId = Number(userRes.lastInsertRowid);
+
+    const { logAuditEvent } = require('../services/auditLogger');
+    logAuditEvent({
+      actor_id: req.user.user_id,
+      actor_role: req.user.role,
+      action: 'HEALTH_WORKER_CREATED',
+      resource_type: 'user',
+      resource_id: userId,
+      details: { name, phone, village_id }
+    });
+
+    return res.status(201).json({
+      message: 'Verified ASHA Health Worker created successfully',
+      worker: { user_id: userId, name, phone, village_id, role: 'asha' }
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
+
 

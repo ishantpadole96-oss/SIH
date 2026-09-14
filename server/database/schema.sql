@@ -331,6 +331,124 @@ CREATE TABLE IF NOT EXISTS disease_surveillance (
     FOREIGN KEY (village_id) REFERENCES villages(village_id) ON DELETE CASCADE
 );
 
+-- 21. Patient Data Sharing Consent (Section 25 & 11.2)
+CREATE TABLE IF NOT EXISTS consents (
+    consent_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id INTEGER NOT NULL,
+    requester_id INTEGER NOT NULL,
+    purpose TEXT NOT NULL,
+    scope TEXT NOT NULL CHECK(scope IN ('full_history', 'diagnostic_reports', 'prescriptions')),
+    status TEXT NOT NULL CHECK(status IN ('Pending', 'Granted', 'Revoked', 'Expired')) DEFAULT 'Pending',
+    granted_at DATETIME,
+    expires_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (requester_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- 22. FCFS Consultation Requests & Doctor Queue (Section 9.5 & 10)
+CREATE TABLE IF NOT EXISTS consultation_requests (
+    request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id INTEGER NOT NULL,
+    health_center_id INTEGER NOT NULL,
+    worker_id INTEGER NOT NULL,
+    chief_complaint TEXT NOT NULL,
+    symptoms_text TEXT NOT NULL,
+    duration TEXT,
+    vitals_json TEXT,
+    urgency TEXT NOT NULL CHECK(urgency IN ('Routine', 'Urgent', 'Emergency')) DEFAULT 'Routine',
+    assigned_doctor_id INTEGER,
+    status TEXT NOT NULL CHECK(status IN ('Queued', 'Assigned', 'In Consultation', 'Completed', 'Cancelled')) DEFAULT 'Queued',
+    doctor_notes TEXT,
+    queued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    assigned_at DATETIME,
+    completed_at DATETIME,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (health_center_id) REFERENCES facilities(facility_id) ON DELETE RESTRICT,
+    FOREIGN KEY (worker_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+    FOREIGN KEY (assigned_doctor_id) REFERENCES doctors(staff_id) ON DELETE SET NULL
+);
+
+-- 23. Digital Prescriptions (Immutable & Versioned - Section 14)
+CREATE TABLE IF NOT EXISTS prescriptions (
+    prescription_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    consultation_id INTEGER,
+    patient_id INTEGER NOT NULL,
+    doctor_id INTEGER NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL CHECK(status IN ('Issued', 'Amended', 'Dispensed', 'Cancelled')) DEFAULT 'Issued',
+    diagnosis TEXT,
+    diet_lifestyle TEXT,
+    instructions TEXT,
+    follow_up TEXT,
+    previous_version_id INTEGER,
+    issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(staff_id) ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS prescription_items (
+    item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prescription_id INTEGER NOT NULL,
+    medicine_name TEXT NOT NULL,
+    strength TEXT,
+    dose TEXT NOT NULL,
+    frequency TEXT NOT NULL,
+    duration TEXT NOT NULL,
+    route TEXT DEFAULT 'Oral',
+    instructions TEXT,
+    FOREIGN KEY (prescription_id) REFERENCES prescriptions(prescription_id) ON DELETE CASCADE
+);
+
+-- 24. Medicine Replenishment Requests (Section 15)
+CREATE TABLE IF NOT EXISTS medicine_requests (
+    request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    facility_id INTEGER NOT NULL,
+    worker_id INTEGER NOT NULL,
+    medicine_name TEXT NOT NULL,
+    category TEXT DEFAULT 'Essential',
+    requested_quantity INTEGER NOT NULL,
+    unit TEXT DEFAULT 'strips',
+    urgency TEXT NOT NULL CHECK(urgency IN ('Routine', 'Urgent', 'Emergency')) DEFAULT 'Routine',
+    status TEXT NOT NULL CHECK(status IN ('Pending', 'Approved', 'Rejected', 'Fulfilled')) DEFAULT 'Pending',
+    admin_id INTEGER,
+    admin_notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    resolved_at DATETIME,
+    FOREIGN KEY (facility_id) REFERENCES facilities(facility_id) ON DELETE RESTRICT,
+    FOREIGN KEY (worker_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+    FOREIGN KEY (admin_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- 25. Inventory Stock Transactions (Section 15)
+CREATE TABLE IF NOT EXISTS inventory_transactions (
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    facility_id INTEGER NOT NULL,
+    medicine_id INTEGER,
+    medicine_name TEXT NOT NULL,
+    transaction_type TEXT NOT NULL CHECK(transaction_type IN ('Restock', 'Dispensed', 'Adjustment', 'Replenishment Fulfilled')),
+    quantity INTEGER NOT NULL,
+    balance_after INTEGER NOT NULL,
+    actor_id INTEGER NOT NULL,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (facility_id) REFERENCES facilities(facility_id) ON DELETE RESTRICT,
+    FOREIGN KEY (actor_id) REFERENCES users(user_id) ON DELETE RESTRICT
+);
+
+-- 26. Security & Operations Audit Logs (Section 35)
+CREATE TABLE IF NOT EXISTS audit_logs (
+    log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_id INTEGER,
+    actor_role TEXT,
+    action TEXT NOT NULL,
+    resource_type TEXT NOT NULL,
+    resource_id TEXT,
+    details TEXT,
+    ip_address TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for optimal lookup and geospatial searching
 CREATE INDEX IF NOT EXISTS idx_facilities_village ON facilities(village_id);
 CREATE INDEX IF NOT EXISTS idx_facilities_type ON facilities(facility_type);
@@ -347,4 +465,8 @@ CREATE INDEX IF NOT EXISTS idx_generic_brand ON generic_medicines(brand_name);
 CREATE INDEX IF NOT EXISTS idx_generic_name ON generic_medicines(generic_name);
 CREATE INDEX IF NOT EXISTS idx_mch_patient ON maternal_child_health(patient_id);
 CREATE INDEX IF NOT EXISTS idx_surveillance_village ON disease_surveillance(village_id);
+CREATE INDEX IF NOT EXISTS idx_consents_patient ON consents(patient_id);
+CREATE INDEX IF NOT EXISTS idx_consultations_queue ON consultation_requests(status, queued_at);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_patient ON prescriptions(patient_id);
+CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_logs(actor_id, timestamp);
 

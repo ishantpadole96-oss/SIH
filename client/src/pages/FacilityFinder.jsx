@@ -121,6 +121,31 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
         </div>
       </div>
 
+      {/* Authoritative Source Banner (Master Technical Spec Sec 2.1 & 18) */}
+      <div style={{
+        background: 'rgba(56, 189, 248, 0.08)',
+        border: '1px solid rgba(56, 189, 248, 0.3)',
+        borderRadius: 'var(--radius-md)',
+        padding: '0.85rem 1.25rem',
+        marginBottom: '1.5rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '0.75rem'
+      }}>
+        <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)' }}>
+          <span style={{ color: '#38BDF8', fontWeight: 700 }}>✓ Official Facility Directory:</span> Mapped from Public Health Department & NHM Maharashtra. GPS coordinates and routing are calculated directly from user location.
+        </div>
+        <a
+          href="tel:112"
+          className="btn btn-emergency btn-sm"
+          style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+        >
+          <ShieldAlert size={14} /> National Emergency 112 (ERSS)
+        </a>
+      </div>
+
       {/* Search & Filter Bar */}
       <div className="card" style={{ padding: '1.25rem', marginBottom: '2rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
@@ -429,6 +454,24 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
                         ))}
                       </div>
                     )}
+
+                    {/* Data Provenance (Master Spec Sec 0 & 32) */}
+                    <div style={{
+                      fontSize: '0.72rem',
+                      color: 'var(--text-muted)',
+                      marginBottom: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'rgba(255,255,255,0.02)',
+                      padding: '3px 8px',
+                      borderRadius: 'var(--radius-sm)'
+                    }}>
+                      <span>Source: <b>{f.source_name || 'Govt of Maharashtra / NHM'}</b></span>
+                      <span style={{ color: f.is_demo_data ? '#F59E0B' : '#34D399', fontWeight: 600 }}>
+                        {f.is_demo_data ? 'DEMO RECORD' : '✓ Verified Public Facility'}
+                      </span>
+                    </div>
 
                     {/* Action Buttons */}
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>

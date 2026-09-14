@@ -24,6 +24,9 @@ const surveillanceRoutes = require('./routes/surveillance');
 const syncRoutes = require('./routes/sync');
 const copilotRoutes = require('./routes/copilot');
 const callRoutes = require('./routes/calls');
+const consentRoutes = require('./routes/consent');
+const consultationRoutes = require('./routes/consultations');
+const prescriptionRoutes = require('./routes/prescriptions');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -73,6 +76,9 @@ app.use('/api/surveillance', surveillanceRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/copilot', copilotRoutes);
 app.use('/api/calls', callRoutes);
+app.use('/api/consent', consentRoutes);
+app.use('/api/consultations', consultationRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
 
 // Central error handler
 app.use((err, req, res, next) => {

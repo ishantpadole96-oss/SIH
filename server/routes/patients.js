@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../database/db');
 const { authenticateToken, requireRoles } = require('../middleware/auth');
+const { logAuditEvent } = require('../services/auditLogger');
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ router.get('/', authenticateToken, requireRoles('asha', 'doctor', 'admin'), (req
 
 /**
  * POST /api/patients/register
- * ASHA / Doctor: Register a new patient directly in field
+ * Register patient (enforcing max 3 accounts per mobile number per Master Specification Section 6 & 44)
  */
 router.post('/register', authenticateToken, requireRoles('asha', 'doctor', 'admin', 'citizen'), (req, res) => {
   try {
@@ -71,6 +72,29 @@ router.post('/register', authenticateToken, requireRoles('asha', 'doctor', 'admi
     }
 
     const cleanPhone = phone.trim();
+
+    // Enforce Section 6 & 44: Maximum 3 active patient accounts per mobile number
+    const activeAccountsCount = db.get(`
+      SELECT COUNT(p.patient_id) as count
+      FROM users u
+      JOIN patients p ON u.user_id = p.user_id
+      WHERE u.phone = ?
+    `, [cleanPhone]);
+
+    // Check if this specific name is already registered to this phone (updating existing member)
+    const exactExisting = db.get(`
+      SELECT p.patient_id
+      FROM users u
+      JOIN patients p ON u.user_id = p.user_id
+      WHERE u.phone = ? AND LOWER(u.name) = LOWER(?)
+    `, [cleanPhone, name.trim()]);
+
+    if (!exactExisting && activeAccountsCount && activeAccountsCount.count >= 3) {
+      return res.status(400).json({
+        error: `Maximum limit of 3 patient accounts linked to mobile number ${cleanPhone} reached (Family Household Account Limit per Specification Section 6).`
+      });
+    }
+
     const cleanEmail = (email && email.trim()) || `patient.${cleanPhone.replace(/\D/g, '')}.${Date.now().toString().slice(-4)}@ruralcare.in`;
     const targetVillageId = village_id ? parseInt(village_id) : (req.user?.village_id || 1);
 
@@ -79,8 +103,8 @@ router.post('/register', authenticateToken, requireRoles('asha', 'doctor', 'admi
 
     let createdPatient;
     db.transaction(() => {
-      // Check if user already exists
-      let userRecord = db.get('SELECT user_id, name FROM users WHERE phone = ?', [cleanPhone]);
+      // Check if user already exists with this phone AND name
+      let userRecord = db.get('SELECT user_id, name FROM users WHERE phone = ? AND LOWER(name) = LOWER(?)', [cleanPhone, name.trim()]);
 
       let userId;
       if (!userRecord) {
@@ -193,13 +217,34 @@ router.get('/:id/records', authenticateToken, (req, res) => {
       return res.status(404).json({ error: 'Patient not found' });
     }
 
-    // Role check: Citizen can only view their own records; ASHA, Doctor, Admin can view all
+    // Role check: Citizen can only view their own records
     if (req.user.role === 'citizen' && req.user.user_id !== patient.user_id) {
+      logAuditEvent({
+        actor_id: req.user.user_id,
+        actor_role: req.user.role,
+        action: 'UNAUTHORIZED_RECORD_ACCESS_BLOCKED',
+        resource_type: 'patient',
+        resource_id: patientId,
+        details: 'Cross-citizen record access attempt blocked'
+      });
       return res.status(403).json({ error: 'Unauthorized to view another citizen’s confidential health record.' });
     }
 
+    // Consent-based history scoping (Section 11.2 & Section 25)
+    // Doctors see current + recent 1-2 visits by default; full history requires active patient consent
+    let hasFullHistoryConsent = true;
+    if (req.user.role === 'doctor') {
+      const activeConsent = db.get(`
+        SELECT * FROM consents
+        WHERE patient_id = ? AND (requester_id = ? OR requester_id = 0) AND status = 'Granted'
+        AND (expires_at IS NULL OR expires_at > datetime('now'))
+      `, [patientId, req.user.user_id]);
+
+      hasFullHistoryConsent = Boolean(activeConsent);
+    }
+
     // Health records (clinical consultation history)
-    const records = db.all(`
+    const allRecords = db.all(`
       SELECT hr.*, d.name as doctor_name, d.specialization, f.facility_name, f.facility_type
       FROM health_records hr
       LEFT JOIN doctors d ON hr.doctor_id = d.staff_id
@@ -207,6 +252,8 @@ router.get('/:id/records', authenticateToken, (req, res) => {
       WHERE hr.patient_id = ?
       ORDER BY hr.visit_date DESC
     `, [patientId]);
+
+    const records = hasFullHistoryConsent ? allRecords : allRecords.slice(0, 2);
 
     // Appointments
     const appointments = db.all(`
@@ -241,12 +288,26 @@ router.get('/:id/records', authenticateToken, (req, res) => {
       ORDER BY s.created_at DESC
     `, [patientId]);
 
+    // Log audit event (Section 35)
+    logAuditEvent({
+      actor_id: req.user.user_id,
+      actor_role: req.user.role,
+      action: 'PATIENT_RECORDS_VIEWED',
+      resource_type: 'patient',
+      resource_id: patientId,
+      details: { full_history_unlocked: hasFullHistoryConsent }
+    });
+
     return res.json({
       patient,
       records,
       appointments,
       referrals,
-      screenings
+      screenings,
+      consent: {
+        has_full_history_consent: hasFullHistoryConsent,
+        requires_consent: !hasFullHistoryConsent && allRecords.length > 2,
+      }
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });

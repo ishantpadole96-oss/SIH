@@ -38,6 +38,9 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
 
   // Consultation Modal
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [patientRecords, setPatientRecords] = useState([]);
+  const [consentInfo, setConsentInfo] = useState(null);
+  const [consentMsg, setConsentMsg] = useState(null);
   const [consultForm, setConsultForm] = useState({
     diagnosis_notes: '',
     prescription: '',
@@ -46,6 +49,57 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
     status: 'Completed'
   });
   const [consultMsg, setConsultMsg] = useState(null);
+
+  const openConsultation = (apt) => {
+    setSelectedAppointment(apt);
+    setConsultForm({
+      diagnosis_notes: '',
+      prescription: '',
+      symptoms: apt.reason || '',
+      vitals: { bp: '130/85', pulse: '76 bpm', temp: '98.6 F', spo2: '98%' },
+      status: 'Completed'
+    });
+    setConsultMsg(null);
+    setConsentMsg(null);
+
+    // Fetch patient records with server-side consent scoping (Sec 11.1 & 25)
+    fetch(`/api/patients/${apt.patient_id}/records`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        setPatientRecords(data.records || []);
+        setConsentInfo({
+          consent_required_for_full_history: data.consent_required_for_full_history,
+          showing_count: data.showing_count,
+          total_records: data.total_lifetime_records,
+          notice: data.consent_notice
+        });
+      })
+      .catch(err => console.error('Failed to load scoped records:', err));
+  };
+
+  const handleRequestConsent = async (patientId) => {
+    try {
+      const res = await fetch('/api/consent/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          patient_id: patientId,
+          scope: 'all_historical_records',
+          purpose: 'Clinical evaluation during OPD consultation'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to request consent');
+      setConsentMsg('Consent request sent to patient mobile. Pending authorization.');
+    } catch (err) {
+      setConsentMsg('Error: ' + err.message);
+    }
+  };
 
   // Referral Modal
   const [showReferralModal, setShowReferralModal] = useState(false);
@@ -101,7 +155,36 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
         })
       });
 
-      // 2. Update appointment status
+      // 2. Issue Immutable Versioned Prescription (Master Spec Sec 14)
+      if (consultForm.prescription && consultForm.prescription.trim()) {
+        try {
+          await fetch('/api/prescriptions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              patient_id: selectedAppointment.patient_id,
+              diagnosis: consultForm.diagnosis_notes,
+              instructions: 'Take medications as instructed. Return if symptoms worsen.',
+              follow_up_advice: 'Follow up in 7 days at primary health center.',
+              items: [
+                {
+                  medicine_name: consultForm.prescription.slice(0, 80),
+                  dose: '1 dose',
+                  frequency: 'TDS (3 times daily)',
+                  duration: '5 days'
+                }
+              ]
+            })
+          });
+        } catch (rxErr) {
+          console.error('Prescription generation error:', rxErr);
+        }
+      }
+
+      // 3. Update appointment status
       await fetch(`/api/appointments/${selectedAppointment.appointment_id}/status`, {
         method: 'PUT',
         headers: {
@@ -114,7 +197,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
         })
       });
 
-      setConsultMsg('Consultation completed and saved to patient permanent health record!');
+      setConsultMsg('Consultation completed, versioned prescription issued, and saved to patient permanent health record!');
       fetchDoctorData();
       setTimeout(() => {
         setSelectedAppointment(null);
@@ -629,17 +712,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
                     {apt.status === 'Scheduled' ? (
                       <>
                         <button
-                          onClick={() => {
-                            setSelectedAppointment(apt);
-                            setConsultForm({
-                              diagnosis_notes: '',
-                              prescription: '',
-                              symptoms: apt.reason,
-                              vitals: { bp: '130/85', pulse: '76 bpm', temp: '98.6 F', spo2: '98%' },
-                              status: 'Completed'
-                            });
-                            setConsultMsg(null);
-                          }}
+                          onClick={() => openConsultation(apt)}
                           className="btn btn-primary btn-sm"
                           style={{ flex: 1 }}
                         >
@@ -775,6 +848,58 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed, onOpenCall }) {
                 <X size={22} />
               </button>
             </div>
+
+            {/* ABDM Consent & Privacy-First Scoping HUD (Master Spec Sec 11.2 & 25) */}
+            <div style={{
+              background: consentInfo?.consent_required_for_full_history ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+              border: `1px solid ${consentInfo?.consent_required_for_full_history ? '#F59E0B' : '#10B981'}`,
+              borderRadius: 'var(--radius-md)',
+              padding: '0.75rem 1rem',
+              marginBottom: '1rem',
+              fontSize: '0.82rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  <span style={{ fontWeight: 700, color: consentInfo?.consent_required_for_full_history ? '#F59E0B' : '#34D399' }}>
+                    {consentInfo?.consent_required_for_full_history ? '🔒 Data Scope: Initial Encounter Only' : '✓ Full Medical History Authorized'}
+                  </span>
+                  <p style={{ margin: '2px 0 0 0', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                    {consentInfo?.notice || 'Showing active checkup and latest encounters.'}
+                  </p>
+                </div>
+                {consentInfo?.consent_required_for_full_history && (
+                  <button
+                    type="button"
+                    onClick={() => handleRequestConsent(selectedAppointment.patient_id)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                  >
+                    Request Consent for Full History
+                  </button>
+                )}
+              </div>
+              {consentMsg && (
+                <div style={{ marginTop: '0.4rem', color: '#38BDF8', fontSize: '0.75rem', fontWeight: 600 }}>
+                  ℹ️ {consentMsg}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Scoped Records Preview */}
+            {patientRecords.length > 0 && (
+              <div style={{ marginBottom: '1rem', background: 'var(--color-bg-primary)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                  RECENT CLINICAL ENCOUNTERS ({patientRecords.length}):
+                </div>
+                <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {patientRecords.map((rec, idx) => (
+                    <div key={idx} style={{ fontSize: '0.76rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '3px' }}>
+                      <span style={{ color: '#38BDF8', fontWeight: 600 }}>{rec.record_date}:</span> {rec.diagnosis || rec.symptoms} {rec.prescription ? `| Rx: ${rec.prescription}` : ''}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {consultMsg && (
               <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', fontSize: '0.85rem' }}>

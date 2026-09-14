@@ -8,7 +8,7 @@ import { offlineStorage } from '../services/offlineStorage';
 import { 
   Users, AlertTriangle, ArrowRightLeft, Calendar, UserPlus, 
   Activity, CheckCircle2, Phone, Stethoscope, ChevronRight, X, Heart, Baby,
-  Wifi, WifiOff, RefreshCw, Sparkles, QrCode, Shield, Clock, MapPin
+  Wifi, WifiOff, RefreshCw, Sparkles, QrCode, Shield, Clock, MapPin, Pill
 } from 'lucide-react';
 
 export function AshaDashboard({ setActiveTab }) {
@@ -60,6 +60,59 @@ export function AshaDashboard({ setActiveTab }) {
     clinical_summary: ''
   });
 
+  // Sub-Centre Pharmacy & Replenishment (Master Spec Sec 15)
+  const [medicines, setMedicines] = useState([]);
+  const [medicineRequests, setMedicineRequests] = useState([]);
+  const [showMedRequestModal, setShowMedRequestModal] = useState(false);
+  const [medRequestForm, setMedRequestForm] = useState({
+    medicine_id: 1,
+    medicine_name: 'Paracetamol 500mg Tablets',
+    quantity_requested: 100,
+    urgency: 'Routine',
+    notes: ''
+  });
+  const [medRequestMsg, setMedRequestMsg] = useState(null);
+
+  const fetchMedicineData = () => {
+    fetch('/api/medicines')
+      .then(r => r.json())
+      .then(d => setMedicines(d.medicines || []))
+      .catch(err => console.error('Failed to load medicines:', err));
+
+    if (token) {
+      fetch('/api/medicines/requests', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(r => r.json())
+        .then(d => setMedicineRequests(d.requests || []))
+        .catch(err => console.error('Failed to load medicine requests:', err));
+    }
+  };
+
+  const handleSubmitMedicineRequest = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/medicines/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(medRequestForm)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit request');
+      setMedRequestMsg('Requisition dispatched to District Drug Warehouse! Request ID: #' + (data.request?.request_id || 'REQ'));
+      fetchMedicineData();
+      setTimeout(() => {
+        setShowMedRequestModal(false);
+        setMedRequestMsg(null);
+      }, 1400);
+    } catch (err) {
+      setMedRequestMsg('Error: ' + err.message);
+    }
+  };
+
   // Subscribe to offline storage state changes
   useEffect(() => {
     const unsub = offlineStorage.subscribe((status) => {
@@ -105,6 +158,7 @@ export function AshaDashboard({ setActiveTab }) {
 
   useEffect(() => {
     fetchData();
+    fetchMedicineData();
   }, [token, offlineStatus.isOnline]);
 
   const handleToggleOfflineMode = () => {
@@ -472,6 +526,13 @@ export function AshaDashboard({ setActiveTab }) {
         >
           <Baby size={16} className="text-teal" /> Maternal &amp; Child Health (MCH / RCH) Registry
         </button>
+        <button
+          type="button"
+          onClick={() => setAshaSubTab('pharmacy')}
+          className={`btn btn-sm ${ashaSubTab === 'pharmacy' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          <Pill size={16} /> Sub-Centre Pharmacy &amp; Requisitions
+        </button>
       </div>
 
       {ashaSubTab === 'mch' ? (
@@ -679,6 +740,114 @@ export function AshaDashboard({ setActiveTab }) {
                   </div>
                 );
               })
+            )}
+          </div>
+        </div>
+      ) : ashaSubTab === 'pharmacy' ? (
+        /* TAB 4: SUB-CENTRE PHARMACY & REQUISITIONS (Master Spec Sec 15) */
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h2 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Pill size={22} color="#2DD4BF" /> Sub-Centre Essential Medicine Formulary &amp; Stock
+              </h2>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                Authoritative Health Center stock balance and transactional replenishment requisitions (Section 15)
+              </p>
+            </div>
+            <button
+              onClick={() => setShowMedRequestModal(true)}
+              className="btn btn-primary btn-sm"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Pill size={15} /> Request Stock Replenishment
+            </button>
+          </div>
+
+          {/* Medicine Stock Cards Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            {medicines.map(m => {
+              const isLow = m.stock_quantity < 25;
+              const isOut = m.stock_quantity === 0;
+              return (
+                <div key={m.medicine_id} className="card" style={{ padding: '1.25rem', borderLeft: `4px solid ${isOut ? '#EF4444' : isLow ? '#F59E0B' : '#10B981'}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#11322A' }}>{m.medicine_name}</span>
+                    <span className={`badge ${isOut ? 'badge-danger' : isLow ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '0.7rem' }}>
+                      {isOut ? 'Stock Out' : isLow ? 'Low Stock' : 'In Stock'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                    Category: {m.category || 'Essential Drug List (EDL)'} &bull; {m.dosage_form || 'Tablet'}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: isOut ? '#EF4444' : '#11322A' }}>
+                      {m.stock_quantity} units
+                    </span>
+                    <button
+                      onClick={() => {
+                        setMedRequestForm({
+                          medicine_id: m.medicine_id,
+                          medicine_name: m.medicine_name,
+                          quantity_requested: 100,
+                          urgency: isOut ? 'Emergency' : isLow ? 'Urgent' : 'Routine',
+                          notes: `Replenishment requisition for Sub-Centre stock (Current balance: ${m.stock_quantity})`
+                        });
+                        setShowMedRequestModal(true);
+                      }}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.75rem', padding: '0.2rem 0.55rem' }}
+                    >
+                      Requisition
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Replenishment Requisitions Tracking Table */}
+          <div className="card" style={{ padding: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#11322A', marginBottom: '1rem' }}>
+              Submitted Requisitions to District / Block Health Administration
+            </h3>
+            {medicineRequests.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No replenishment requests currently active.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: '0.84rem', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '0.5rem' }}>Req ID</th>
+                      <th style={{ padding: '0.5rem' }}>Medicine</th>
+                      <th style={{ padding: '0.5rem' }}>Qty</th>
+                      <th style={{ padding: '0.5rem' }}>Urgency</th>
+                      <th style={{ padding: '0.5rem' }}>Status</th>
+                      <th style={{ padding: '0.5rem' }}>Requested Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {medicineRequests.map(r => (
+                      <tr key={r.request_id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '0.6rem 0.5rem', fontWeight: 700, color: '#38BDF8' }}>#{r.request_id}</td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontWeight: 600 }}>{r.medicine_name}</td>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>{r.quantity_requested}</td>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>
+                          <span className={`badge ${r.urgency === 'Emergency' ? 'badge-danger' : r.urgency === 'Urgent' ? 'badge-warning' : 'badge-info'}`} style={{ fontSize: '0.7rem' }}>
+                            {r.urgency}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>
+                          <span className={`badge ${r.status === 'Fulfilled' ? 'badge-success' : r.status === 'Approved' ? 'badge-info' : r.status === 'Rejected' ? 'badge-danger' : 'badge-neutral'}`} style={{ fontSize: '0.7rem' }}>
+                            {r.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>{r.created_at}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
@@ -1059,6 +1228,105 @@ export function AshaDashboard({ setActiveTab }) {
                   {!offlineStatus.isOnline ? 'Issue Offline Smart Referral' : 'Issue Smart Referral with Pre-booked Queue Token'}
                 </button>
                 <button type="button" onClick={() => setShowReferralModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Medicine Replenishment Requisition Modal (Master Spec Sec 15) */}
+      {showMedRequestModal && (
+        <div className="modal-overlay" onClick={() => setShowMedRequestModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 800 }}>
+                  Medicine Replenishment Requisition
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Dispatch stock demand to District / Block Drug Warehouse
+                </p>
+              </div>
+              <button onClick={() => setShowMedRequestModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {medRequestMsg && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', fontSize: '0.84rem' }}>
+                {medRequestMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitMedicineRequest}>
+              <div className="form-group">
+                <label className="form-label">Select Medicine from Formulary</label>
+                <select
+                  className="form-select"
+                  value={medRequestForm.medicine_id}
+                  onChange={e => {
+                    const selId = parseInt(e.target.value);
+                    const selMed = medicines.find(m => m.medicine_id === selId);
+                    setMedRequestForm({
+                      ...medRequestForm,
+                      medicine_id: selId,
+                      medicine_name: selMed ? selMed.medicine_name : ''
+                    });
+                  }}
+                  required
+                >
+                  {medicines.map(m => (
+                    <option key={m.medicine_id} value={m.medicine_id}>
+                      {m.medicine_name} (Current Stock: {m.stock_quantity})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Quantity Required (Units)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="form-input"
+                    value={medRequestForm.quantity_requested}
+                    onChange={e => setMedRequestForm({ ...medRequestForm, quantity_requested: parseInt(e.target.value) || 1 })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Requisition Urgency</label>
+                  <select
+                    className="form-select"
+                    value={medRequestForm.urgency}
+                    onChange={e => setMedRequestForm({ ...medRequestForm, urgency: e.target.value })}
+                  >
+                    <option value="Routine">🟢 Routine Batch (5-7 days)</option>
+                    <option value="Urgent">🟠 Urgent Stock-out (24-48 hrs)</option>
+                    <option value="Emergency">🔴 Emergency / Epidemic (Immediate)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Clinical Justification / Operational Notes</label>
+                <textarea
+                  className="form-textarea"
+                  placeholder="e.g. Seasonal spike in viral fever cases; current stock running under safety threshold..."
+                  value={medRequestForm.notes}
+                  onChange={e => setMedRequestForm({ ...medRequestForm, notes: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  Submit Requisition to District
+                </button>
+                <button type="button" onClick={() => setShowMedRequestModal(false)} className="btn btn-secondary">
                   Cancel
                 </button>
               </div>
