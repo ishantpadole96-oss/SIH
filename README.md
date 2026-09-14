@@ -222,7 +222,7 @@ RuralCare is configured out-of-the-box for seamless zero-config deployment on **
    - **Output Directory**: `client/dist` *(auto-configured in vercel.json)*.
 
 3. **Click Deploy**:
-   - Vercel will install dependencies, compile the Vite frontend, bundle the serverless `/api` endpoints, and deploy your live URL (e.g., `https://ruralcare-sih.vercel.app`).
+   - Vercel will install dependencies, compile the Vite frontend, bundle the serverless `/api` endpoints, and deploy your live URL: `https://ruralcaremaharashtra.vercel.app`.
 
 ---
 
