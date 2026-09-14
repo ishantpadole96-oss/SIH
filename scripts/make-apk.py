@@ -12,11 +12,28 @@ def create_apk():
             with open(manifest_path, 'rb') as f:
                 z.writestr('AndroidManifest.xml', f.read())
         
-        # Launcher Icon
+        # Launcher Icon & Drawables
         icon_path = os.path.join('client', 'public', 'ruralcare-mark.png')
         if os.path.exists(icon_path):
             with open(icon_path, 'rb') as f:
-                z.writestr('res/drawable-xxhdpi/ic_launcher.png', f.read())
+                content = f.read()
+                z.writestr('res/drawable/ruralcare_mark.png', content)
+                z.writestr('res/drawable-xxhdpi/ic_launcher.png', content)
+
+        logo_path = os.path.join('client', 'public', 'ruralcare-logo.png')
+        if os.path.exists(logo_path):
+            with open(logo_path, 'rb') as f:
+                z.writestr('res/drawable/ruralcare_logo.png', f.read())
+
+        splash_bg = os.path.join('android', 'app', 'src', 'main', 'res', 'drawable', 'splash_logo_bg.xml')
+        if os.path.exists(splash_bg):
+            with open(splash_bg, 'rb') as f:
+                z.writestr('res/drawable/splash_logo_bg.xml', f.read())
+
+        activity_layout = os.path.join('android', 'app', 'src', 'main', 'res', 'layout', 'activity_main.xml')
+        if os.path.exists(activity_layout):
+            with open(activity_layout, 'rb') as f:
+                z.writestr('res/layout/activity_main.xml', f.read())
         
         # Assets & Config
         config_json = (
@@ -24,6 +41,7 @@ def create_apk():
             '  "app_name": "RuralCare",\n'
             '  "version": "1.0.0",\n'
             '  "platform": "android",\n'
+            '  "splash_screen": true,\n'
             '  "author": "Smart India Hackathon Team",\n'
             '  "default_url": "https://ishantpadole96-oss.github.io/SIH/"\n'
             '}\n'

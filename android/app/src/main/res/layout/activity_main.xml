@@ -36,9 +36,16 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center"
-        android:padding="24dp"
+        android:padding="28dp"
         android:background="#F9FAFB"
         android:visibility="gone">
+
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:src="@drawable/ruralcare_mark"
+            android:contentDescription="@string/app_name"
+            android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -57,7 +64,7 @@
             android:textColor="#4B5563"
             android:textSize="15sp"
             android:gravity="center"
-            android:layout_marginBottom="20dp" />
+            android:layout_marginBottom="24dp" />
 
         <Button
             android:id="@+id/btnRetry"
@@ -66,9 +73,111 @@
             android:text="@string/retry"
             android:backgroundTint="@color/accent"
             android:textColor="#FFFFFF"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp" />
+            android:paddingStart="28dp"
+            android:paddingEnd="28dp" />
 
     </LinearLayout>
+
+    <!-- Fullscreen Branded Loading / Splash Screen -->
+    <RelativeLayout
+        android:id="@+id/loadingScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFFFFF"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="visible">
+
+        <!-- Center Content: Logo + Brand + Spinner -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="24dp">
+
+            <!-- Logo Card Frame -->
+            <ImageView
+                android:id="@+id/imgSplashLogo"
+                android:layout_width="88dp"
+                android:layout_height="88dp"
+                android:src="@drawable/ruralcare_mark"
+                android:contentDescription="@string/app_name"
+                android:background="@drawable/splash_logo_bg"
+                android:padding="12dp"
+                android:elevation="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Brand Title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="RuralCare"
+                android:textColor="#11322A"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:letterSpacing="-0.02" />
+
+            <!-- Tagline -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connected care, closer"
+                android:textColor="#0D9488"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Loading Spinner -->
+            <ProgressBar
+                android:id="@+id/splashSpinner"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:indeterminate="true"
+                android:indeterminateTint="#0D9488"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Loading Status Label -->
+            <TextView
+                android:id="@+id/tvLoadingStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connecting to Maharashtra Health Network..."
+                android:textColor="#6B7280"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Bottom Notice -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="28dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Government of Maharashtra"
+                android:textColor="#11322A"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="National Health Mission (NHM) • SIH Continuum"
+                android:textColor="#9CA3AF"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
 
 </RelativeLayout>

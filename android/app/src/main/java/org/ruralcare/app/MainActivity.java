@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar progressBar;
     private LinearLayout offlineLayout;
+    private android.widget.RelativeLayout loadingScreen;
     private Button btnRetry;
 
     private ValueCallback<Uri[]> fileUploadCallback;
@@ -69,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         progressBar = findViewById(R.id.progressBar);
         offlineLayout = findViewById(R.id.offlineLayout);
+        loadingScreen = findViewById(R.id.loadingScreen);
         btnRetry = findViewById(R.id.btnRetry);
 
         initFileChooserLauncher();
@@ -78,9 +80,13 @@ public class MainActivity extends AppCompatActivity {
         setupBackNavigation();
 
         btnRetry.setOnClickListener(v -> {
-            offlineLayout.setVisibility(View.GONE);
-            webView.setVisibility(View.VISIBLE);
             if (isNetworkAvailable()) {
+                offlineLayout.setVisibility(View.GONE);
+                webView.setVisibility(View.VISIBLE);
+                if (loadingScreen != null) {
+                    loadingScreen.setAlpha(1f);
+                    loadingScreen.setVisibility(View.VISIBLE);
+                }
                 webView.reload();
             } else {
                 Toast.makeText(this, R.string.offline_message, Toast.LENGTH_SHORT).show();
@@ -187,6 +193,14 @@ public class MainActivity extends AppCompatActivity {
                 super.onPageFinished(view, url);
                 progressBar.setVisibility(View.GONE);
                 swipeRefreshLayout.setRefreshing(false);
+
+                // Smoothly dismiss the branded loading screen
+                if (loadingScreen != null && loadingScreen.getVisibility() == View.VISIBLE) {
+                    loadingScreen.animate()
+                            .alpha(0f)
+                            .setDuration(400)
+                            .withEndAction(() -> loadingScreen.setVisibility(View.GONE));
+                }
             }
 
             @Override
@@ -195,6 +209,9 @@ public class MainActivity extends AppCompatActivity {
                 if (request.isForMainFrame()) {
                     progressBar.setVisibility(View.GONE);
                     swipeRefreshLayout.setRefreshing(false);
+                    if (loadingScreen != null) {
+                        loadingScreen.setVisibility(View.GONE);
+                    }
                     if (!isNetworkAvailable()) {
                         webView.setVisibility(View.GONE);
                         offlineLayout.setVisibility(View.VISIBLE);
