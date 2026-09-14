@@ -1,8 +1,8 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { ShieldAlert, Globe, Phone, ArrowRight, User, Check } from 'lucide-react';
+import { ShieldAlert, Globe, Phone, ArrowRight, User, Check, Smartphone } from 'lucide-react';
 
-export function LandingNavbar({ onSelectPortal, onOpenEmergency, onOpenAuth }) {
+export function LandingNavbar({ onSelectPortal, onOpenEmergency, onOpenAuth, onOpenDownloadApp }) {
   const { lang, setLang, t } = useLanguage();
   const [showLangDropdown, setShowLangDropdown] = React.useState(false);
 
@@ -180,8 +180,41 @@ export function LandingNavbar({ onSelectPortal, onOpenEmergency, onOpenAuth }) {
         </nav>
 
         {/* Right Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           
+          {/* DOWNLOAD APP Button */}
+          <button
+            onClick={onOpenDownloadApp}
+            title="Download RuralCare Android App (.apk)"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.42rem',
+              background: '#0D9488',
+              color: '#FFFFFF',
+              border: 'none',
+              padding: '0.48rem 0.95rem',
+              borderRadius: '9999px',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              letterSpacing: '0.02em',
+              boxShadow: '0 2px 8px rgba(13, 148, 136, 0.28)',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = '#0F766E';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = '#0D9488';
+              e.currentTarget.style.transform = 'none';
+            }}
+          >
+            <Smartphone size={14} />
+            <span>DOWNLOAD APP</span>
+          </button>
+
           {/* Language Switcher Dropdown */}
           <div style={{ position: 'relative' }}>
             <button

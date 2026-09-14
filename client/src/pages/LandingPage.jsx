@@ -3,14 +3,15 @@ import { useLanguage } from '../context/LanguageContext';
 import { 
   Users, Stethoscope, Building2, ShieldAlert, Sparkles, QrCode, 
   WifiOff, ArrowRight, Phone, HeartPulse, Bed, MapPin, 
-  Activity, Shield, CheckCircle2, Award, ExternalLink, HelpCircle
+  Activity, Shield, CheckCircle2, Award, ExternalLink, HelpCircle, Smartphone
 } from 'lucide-react';
 
 export function LandingPage({ 
   onSelectPortal, 
   onOpenEmergency, 
   onOpenJourneyScanner,
-  onOpenCopilot 
+  onOpenCopilot,
+  onOpenDownloadApp 
 }) {
   const { t, lang } = useLanguage();
 
@@ -270,6 +271,36 @@ export function LandingPage({
             >
               <Phone size={18} />
               <span>{t('landing_btn_emergency')}</span>
+            </button>
+
+            <button
+              onClick={onOpenDownloadApp}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.55rem',
+                background: 'rgba(255, 255, 255, 0.12)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                color: '#FFFFFF',
+                padding: '0.9rem 1.6rem',
+                borderRadius: '9999px',
+                fontSize: '1rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.22)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                e.currentTarget.style.transform = 'none';
+              }}
+            >
+              <Smartphone size={18} color="#2DD4BF" />
+              <span>{lang === 'mr' ? 'अँड्रॉइड ॲप डाऊनलोड' : lang === 'hi' ? 'एंड्रॉइड ऐप डाउनलोड' : 'Download Android App'}</span>
             </button>
           </div>
         </div>

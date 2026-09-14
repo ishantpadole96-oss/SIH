@@ -8,6 +8,7 @@ import { CallModal } from './components/CallModal';
 import { IncomingCallBanner } from './components/IncomingCallBanner';
 
 import { LandingNavbar } from './components/LandingNavbar';
+import { DownloadAppModal } from './components/DownloadAppModal';
 import { LandingPage } from './pages/LandingPage';
 import { CitizenHome } from './pages/CitizenHome';
 import { FacilityFinder } from './pages/FacilityFinder';
@@ -102,6 +103,7 @@ function AppContent() {
   const [showQRJourneyModal, setShowQRJourneyModal] = useState(false);
   const [journeyIdForModal, setJourneyIdForModal] = useState('MH-RURAL-2026-0001');
   const [showCopilotModal, setShowCopilotModal] = useState(false);
+  const [showDownloadAppModal, setShowDownloadAppModal] = useState(false);
   const [selectedFacilityForBooking, setSelectedFacilityForBooking] = useState(null);
 
   const [showCallModal, setShowCallModal] = useState(false);
@@ -306,6 +308,7 @@ function AppContent() {
             navigatePortal(roleToOpen, targetTab);
           }}
           onOpenEmergency={() => setShowEmergencyModal(true)}
+          onOpenDownloadApp={() => setShowDownloadAppModal(true)}
           onOpenAuth={() => {
             logout();
             setLoginPortalRole('citizen');
@@ -320,6 +323,7 @@ function AppContent() {
               navigatePortal(roleToOpen, targetTab);
             }}
             onOpenEmergency={() => setShowEmergencyModal(true)}
+            onOpenDownloadApp={() => setShowDownloadAppModal(true)}
             onOpenJourneyScanner={() => {
               setJourneyIdForModal('MH-RURAL-2026-0001');
               setShowQRJourneyModal(true);
@@ -350,6 +354,7 @@ function AppContent() {
         </footer>
 
         <EmergencyModal isOpen={showEmergencyModal} onClose={() => setShowEmergencyModal(false)} />
+        <DownloadAppModal isOpen={showDownloadAppModal} onClose={() => setShowDownloadAppModal(false)} />
         <CallModal isOpen={showCallModal} onClose={() => setShowCallModal(false)} onEscalateVideo={() => handleOpenTelemed({ doctorName: callParams.calleeName || 'Dr. Rajesh Deshmukh', facility: callParams.calleeFacility })} {...callParams} />
         <QRJourneyModal isOpen={showQRJourneyModal} onClose={() => setShowQRJourneyModal(false)} initialJourneyId={journeyIdForModal} />
         <SmartHealthWorkerCopilot isOpen={showCopilotModal} onClose={() => setShowCopilotModal(false)} onSelectTriage={() => navigatePortal('citizen', 'screening')} />
@@ -721,6 +726,7 @@ function AppContent() {
           setLoginPortalRole('citizen');
           setCurrentPortal('login');
         }}
+        onOpenDownloadApp={() => setShowDownloadAppModal(true)}
         onOpenJourneyScanner={() => {
           setJourneyIdForModal('MH-RURAL-2026-0001');
           setShowQRJourneyModal(true);
@@ -888,6 +894,7 @@ function AppContent() {
         onOpenTelemed={handleOpenTelemed}
         onPrepopulateReferral={() => navigatePortal('asha')}
       />
+      <DownloadAppModal isOpen={showDownloadAppModal} onClose={() => setShowDownloadAppModal(false)} />
     </div>
   );
 }

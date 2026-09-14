@@ -4,10 +4,10 @@ import { useLanguage } from '../context/LanguageContext';
 import { offlineStorage } from '../services/offlineStorage';
 import { 
   MapPin, Globe, Bell, ChevronDown, Menu, User, 
-  Check, LogOut, ShieldCheck, Wifi, WifiOff, QrCode, Sparkles 
+  Check, LogOut, ShieldCheck, Wifi, WifiOff, QrCode, Sparkles, Smartphone 
 } from 'lucide-react';
 
-export function TopHeader({ onToggleMobileSidebar, onOpenAuth, onOpenJourneyScanner, onOpenCopilot }) {
+export function TopHeader({ onToggleMobileSidebar, onOpenAuth, onOpenJourneyScanner, onOpenCopilot, onOpenDownloadApp }) {
   const { user, role, logout, selectedVillage, setSelectedVillage, villages } = useAuth();
   const { lang, setLang, t } = useLanguage();
 
@@ -368,6 +368,29 @@ export function TopHeader({ onToggleMobileSidebar, onOpenAuth, onOpenJourneyScan
             </div>
           )}
         </div>
+
+        {/* Download App Quick Pill */}
+        <button
+          onClick={onOpenDownloadApp}
+          title="Download RuralCare Android App (.apk)"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            background: '#F0FDF4',
+            border: '1px solid #BBF7D0',
+            color: '#166534',
+            padding: '0.42rem 0.75rem',
+            borderRadius: '9999px',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+          }}
+        >
+          <Smartphone size={14} color="#166534" />
+          <span>App</span>
+        </button>
 
         {/* Language Selector: 文A English */}
         <div style={{ position: 'relative' }}>

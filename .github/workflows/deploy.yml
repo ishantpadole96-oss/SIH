@@ -29,6 +29,15 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup Java 17 for Android Build
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Install Dependencies
         run: |
           npm install
@@ -43,6 +52,25 @@ jobs:
 
       - name: Build Vite Production Web App
         run: npm run build
+
+      - name: Build Android WebView APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon || true
+          cd ..
+          if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            cp android/app/build/outputs/apk/debug/app-debug.apk client/dist/ruralcare.apk
+            echo "Successfully updated client/dist/ruralcare.apk with freshly compiled APK"
+          fi
+        continue-on-error: true
+
+      - name: Upload APK Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruralcare-android-apk
+          path: client/dist/ruralcare.apk
+        continue-on-error: true
 
       - name: Upload GitHub Pages Artifact
         if: github.ref == 'refs/heads/main'
