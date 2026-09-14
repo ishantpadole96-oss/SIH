@@ -80,6 +80,23 @@ app.use('/api/consent', consentRoutes);
 app.use('/api/consultations', consultationRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
 
+// Serve frontend static files if client/dist exists
+const clientDistPath = path.join(__dirname, '../client/dist');
+app.use(express.static(clientDistPath));
+
+// Fallback to client/dist/index.html for SPA frontend routing
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  const indexPath = path.join(clientDistPath, 'index.html');
+  const fs = require('fs');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  res.status(404).send('RuralCare API Server running. Open frontend on http://localhost:3000');
+});
+
 // Central error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled server error:', err);
