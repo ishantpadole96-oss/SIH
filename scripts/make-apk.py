@@ -39,7 +39,7 @@ def create_apk():
         config_json = (
             '{\n'
             '  "app_name": "RuralCare",\n'
-            '  "version": "1.0.0",\n'
+            '  "version": "2.0.0",\n'
             '  "platform": "android",\n'
             '  "splash_screen": true,\n'
             '  "author": "Smart India Hackathon Team",\n'

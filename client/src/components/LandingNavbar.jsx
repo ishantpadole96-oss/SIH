@@ -185,15 +185,15 @@ export function LandingNavbar({ onSelectPortal, onOpenEmergency, onOpenAuth, onO
           {/* DOWNLOAD APP Button */}
           <button
             onClick={onOpenDownloadApp}
-            title="Download RuralCare Android App (.apk)"
+            title="Download RuralCare Android App v2.0 (.apk)"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.42rem',
+              gap: '0.35rem',
               background: '#0D9488',
               color: '#FFFFFF',
               border: 'none',
-              padding: '0.48rem 0.95rem',
+              padding: '0.45rem 0.85rem',
               borderRadius: '9999px',
               fontSize: '0.8rem',
               fontWeight: 800,
@@ -213,6 +213,15 @@ export function LandingNavbar({ onSelectPortal, onOpenEmergency, onOpenAuth, onO
           >
             <Smartphone size={14} />
             <span>DOWNLOAD APP</span>
+            <span style={{
+              background: '#A7DBBB',
+              color: '#0F2922',
+              fontSize: '0.66rem',
+              fontWeight: 800,
+              padding: '0.12rem 0.38rem',
+              borderRadius: '9999px',
+              lineHeight: 1
+            }}>v2</span>
           </button>
 
           {/* Language Switcher Dropdown */}

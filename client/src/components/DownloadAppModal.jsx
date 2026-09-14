@@ -31,7 +31,7 @@ export function DownloadAppModal({ isOpen, onClose }) {
     en: {
       title: 'RuralCare for Android',
       subtitle: 'Official Android WebView App for Citizens, ASHAs, and Doctors across Maharashtra.',
-      btn_download: 'Download APK (v1.0.0)',
+      btn_download: 'Download APK (v2.0.0)',
       btn_downloading: 'Downloading APK...',
       direct_hint: 'Download not starting? Click here',
       features_heading: 'Key Mobile Features',
@@ -52,7 +52,7 @@ export function DownloadAppModal({ isOpen, onClose }) {
     hi: {
       title: 'रूरलकेयर एंड्रॉइड ऐप',
       subtitle: 'महाराष्ट्र भर के नागरिकों, आशा कार्यकर्ताओं और डॉक्टरों के लिए आधिकारिक ऐप।',
-      btn_download: 'APK डाउनलोड करें (v1.0.0)',
+      btn_download: 'APK डाउनलोड करें (v2.0.0)',
       btn_downloading: 'डाउनलोड हो रहा है...',
       direct_hint: 'डाउनलोड शुरू नहीं हुआ? यहाँ क्लिक करें',
       features_heading: 'मुख्य मोबाइल सुविधाएँ',
@@ -73,7 +73,7 @@ export function DownloadAppModal({ isOpen, onClose }) {
     mr: {
       title: 'रुरलकेअर अँड्रॉइड ॲप',
       subtitle: 'महाराष्ट्रातील नागरिक, आशा सेविका आणि डॉक्टरांसाठी अधिकृत मोबाईल ॲप.',
-      btn_download: 'APK डाऊनलोड करा (v1.0.0)',
+      btn_download: 'APK डाऊनलोड करा (v2.0.0)',
       btn_downloading: 'डाऊनलोड सुरू आहे...',
       direct_hint: 'डाऊनलोड सुरू झाले नाही? येथे क्लिक करा',
       features_heading: 'प्रमुख मोबाईल वैशिष्ट्ये',
