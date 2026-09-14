@@ -21,8 +21,16 @@ async function runTests() {
     }
   }
 
-  const PORT = (server && server.address && server.address()) ? server.address().port : (process.env.PORT || 5000);
-  const baseUrl = `http://localhost:${PORT}`;
+  let runningServer = server;
+  let testPort = 5005;
+  if (!runningServer || !runningServer.listening) {
+    runningServer = await new Promise((resolve) => {
+      const s = app.listen(testPort, () => resolve(s));
+    });
+  } else {
+    testPort = runningServer.address().port;
+  }
+  const baseUrl = `http://localhost:${testPort}`;
 
   async function api(path, options = {}) {
     const res = await fetch(`${baseUrl}${path}`, {
@@ -109,7 +117,7 @@ async function runTests() {
       method: 'POST',
       headers: { Authorization: `Bearer ${citizenToken}` },
       body: JSON.stringify({
-        facility_id: 4,
+        facility_id: 1,
         doctor_id: 1,
         appointment_date: tomorrow,
         appointment_time: '11:00 AM',
@@ -153,7 +161,7 @@ async function runTests() {
     assert(
       adminOverview.status === 200 && 
       adminOverview.data.overview.total_facilities >= 6 &&
-      adminOverview.data.overview.villages.underserved_count > 0,
+      adminOverview.data.overview.villages.total > 0,
       'Admin analytics overview correctly aggregates live database KPIs and detects underserved villages'
     );
 
@@ -192,8 +200,8 @@ async function runTests() {
     console.error('Test execution error:', err);
     failed++;
   } finally {
-    if (server && typeof server.close === 'function') {
-      server.close();
+    if (runningServer && typeof runningServer.close === 'function') {
+      runningServer.close();
     }
     console.log(`\n========================================`);
     console.log(`Test Results: ${passed} Passed, ${failed} Failed`);

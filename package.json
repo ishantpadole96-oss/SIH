@@ -6,6 +6,7 @@
     "server": "node server/index.js",
     "client": "npm --prefix client run dev",
     "seed": "node server/database/seed.js",
+    "sync-mongo": "node server/database/syncMongo.js",
     "test-api": "node server/scripts/test-api.js",
     "build": "npm --prefix client install && npm --prefix client run build",
     "vercel-build": "npm --prefix client install && npm --prefix client run build"
@@ -15,6 +16,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^7.6.0",
+    "mongoose": "^9.10.0"
   }
 }

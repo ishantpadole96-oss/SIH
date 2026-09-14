@@ -2,8 +2,16 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-// Ensure database and schema are initialized
-require('./database/db');
+// Load environment variables from server/.env or root .env
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
+// Ensure SQLite database and schema are initialized
+const sqliteDb = require('./database/db');
+
+// Initialize MongoDB Atlas connection non-blockingly
+const { getMongoStatus } = require('./database/mongodb');
+const { syncAllData } = require('./database/syncMongo');
 
 const authRoutes = require('./routes/auth');
 const villageRoutes = require('./routes/villages');
@@ -46,14 +54,39 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
+// Health check endpoint reporting both SQLite and MongoDB status
 app.get('/api/health', (req, res) => {
+  const mongoStatus = getMongoStatus();
   res.json({
     status: 'healthy',
     service: 'RuralCare Backend API',
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: '1.0.0',
+    databases: {
+      sqlite: {
+        status: 'connected',
+        type: 'Relational (SQLite node:sqlite)',
+        file: 'ruralcare.db'
+      },
+      mongodb: {
+        status: mongoStatus.status,
+        readyState: mongoStatus.readyStateDesc,
+        lastError: mongoStatus.lastError,
+        cluster: 'isolated-free-cluster.4ahr84c.mongodb.net',
+        database: 'ruralcare'
+      }
+    }
   });
+});
+
+// Admin endpoint to trigger SQLite -> MongoDB Atlas data synchronization
+app.post('/api/admin/mongo-sync', async (req, res) => {
+  try {
+    const result = await syncAllData();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Sync failed: ' + err.message });
+  }
 });
 
 // Mount modular REST API routes
