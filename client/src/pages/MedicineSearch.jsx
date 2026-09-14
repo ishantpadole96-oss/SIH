@@ -102,10 +102,10 @@ export function MedicineSearch() {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(13, 148, 136, 0.15)', color: 'var(--primary-teal)', padding: '0.35rem 1rem', borderRadius: 'var(--radius-full)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>
           <Pill size={16} /> National Essential Medicines List (NEML) & Jan Aushadhi
         </div>
-        <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.5rem' }}>
+        <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#11322A', marginBottom: '0.5rem' }}>
           Rural Medicine Availability & Generic Finder
         </h1>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '680px', margin: '0 auto', fontSize: '1rem' }}>
+        <p style={{ color: '#52786D', maxWidth: '680px', margin: '0 auto', fontSize: '1rem' }}>
           Check real-time pharmacy stocks across Sub-Centres, PHCs, and District Hospitals, or find affordable government-subsidized Jan Aushadhi generic alternatives.
         </p>
       </div>
@@ -118,9 +118,9 @@ export function MedicineSearch() {
           style={{
             padding: '0.75rem 1.5rem',
             borderRadius: 'var(--radius-full)',
-            border: activeTab === 'inventory' ? '2px solid var(--primary-teal)' : '1px solid var(--border-subtle)',
-            background: activeTab === 'inventory' ? 'var(--primary-teal)' : 'var(--card-bg)',
-            color: '#FFFFFF',
+            border: activeTab === 'inventory' ? '2px solid #0D9488' : '1px solid var(--border-subtle)',
+            background: activeTab === 'inventory' ? '#0D9488' : '#FFFFFF',
+            color: activeTab === 'inventory' ? '#FFFFFF' : '#374151',
             fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
@@ -187,21 +187,21 @@ export function MedicineSearch() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(13, 148, 136, 0.15) 100%)',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(13, 148, 136, 0.12) 100%)',
               border: '1px solid rgba(245, 158, 11, 0.3)',
               borderRadius: 'var(--radius-md)',
               padding: '1rem 1.5rem',
               marginBottom: '1.5rem',
-              color: '#FFFFFF'
+              color: '#11322A'
             }}>
               <div>
-                <strong style={{ fontSize: '1.1rem', color: '#FBBF24' }}>Pradhan Mantri Bhartiya Janaushadhi Pariyojana (PMBJP)</strong>
-                <p style={{ fontSize: '0.85rem', color: '#CBD5E1', margin: 0 }}>
+                <strong style={{ fontSize: '1.1rem', color: '#B45309' }}>Pradhan Mantri Bhartiya Janaushadhi Pariyojana (PMBJP)</strong>
+                <p style={{ fontSize: '0.85rem', color: '#475569', margin: 0 }}>
                   High-quality generic medicines matching WHO-GMP bioequivalence at a fraction of branded market retail cost.
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34D399' }}>~{genericStats.avgSavings}%</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0D9488' }}>~{genericStats.avgSavings}%</span>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Average Citizen Savings</div>
               </div>
             </div>
@@ -219,7 +219,7 @@ export function MedicineSearch() {
                 <div key={g.generic_id} className="card" style={{
                   padding: '1.5rem',
                   border: '1px solid rgba(245, 158, 11, 0.25)',
-                  background: 'var(--card-bg)',
+                  background: '#FFFFFF',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between'
@@ -227,7 +227,7 @@ export function MedicineSearch() {
                   <div>
                     {/* Header Pill */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', background: 'rgba(255, 255, 255, 0.1)', color: '#CBD5E1' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', background: '#F1F5F9', color: '#475569' }}>
                         {g.category}
                       </span>
                       <span style={{
@@ -235,8 +235,8 @@ export function MedicineSearch() {
                         fontWeight: 800,
                         padding: '0.25rem 0.65rem',
                         borderRadius: 'var(--radius-full)',
-                        background: 'rgba(16, 185, 129, 0.2)',
-                        color: '#34D399',
+                        background: 'rgba(16, 185, 129, 0.15)',
+                        color: '#059669',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.25rem'
@@ -247,14 +247,14 @@ export function MedicineSearch() {
 
                     {/* Brand vs Generic Title */}
                     <div style={{ marginBottom: '0.75rem' }}>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Popular Brand Name</div>
-                      <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#FFFFFF', margin: '0.1rem 0 0.5rem 0' }}>{g.brand_name}</h3>
+                      <div style={{ fontSize: '0.85rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Popular Brand Name</div>
+                      <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#11322A', margin: '0.1rem 0 0.5rem 0' }}>{g.brand_name}</h3>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-teal)', fontWeight: 600, fontSize: '0.95rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0D9488', fontWeight: 600, fontSize: '0.95rem' }}>
                         <ArrowRight size={16} />
                         <span>Jan Aushadhi Generic Formula:</span>
                       </div>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#2DD4BF', marginTop: '0.2rem' }}>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0F766E', marginTop: '0.2rem' }}>
                         {g.generic_name}
                       </div>
                     </div>
@@ -313,16 +313,16 @@ export function MedicineSearch() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {groupedMedicines.map((group, idx) => (
-                <div key={idx} className="card" style={{ padding: '1.5rem', background: 'var(--card-bg)', border: '1px solid var(--border-subtle)' }}>
+                <div key={idx} className="card" style={{ padding: '1.5rem', background: '#FFFFFF', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                        <h2 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#FFFFFF' }}>{group.medicine_name}</h2>
-                        <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', background: 'rgba(13, 148, 136, 0.2)', color: 'var(--primary-teal)', fontWeight: 600 }}>
+                        <h2 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#11322A' }}>{group.medicine_name}</h2>
+                        <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', background: '#E8F5EE', color: '#0D9488', fontWeight: 600 }}>
                           {group.category}
                         </span>
                       </div>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                      <p style={{ color: '#52786D', fontSize: '0.85rem', marginTop: '0.25rem' }}>
                         Available across {group.facilities.length} government healthcare centres
                       </p>
                     </div>
@@ -340,7 +340,7 @@ export function MedicineSearch() {
                         <div
                           key={fac.facility_id}
                           style={{
-                            background: 'var(--card-hover)',
+                            background: '#F8FAF9',
                             border: `1px solid ${isOutOfStock ? 'rgba(239, 68, 68, 0.3)' : isLowStock ? 'rgba(245, 158, 11, 0.3)' : 'var(--border-subtle)'}`,
                             borderRadius: 'var(--radius-md)',
                             padding: '1rem',
@@ -351,7 +351,7 @@ export function MedicineSearch() {
                         >
                           <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#FFFFFF' }}>{fac.facility_name}</h3>
+                              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#11322A' }}>{fac.facility_name}</h3>
                               <span
                                 className={`badge ${isOutOfStock ? 'badge-danger' : isLowStock ? 'badge-warning' : 'badge-success'}`}
                                 style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', whiteSpace: 'nowrap' }}
@@ -360,12 +360,12 @@ export function MedicineSearch() {
                               </span>
                             </div>
 
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                            <div style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '0.5rem' }}>
                               {fac.facility_type} • {fac.village_name || 'Pune District'}
                             </div>
 
-                            <div style={{ fontSize: '0.9rem', color: '#CBD5E1', marginBottom: '0.5rem' }}>
-                              Current Quantity: <b>{fac.quantity} {group.unit}</b>
+                            <div style={{ fontSize: '0.9rem', color: '#334155', marginBottom: '0.5rem' }}>
+                              Current Quantity: <strong style={{ color: '#11322A' }}>{fac.quantity} {group.unit}</strong>
                             </div>
                           </div>
 
@@ -406,7 +406,7 @@ export function MedicineSearch() {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF' }}>Update Pharmacy Inventory</h3>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A' }}>Update Pharmacy Inventory</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{editingMed.facility_name}</p>
               </div>
               <button onClick={() => setEditingMed(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>

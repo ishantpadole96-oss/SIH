@@ -332,7 +332,7 @@ export function AshaDashboard({ setActiveTab }) {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(13, 148, 136, 0.2)', color: '#2DD4BF', padding: '0.3rem 0.85rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>
             <Activity size={14} /> COMMUNITY HEALTH WORKER (ASHA / ANM)
           </div>
-          <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
+          <h1 style={{ fontSize: '2rem', color: '#11322A', fontWeight: 800 }}>
             ASHA Community Health Portal
           </h1>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
@@ -436,7 +436,7 @@ export function AshaDashboard({ setActiveTab }) {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div>
-              <h2 style={{ fontSize: '1.3rem', color: '#FFFFFF', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h2 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <ArrowRightLeft size={22} color="#2DD4BF" /> Cross-Tier Referral Tracking &amp; Dropout Watchlist
               </h2>
               <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
@@ -484,7 +484,7 @@ export function AshaDashboard({ setActiveTab }) {
                             Ref #{ref.referral_id}
                           </span>
                         </div>
-                        <h3 style={{ fontSize: '1.15rem', color: '#FFFFFF', fontWeight: 800, marginTop: '0.4rem' }}>
+                        <h3 style={{ fontSize: '1.15rem', color: '#11322A', fontWeight: 800, marginTop: '0.4rem' }}>
                           {ref.patient_name} • {ref.reason}
                         </h3>
                         <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
@@ -676,7 +676,7 @@ export function AshaDashboard({ setActiveTab }) {
                       </span>
                     </div>
 
-                    <h3 style={{ fontSize: '1.15rem', color: '#FFFFFF', fontWeight: 700, margin: '2px 0' }}>
+                    <h3 style={{ fontSize: '1.15rem', color: '#11322A', fontWeight: 700, margin: '2px 0' }}>
                       {c.patient_name} ({c.patient_age} yrs • {c.patient_gender})
                     </h3>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
@@ -733,7 +733,7 @@ export function AshaDashboard({ setActiveTab }) {
           {/* Registered Patients List */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <h2 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <Users size={20} color="#2DD4BF" /> Registered Village Patients
               </h2>
               <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -747,7 +747,7 @@ export function AshaDashboard({ setActiveTab }) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <h3 style={{ fontSize: '1.1rem', color: '#FFFFFF', fontWeight: 700 }}>
+                        <h3 style={{ fontSize: '1.1rem', color: '#11322A', fontWeight: 700 }}>
                           {p.name}
                         </h3>
                         {p.is_offline && (
@@ -812,7 +812,7 @@ export function AshaDashboard({ setActiveTab }) {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF' }}>Register Villager in Field</h3>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A' }}>Register Villager in Field</h3>
                 <span style={{ fontSize: '0.78rem', color: !offlineStatus.isOnline ? '#F97316' : '#2DD4BF' }}>
                   {!offlineStatus.isOnline ? '📴 Offline Mode Active: Saving to local device queue' : '📶 Online Mode: Central cloud verification'}
                 </span>
@@ -907,7 +907,7 @@ export function AshaDashboard({ setActiveTab }) {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF' }}>Generate Smart Referral</h3>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A' }}>Generate Smart Referral</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                   Patient: <b>{refPatient.name || refPatient.patient_name}</b> ({refPatient.health_journey_id || 'MH-RURAL-2026-0001'})
                 </p>

@@ -41,19 +41,59 @@ export function TopHeader({ onToggleMobileSidebar, onOpenAuth, onOpenJourneyScan
 
   const currentLangLabel = languages.find(l => l.code === lang)?.label || 'English';
 
-  const defaultLocations = [
-    { village_id: 1, village_name: 'Khedgaon', district: 'Pune' },
-    { village_id: 2, village_name: 'Bhor', district: 'Pune' },
-    { village_id: 3, village_name: 'Junnar', district: 'Pune' },
-    { village_id: 4, village_name: 'Baramati', district: 'Pune' },
-    { village_id: 5, village_name: 'Ambegaon', district: 'Pune' },
-    { village_id: 6, village_name: 'Shirur', district: 'Pune' },
-    { village_id: 7, village_name: 'Mulshi', district: 'Pune' },
-    { village_id: 8, village_name: 'Daund', district: 'Pune' }
+  const [districtSearch, setDistrictSearch] = useState('');
+
+  const MAHARASHTRA_DISTRICTS_36 = [
+    { village_id: 110, village_name: "Ahmednagar Center", district: "Ahmednagar" },
+    { village_id: 311, village_name: "Akola Cotton City", district: "Akola" },
+    { village_id: 300, village_name: "Amravati City", district: "Amravati" },
+    { village_id: 165, village_name: "Beed City", district: "Beed" },
+    { village_id: 262, village_name: "Bhandara City", district: "Bhandara" },
+    { village_id: 333, village_name: "Buldhana City", district: "Buldhana" },
+    { village_id: 277, village_name: "Chandrapur City", district: "Chandrapur" },
+    { village_id: 123, village_name: "Chhatrapati Sambhajinagar", district: "Chhatrapati Sambhajinagar" },
+    { village_id: 186, village_name: "Dharashiv (Osmanabad)", district: "Dharashiv" },
+    { village_id: 87, village_name: "Dhule City", district: "Dhule" },
+    { village_id: 288, village_name: "Gadchiroli Center", district: "Gadchiroli" },
+    { village_id: 269, village_name: "Gondia City", district: "Gondia" },
+    { village_id: 149, village_name: "Hingoli City", district: "Hingoli" },
+    { village_id: 99, village_name: "Jalgaon City", district: "Jalgaon" },
+    { village_id: 132, village_name: "Jalna City", district: "Jalna" },
+    { village_id: 216, village_name: "Kolhapur City", district: "Kolhapur" },
+    { village_id: 176, village_name: "Latur City", district: "Latur" },
+    { village_id: 17, village_name: "Mumbai City Center", district: "Mumbai City" },
+    { village_id: 23, village_name: "Mumbai Suburban", district: "Mumbai Suburban" },
+    { village_id: 240, village_name: "Nagpur Metro Central", district: "Nagpur" },
+    { village_id: 154, village_name: "Nanded City", district: "Nanded" },
+    { village_id: 93, village_name: "Nandurbar City", district: "Nandurbar" },
+    { village_id: 75, village_name: "Nashik City", district: "Nashik" },
+    { village_id: 38, village_name: "Palghar Center", district: "Palghar" },
+    { village_id: 140, village_name: "Parbhani City", district: "Parbhani" },
+    { village_id: 1, village_name: "Pune City Center", district: "Pune" },
+    { village_id: 46, village_name: "Alibag / Raigad", district: "Raigad" },
+    { village_id: 57, village_name: "Ratnagiri Coastal", district: "Ratnagiri" },
+    { village_id: 229, village_name: "Sangli City", district: "Sangli" },
+    { village_id: 205, village_name: "Satara City", district: "Satara" },
+    { village_id: 66, village_name: "Sindhudurg / Oros", district: "Sindhudurg" },
+    { village_id: 194, village_name: "Solapur City", district: "Solapur" },
+    { village_id: 30, village_name: "Thane City", district: "Thane" },
+    { village_id: 253, village_name: "Wardha City", district: "Wardha" },
+    { village_id: 345, village_name: "Washim Center", district: "Washim" },
+    { village_id: 318, village_name: "Yavatmal Center", district: "Yavatmal" }
   ];
 
-  const availableLocations = (villages && villages.length > 0) ? villages : defaultLocations;
-  const currentLoc = selectedVillage || availableLocations[0];
+  // Combine backend villages if available or fallback to all 36 Maharashtra Districts
+  const availableLocations = (villages && villages.length > 0) ? villages : MAHARASHTRA_DISTRICTS_36;
+  const currentLoc = selectedVillage || availableLocations.find(l => l.district === 'Pune') || availableLocations[0];
+
+  const filteredLocations = availableLocations.filter(loc => {
+    if (!districtSearch.trim()) return true;
+    const term = districtSearch.toLowerCase();
+    return (
+      (loc.district && loc.district.toLowerCase().includes(term)) ||
+      (loc.village_name && loc.village_name.toLowerCase().includes(term))
+    );
+  });
 
   const userName = user 
     ? (user.name || user.email.split('@')[0]) 
@@ -221,7 +261,9 @@ export function TopHeader({ onToggleMobileSidebar, onOpenAuth, onOpenJourneyScan
             onMouseLeave={e => e.currentTarget.style.borderColor = '#E2ECE5'}
           >
             <MapPin size={14} color="#0D9488" />
-            <span>{currentLoc.village_name || 'Khedgaon'}</span>
+            <span title={`${currentLoc.village_name || ''}, ${currentLoc.district || 'Maharashtra'}`}>
+              {currentLoc.district ? `${currentLoc.district}` : (currentLoc.village_name || 'Maharashtra')}
+            </span>
             <ChevronDown size={13} color="#6B7280" />
           </button>
 
@@ -230,48 +272,99 @@ export function TopHeader({ onToggleMobileSidebar, onOpenAuth, onOpenJourneyScan
               position: 'absolute',
               top: '115%',
               right: 0,
-              width: '240px',
+              width: '290px',
               background: '#FFFFFF',
               borderRadius: '12px',
-              boxShadow: '0 10px 25px -3px rgba(17, 34, 25, 0.12), 0 4px 6px -2px rgba(17, 34, 25, 0.05)',
+              boxShadow: '0 10px 25px -3px rgba(17, 34, 25, 0.14), 0 4px 6px -2px rgba(17, 34, 25, 0.05)',
               border: '1px solid #E2ECE5',
-              padding: '0.4rem',
+              padding: '0.5rem',
               zIndex: 1000
             }}>
-              <div style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>
-                {t('select_district_cluster')}
+              <div style={{ 
+                padding: '0.35rem 0.5rem 0.5rem', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                borderBottom: '1px solid #F0F4F2',
+                marginBottom: '0.4rem'
+              }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#43685C', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  Maharashtra (36 Districts)
+                </span>
+                <span style={{ fontSize: '0.68rem', background: '#E8F5EE', color: '#0D9488', fontWeight: 700, padding: '1px 6px', borderRadius: '8px' }}>
+                  {filteredLocations.length} Available
+                </span>
               </div>
-              {availableLocations.slice(0, 8).map(loc => (
-                <div
-                  key={loc.village_id}
-                  onClick={() => {
-                    setSelectedVillage(loc);
-                    setShowLocationDropdown(false);
-                  }}
+
+              {/* District & Village Search Filter Input */}
+              <div style={{ padding: '0 0.2rem 0.4rem' }}>
+                <input
+                  type="text"
+                  value={districtSearch}
+                  onChange={e => setDistrictSearch(e.target.value)}
+                  placeholder="Search 36 districts..."
                   style={{
-                    padding: '0.5rem 0.75rem',
+                    width: '100%',
+                    padding: '0.45rem 0.65rem',
+                    fontSize: '0.8rem',
                     borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    background: (currentLoc.village_id === loc.village_id || currentLoc.village_name === loc.village_name) ? '#E8F5EE' : 'transparent',
-                    color: '#11322A',
-                    fontSize: '0.82rem',
-                    fontWeight: (currentLoc.village_id === loc.village_id || currentLoc.village_name === loc.village_name) ? 600 : 400
+                    border: '1px solid #D1D5DB',
+                    outline: 'none',
+                    background: '#F9FAFB',
+                    color: '#111827'
                   }}
-                  onMouseEnter={e => { if (currentLoc.village_id !== loc.village_id) e.currentTarget.style.background = '#F6FAF7'; }}
-                  onMouseLeave={e => { if (currentLoc.village_id !== loc.village_id) e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{loc.village_name}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#6B7280' }}>{loc.district}</div>
+                  autoFocus
+                />
+              </div>
+
+              {/* Scrollable list of 36 Districts */}
+              <div style={{ maxHeight: '330px', overflowY: 'auto', paddingRight: '2px' }}>
+                {filteredLocations.length === 0 ? (
+                  <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8rem', color: '#6B7280' }}>
+                    No district found matching "{districtSearch}"
                   </div>
-                  {(currentLoc.village_id === loc.village_id || currentLoc.village_name === loc.village_name) && (
-                    <Check size={14} color="#0D9488" />
-                  )}
-                </div>
-              ))}
+                ) : (
+                  filteredLocations.map(loc => {
+                    const isSelected = (currentLoc.district === loc.district && (!loc.village_name || currentLoc.village_name === loc.village_name)) || currentLoc.village_id === loc.village_id;
+                    return (
+                      <div
+                        key={`${loc.district}-${loc.village_id || loc.village_name}`}
+                        onClick={() => {
+                          setSelectedVillage(loc);
+                          setShowLocationDropdown(false);
+                          setDistrictSearch('');
+                        }}
+                        style={{
+                          padding: '0.5rem 0.7rem',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          background: isSelected ? '#E8F5EE' : 'transparent',
+                          color: '#11322A',
+                          fontSize: '0.82rem',
+                          fontWeight: isSelected ? 600 : 400,
+                          marginBottom: '2px',
+                          transition: 'background 0.12s ease'
+                        }}
+                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#F6FAF7'; }}
+                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 600, color: '#11322A' }}>{loc.district}</div>
+                          <div style={{ fontSize: '0.7rem', color: '#6B7280' }}>
+                            {loc.village_name ? loc.village_name : 'District Cluster'}
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <Check size={14} color="#0D9488" style={{ flexShrink: 0, marginLeft: '0.5rem' }} />
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           )}
         </div>

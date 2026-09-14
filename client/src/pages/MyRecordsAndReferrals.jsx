@@ -51,7 +51,7 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
       
       {/* Title */}
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
+        <h1 style={{ fontSize: '2rem', color: '#11322A', fontWeight: 800 }}>
           {activeSubTab === 'referrals' ? t('tile_my_referrals') : t('tile_my_records')}
         </h1>
         <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
@@ -95,7 +95,7 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Registered Patient Profile
                   </span>
-                  <h3 style={{ fontSize: '1.3rem', color: '#FFFFFF', fontWeight: 700 }}>
+                  <h3 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 700 }}>
                     {data.patient.name} ({data.patient.age} yrs • {data.patient.gender})
                   </h3>
                   <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
@@ -137,7 +137,7 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                         <span className="badge badge-info" style={{ marginBottom: '0.3rem' }}>
                           {r.facility_type || 'PHC'}
                         </span>
-                        <h3 style={{ fontSize: '1.15rem', color: '#FFFFFF', fontWeight: 700 }}>
+                        <h3 style={{ fontSize: '1.15rem', color: '#11322A', fontWeight: 700 }}>
                           {r.facility_name}
                         </h3>
                         <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -167,7 +167,7 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                           Clinical Diagnosis & Doctor Advice:
                         </span>
-                        <p style={{ fontSize: '0.95rem', color: '#FFFFFF', fontWeight: 600, marginTop: '2px' }}>
+                        <p style={{ fontSize: '0.95rem', color: '#11322A', fontWeight: 600, marginTop: '2px' }}>
                           {r.diagnosis_notes}
                         </p>
                       </div>
@@ -224,7 +224,7 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                               Ref #{ref.referral_id}
                             </span>
                           </div>
-                          <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 700, marginTop: '0.5rem' }}>
+                          <h3 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 700, marginTop: '0.5rem' }}>
                             {ref.reason}
                           </h3>
                         </div>
@@ -364,7 +364,7 @@ export function MyRecordsAndReferrals({ initialTab = 'records', onOpenTelemed })
                         </span>
                         <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Ticket #{apt.appointment_id}</span>
                       </div>
-                      <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 700 }}>
+                      <h3 style={{ fontSize: '1.2rem', color: '#11322A', fontWeight: 700 }}>
                         {apt.facility_name}
                       </h3>
                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>

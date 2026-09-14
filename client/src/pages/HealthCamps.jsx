@@ -106,7 +106,7 @@ export function HealthCamps() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
+          <h1 style={{ fontSize: '2rem', color: '#11322A', fontWeight: 800 }}>
             {t('tile_health_camps')}
           </h1>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
@@ -184,7 +184,7 @@ export function HealthCamps() {
                     )}
                   </div>
 
-                  <h3 style={{ fontSize: '1.35rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '0.4rem' }}>
+                  <h3 style={{ fontSize: '1.35rem', color: '#11322A', fontWeight: 700, marginBottom: '0.4rem' }}>
                     {camp.camp_name}
                   </h3>
 
@@ -255,7 +255,7 @@ export function HealthCamps() {
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF' }}>Schedule Health Camp</h3>
+              <h3 style={{ fontSize: '1.25rem', color: '#11322A' }}>Schedule Health Camp</h3>
               <button onClick={() => setShowAddModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                 <X size={22} />
               </button>

@@ -156,7 +156,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed }) {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '0.3rem 0.85rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>
           <Stethoscope size={14} /> MEDICAL OFFICER OPD CONSOLE
         </div>
-        <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
+        <h1 style={{ fontSize: '2rem', color: '#11322A', fontWeight: 800 }}>
           {user?.name || 'Dr. Rajesh Deshmukh'}
         </h1>
         <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
@@ -197,7 +197,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed }) {
         {/* Today's Appointments Queue */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <h2 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Calendar size={20} color="#38BDF8" /> OPD Consultations Queue
             </h2>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -222,7 +222,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed }) {
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 700 }}>
+                  <h3 style={{ fontSize: '1.2rem', color: '#11322A', fontWeight: 700 }}>
                     {apt.patient_name} ({apt.patient_age} yrs • {apt.patient_gender})
                   </h3>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
@@ -316,7 +316,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed }) {
         {/* Referrals In/Out Queue */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <h2 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <ArrowRightLeft size={20} color="#FBBF24" /> Inter-Tier Referral Desk
             </h2>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -336,7 +336,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed }) {
                   </span>
                 </div>
 
-                <h4 style={{ fontSize: '1.05rem', color: '#FFFFFF', fontWeight: 700 }}>
+                <h4 style={{ fontSize: '1.05rem', color: '#11322A', fontWeight: 700 }}>
                   {ref.patient_name} — {ref.reason}
                 </h4>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
@@ -383,7 +383,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed }) {
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.3rem', color: '#FFFFFF', fontWeight: 800 }}>Clinical Consultation</h3>
+                <h3 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 800 }}>Clinical Consultation</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                   Patient: <b>{selectedAppointment.patient_name}</b> ({selectedAppointment.patient_age} yrs, {selectedAppointment.patient_gender})
                 </p>
@@ -474,7 +474,7 @@ export function DoctorDashboard({ setActiveTab, onOpenTelemed }) {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF' }}>Issue Specialist Referral</h3>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A' }}>Issue Specialist Referral</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                   Patient: {referralTargetPatient.patient_name || referralTargetPatient.name}
                 </p>

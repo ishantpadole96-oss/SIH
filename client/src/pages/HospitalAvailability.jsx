@@ -87,7 +87,7 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
+          <h1 style={{ fontSize: '2rem', color: '#11322A', fontWeight: 800 }}>
             {t('tile_hospital_availability')}
           </h1>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
@@ -192,7 +192,7 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
                   </div>
 
                   {/* Facility Title & Location */}
-                  <h3 style={{ fontSize: '1.3rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '0.2rem' }}>
+                  <h3 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 700, marginBottom: '0.2rem' }}>
                     {facility.facility_name}
                   </h3>
                   <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
@@ -351,7 +351,7 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF' }}>Update Hospital Census</h3>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A' }}>Update Hospital Census</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{editingFacility.facility_name}</p>
               </div>
               <button onClick={() => setEditingFacility(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -421,7 +421,7 @@ export function HospitalAvailability({ setActiveTab, setSelectedFacilityForBooki
                     onChange={e => setUpdateForm({ ...updateForm, emergency_available: e.target.checked ? 1 : 0 })}
                     style={{ width: '16px', height: '16px', accentColor: '#0D9488' }}
                   />
-                  <span style={{ fontSize: '0.9rem', color: '#FFFFFF' }}>Emergency Department Operational 24x7</span>
+                  <span style={{ fontSize: '0.9rem', color: '#11322A' }}>Emergency Department Operational 24x7</span>
                 </label>
               </div>
 

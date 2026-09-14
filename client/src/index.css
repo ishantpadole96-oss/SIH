@@ -97,6 +97,16 @@ button, input, select, textarea {
   font-size: 1rem;
 }
 
+input, textarea, select {
+  color: #111827 !important;
+  background-color: #FFFFFF;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #6B7280 !important;
+  opacity: 0.85;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -285,16 +295,18 @@ button, input, select, textarea {
 .form-input, .form-select, .form-textarea {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: var(--color-bg-primary);
+  background: #FFFFFF !important;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  color: var(--text-primary);
+  color: #111827 !important;
   outline: none;
   transition: all var(--transition-fast);
 }
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
-  border-color: var(--color-brand-400);
+  border-color: #0D9488;
+  color: #111827 !important;
+  background: #FFFFFF !important;
   box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
 }
 

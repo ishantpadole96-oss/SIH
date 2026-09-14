@@ -96,7 +96,7 @@ export function BookAppointment({ setActiveTab, preselectedFacility, onOpenTelem
       
       {/* Title */}
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
+        <h1 style={{ fontSize: '2rem', color: '#11322A', fontWeight: 800 }}>
           {t('tile_book_appointment')}
         </h1>
         <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
@@ -119,7 +119,7 @@ export function BookAppointment({ setActiveTab, preselectedFacility, onOpenTelem
             <CheckCircle2 size={36} color="#34D399" />
           </div>
 
-          <h2 style={{ fontSize: '1.6rem', color: '#FFFFFF', fontWeight: 800, marginBottom: '0.5rem' }}>
+          <h2 style={{ fontSize: '1.6rem', color: '#11322A', fontWeight: 800, marginBottom: '0.5rem' }}>
             Consultation Confirmed!
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', marginBottom: '1.5rem' }}>

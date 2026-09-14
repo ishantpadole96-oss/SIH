@@ -99,7 +99,7 @@ export function AdminDashboard() {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(239, 68, 68, 0.15)', color: '#F87171', padding: '0.3rem 0.85rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>
             <Building2 size={14} /> MAHARASHTRA PUBLIC HEALTH ADMINISTRATION
           </div>
-          <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
+          <h1 style={{ fontSize: '2rem', color: '#11322A', fontWeight: 800 }}>
             Rural Healthcare Monitoring &amp; GIS Command Console
           </h1>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
@@ -223,7 +223,7 @@ export function AdminDashboard() {
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(245, 158, 11, 0.15)', color: '#FBBF24', padding: '0.3rem 0.85rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.4rem' }}>
                   <AlertTriangle size={14} /> DISTRICT OPERATIONAL HEALTH INTELLIGENCE
                 </div>
-                <h2 style={{ fontSize: '1.6rem', color: '#FFFFFF', fontWeight: 800 }}>
+                <h2 style={{ fontSize: '1.6rem', color: '#11322A', fontWeight: 800 }}>
                   🚨 Healthcare Bottleneck Map &amp; Anomaly Detection
                 </h2>
                 <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
@@ -342,7 +342,7 @@ export function AdminDashboard() {
                           <span style={{ fontSize: '0.7rem', color: '#2DD4BF', fontFamily: 'monospace', fontWeight: 800 }}>
                             {anom.facility_code} • {anom.district}
                           </span>
-                          <h4 style={{ fontSize: '1.05rem', color: '#FFFFFF', fontWeight: 800, margin: '2px 0' }}>
+                          <h4 style={{ fontSize: '1.05rem', color: '#11322A', fontWeight: 800, margin: '2px 0' }}>
                             {anom.facility_name}
                           </h4>
                         </div>
@@ -376,7 +376,7 @@ export function AdminDashboard() {
               <div className="card" style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <div>
-                    <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 800 }}>
+                    <h3 style={{ fontSize: '1.2rem', color: '#11322A', fontWeight: 800 }}>
                       Stuck Patient Telemetry Registry
                     </h3>
                     <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
@@ -461,7 +461,7 @@ export function AdminDashboard() {
             <div className="card" style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
-                  <h2 style={{ fontSize: '1.3rem', color: '#FFFFFF', fontWeight: 700 }}>
+                  <h2 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 700 }}>
                     Rural Healthcare Coverage &amp; Accessibility GIS
                   </h2>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -500,7 +500,7 @@ export function AdminDashboard() {
                           Score: {v.score} / 100
                         </span>
                       </div>
-                      <h4 style={{ fontSize: '1.15rem', color: '#FFFFFF', fontWeight: 700 }}>
+                      <h4 style={{ fontSize: '1.15rem', color: '#11322A', fontWeight: 700 }}>
                         {v.village_name}
                       </h4>
                       <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
@@ -518,7 +518,7 @@ export function AdminDashboard() {
 
               {/* All Villages Ranking Table */}
               <div className="card" style={{ padding: '1.5rem', overflowX: 'auto' }}>
-                <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.2rem', color: '#11322A', fontWeight: 700, marginBottom: '1rem' }}>
                   Complete Village Accessibility Score Rankings
                 </h3>
 
@@ -539,7 +539,7 @@ export function AdminDashboard() {
                     {accessibilityData.all_villages_ranking.map((v, idx) => (
                       <tr key={v.village_id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                         <td style={{ padding: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>#{idx + 1}</td>
-                        <td style={{ padding: '0.75rem', fontWeight: 700, color: '#FFFFFF' }}>{v.village_name}</td>
+                        <td style={{ padding: '0.75rem', fontWeight: 700, color: '#11322A' }}>{v.village_name}</td>
                         <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{v.district}</td>
                         <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{v.population?.toLocaleString()}</td>
                         <td style={{ padding: '0.75rem', color: '#38BDF8' }}>{v.nearest_facility?.name}</td>
@@ -566,14 +566,14 @@ export function AdminDashboard() {
               
               {/* Facility Ratings */}
               <div className="card" style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.2rem', color: '#11322A', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Star size={18} color="#FBBF24" /> Facility Public Ratings Comparison
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {qualityData.facilityRatings.map(fr => (
                     <div key={fr.facility_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
                       <div>
-                        <div style={{ fontWeight: 700, color: '#FFFFFF', fontSize: '0.92rem' }}>{fr.facility_name}</div>
+                        <div style={{ fontWeight: 700, color: '#11322A', fontSize: '0.92rem' }}>{fr.facility_name}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{fr.facility_type} • {fr.review_count} reviews</div>
                       </div>
                       <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FBBF24' }}>
@@ -586,7 +586,7 @@ export function AdminDashboard() {
 
               {/* Grievances by Nature */}
               <div className="card" style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.2rem', color: '#11322A', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <AlertCircle size={18} color="#EF4444" /> Citizen Complaints Breakdown
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -601,14 +601,14 @@ export function AdminDashboard() {
 
               {/* Medicine Shortages */}
               <div className="card" style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.2rem', color: '#11322A', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Pill size={18} color="#EC4899" /> Medicine Stockouts per Health Centre
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {qualityData.shortagesByFacility.map((sf, idx) => (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontSize: '0.9rem', color: '#FFFFFF', fontWeight: 600 }}>{sf.facility_name}</div>
+                        <div style={{ fontSize: '0.9rem', color: '#11322A', fontWeight: 600 }}>{sf.facility_name}</div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{sf.facility_type}</div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -622,14 +622,14 @@ export function AdminDashboard() {
 
               {/* Referral Completion Rate */}
               <div className="card" style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.2rem', color: '#11322A', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <ArrowRightLeft size={18} color="#34D399" /> Referral Delivery Performance
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {qualityData.referralRates.map((rr, idx) => (
                     <div key={idx} style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#FFFFFF' }}>{rr.facility_name}</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#11322A' }}>{rr.facility_name}</span>
                         <span style={{ fontSize: '0.82rem', color: '#34D399', fontWeight: 700 }}>{rr.completed} Completed</span>
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -648,7 +648,7 @@ export function AdminDashboard() {
             <div className="card" style={{ padding: '1.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.3rem', color: '#FFFFFF', fontWeight: 700 }}>
+                  <h3 style={{ fontSize: '1.3rem', color: '#11322A', fontWeight: 700 }}>
                     Citizen Grievance Resolution Desk
                   </h3>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -692,7 +692,7 @@ export function AdminDashboard() {
                       </button>
                     </div>
 
-                    <h4 style={{ fontSize: '1.1rem', color: '#FFFFFF', fontWeight: 700, margin: '2px 0' }}>
+                    <h4 style={{ fontSize: '1.1rem', color: '#11322A', fontWeight: 700, margin: '2px 0' }}>
                       {comp.complaint_type} at {comp.facility_name}
                     </h4>
                     <p style={{ fontSize: '0.86rem', color: '#CBD5E1', margin: '0.5rem 0', background: 'var(--color-bg-elevated)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
@@ -719,7 +719,7 @@ export function AdminDashboard() {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF' }}>Resolve Citizen Grievance</h3>
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A' }}>Resolve Citizen Grievance</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                   Ticket #{resolvingComplaint.complaint_id}: {resolvingComplaint.complaint_type}
                 </p>

@@ -116,21 +116,21 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
       
       {/* Title */}
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(139, 92, 246, 0.15)', color: '#A78BFA', padding: '0.4rem 1rem', borderRadius: 'var(--radius-full)', fontWeight: 700, fontSize: '0.82rem', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#7C3AED', padding: '0.4rem 1rem', borderRadius: 'var(--radius-full)', fontWeight: 700, fontSize: '0.82rem', marginBottom: '0.75rem' }}>
           <Sparkles size={16} /> AI CLINICAL TRIAGE & DECISION SUPPORT
         </div>
-        <h1 style={{ fontSize: '2.2rem', color: '#FFFFFF', fontWeight: 800 }}>
+        <h1 style={{ fontSize: '2.2rem', color: '#11322A', fontWeight: 800 }}>
           {t('ai_screening_title')}
         </h1>
-        <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0.4rem auto 0 auto' }}>
+        <p style={{ fontSize: '0.92rem', color: '#52786D', maxWidth: '600px', margin: '0.4rem auto 0 auto' }}>
           Guided step-by-step health questionnaire with vital signs red-flag verification and automatic appropriate facility routing.
         </p>
       </div>
 
       {/* Mandatory Clinical Disclaimer Alert */}
       <div style={{
-        background: 'rgba(245, 158, 11, 0.1)',
-        border: '1px solid rgba(245, 158, 11, 0.3)',
+        background: '#FFFBEB',
+        border: '1px solid #FCD34D',
         borderRadius: 'var(--radius-md)',
         padding: '0.9rem 1.1rem',
         display: 'flex',
@@ -138,8 +138,8 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
         gap: '0.75rem',
         marginBottom: '2rem'
       }}>
-        <AlertTriangle size={22} color="#FBBF24" style={{ flexShrink: 0, marginTop: '2px' }} />
-        <div style={{ fontSize: '0.82rem', color: '#FEF3C7', lineHeight: 1.5 }}>
+        <AlertTriangle size={22} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <div style={{ fontSize: '0.84rem', color: '#92400E', lineHeight: 1.5 }}>
           <b>{t('ai_disclaimer')}</b>
         </div>
       </div>
@@ -147,24 +147,24 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
       {/* Wizard Progress Indicator */}
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: step >= 1 ? 'var(--color-brand-500)' : 'var(--color-bg-card)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: step >= 1 ? '#0D9488' : '#E2ECE5', color: step >= 1 ? '#FFFFFF' : '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
             1
           </div>
-          <span style={{ fontSize: '0.85rem', color: step >= 1 ? '#FFFFFF' : 'var(--text-muted)' }}>Vitals & Baseline</span>
+          <span style={{ fontSize: '0.85rem', color: step >= 1 ? '#11322A' : '#6B7280', fontWeight: step >= 1 ? 700 : 500 }}>Vitals & Baseline</span>
         </div>
-        <div style={{ width: '40px', height: '2px', background: step >= 2 ? 'var(--color-brand-500)' : 'var(--border-subtle)' }} />
+        <div style={{ width: '40px', height: '2px', background: step >= 2 ? '#0D9488' : '#CBD7CE' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: step >= 2 ? 'var(--color-brand-500)' : 'var(--color-bg-card)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: step >= 2 ? '#0D9488' : '#E2ECE5', color: step >= 2 ? '#FFFFFF' : '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
             2
           </div>
-          <span style={{ fontSize: '0.85rem', color: step >= 2 ? '#FFFFFF' : 'var(--text-muted)' }}>Symptoms & Severity</span>
+          <span style={{ fontSize: '0.85rem', color: step >= 2 ? '#11322A' : '#6B7280', fontWeight: step >= 2 ? 700 : 500 }}>Symptoms & Severity</span>
         </div>
-        <div style={{ width: '40px', height: '2px', background: step >= 3 ? 'var(--color-brand-500)' : 'var(--border-subtle)' }} />
+        <div style={{ width: '40px', height: '2px', background: step >= 3 ? '#0D9488' : '#CBD7CE' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: step >= 3 ? 'var(--color-brand-500)' : 'var(--color-bg-card)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: step >= 3 ? '#0D9488' : '#E2ECE5', color: step >= 3 ? '#FFFFFF' : '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
             3
           </div>
-          <span style={{ fontSize: '0.85rem', color: step >= 3 ? '#FFFFFF' : 'var(--text-muted)' }}>Decision Support</span>
+          <span style={{ fontSize: '0.85rem', color: step >= 3 ? '#11322A' : '#6B7280', fontWeight: step >= 3 ? 700 : 500 }}>Decision Support</span>
         </div>
       </div>
 
@@ -177,8 +177,8 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
       {/* STEP 1: Vitals & Baseline Details */}
       {step === 1 && (
         <div className="card" style={{ padding: '2rem' }}>
-          <h2 style={{ fontSize: '1.3rem', color: '#FFFFFF', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Activity size={22} color="#2DD4BF" /> Step 1: Patient Vitals & Health Baseline
+          <h2 style={{ fontSize: '1.3rem', color: '#11322A', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Activity size={22} color="#0D9488" /> Step 1: Patient Vitals & Health Baseline
           </h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
@@ -293,10 +293,10 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
       {/* STEP 2: Symptoms Selection */}
       {step === 2 && (
         <div className="card" style={{ padding: '2rem' }}>
-          <h2 style={{ fontSize: '1.3rem', color: '#FFFFFF', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Stethoscope size={22} color="#A78BFA" /> Step 2: Current Symptoms & Onset
+          <h2 style={{ fontSize: '1.3rem', color: '#11322A', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Stethoscope size={22} color="#7C3AED" /> Step 2: Current Symptoms & Onset
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+          <p style={{ fontSize: '0.85rem', color: '#52786D', marginBottom: '1.5rem' }}>
             Tap all symptoms that you or the patient are currently experiencing:
           </p>
 
@@ -309,8 +309,8 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
                   onClick={() => toggleSymptom(sym)}
                   style={{
                     padding: '0.75rem 1rem',
-                    background: selected ? 'rgba(13, 148, 136, 0.25)' : 'var(--color-bg-primary)',
-                    border: selected ? '1px solid #2DD4BF' : '1px solid var(--border-subtle)',
+                    background: selected ? '#E8F5EE' : '#FFFFFF',
+                    border: selected ? '1.5px solid #0D9488' : '1px solid var(--border-subtle)',
                     borderRadius: 'var(--radius-md)',
                     cursor: 'pointer',
                     display: 'flex',
@@ -319,10 +319,10 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <span style={{ fontSize: '0.9rem', color: selected ? '#FFFFFF' : 'var(--text-secondary)', fontWeight: selected ? 600 : 400 }}>
+                  <span style={{ fontSize: '0.9rem', color: selected ? '#0D9488' : '#374151', fontWeight: selected ? 700 : 500 }}>
                     {sym}
                   </span>
-                  {selected && <CheckCircle2 size={18} color="#2DD4BF" />}
+                  {selected && <CheckCircle2 size={18} color="#0D9488" />}
                 </div>
               );
             })}
@@ -399,7 +399,7 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
                 }}>
                   {screeningResult.screening_data.ai_risk_level} Risk Assessment
                 </span>
-                <h2 style={{ fontSize: '1.8rem', color: '#FFFFFF', fontWeight: 800 }}>
+                <h2 style={{ fontSize: '1.8rem', color: '#11322A', fontWeight: 800 }}>
                   Clinical Decision Support Summary
                 </h2>
               </div>
@@ -467,13 +467,13 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
           </div>
 
           {/* Prominent Action: Find Appropriate Healthcare Facility */}
-          <div className="card" style={{ padding: '1.75rem', background: 'var(--color-bg-card)', border: '1px solid rgba(13, 148, 136, 0.4)' }}>
+          <div className="card" style={{ padding: '1.75rem', background: '#FFFFFF', border: '1px solid rgba(13, 148, 136, 0.4)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Hospital size={22} color="#2DD4BF" /> Recommended Healthcare Facilities for this Case
+                <h3 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Hospital size={22} color="#0D9488" /> Recommended Healthcare Facilities for this Case
                 </h3>
-                <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+                <p style={{ fontSize: '0.86rem', color: '#52786D' }}>
                   Auto-matched based on your location (<b>{selectedVillage?.village_name}</b>) and required clinical capabilities
                 </p>
               </div>
@@ -492,7 +492,7 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
                 <div
                   key={fac.facility_id}
                   style={{
-                    background: 'var(--color-bg-primary)',
+                    background: '#F8FAF9',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: 'var(--radius-md)',
                     padding: '1.1rem',
@@ -506,12 +506,12 @@ export function AIScreening({ setActiveTab, setSelectedFacilityForBooking }) {
                       <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>
                         {fac.facility_type}
                       </span>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#2DD4BF' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0D9488' }}>
                         {fac.distanceKm} km
                       </span>
                     </div>
 
-                    <h4 style={{ fontSize: '1.05rem', color: '#FFFFFF', fontWeight: 700, margin: '4px 0' }}>
+                    <h4 style={{ fontSize: '1.05rem', color: '#11322A', fontWeight: 700, margin: '4px 0' }}>
                       {fac.facility_name}
                     </h4>
                     <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>

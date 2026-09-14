@@ -127,7 +127,7 @@ export function FeedbackAndComplaints() {
       
       {/* Title */}
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
+        <h1 style={{ fontSize: '2rem', color: '#11322A', fontWeight: 800 }}>
           {t('tile_feedback_complaints')}
         </h1>
         <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
@@ -157,7 +157,7 @@ export function FeedbackAndComplaints() {
           
           {/* Lodge Complaint Form */}
           <div className="card" style={{ padding: '1.75rem' }}>
-            <h2 style={{ fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '0.35rem' }}>
+            <h2 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 700, marginBottom: '0.35rem' }}>
               Lodge Public Healthcare Grievance
             </h2>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
@@ -225,7 +225,7 @@ export function FeedbackAndComplaints() {
 
           {/* My Complaints Tracker */}
           <div>
-            <h2 style={{ fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '0.35rem' }}>
+            <h2 style={{ fontSize: '1.25rem', color: '#11322A', fontWeight: 700, marginBottom: '0.35rem' }}>
               My Grievance Tickets
             </h2>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
@@ -265,14 +265,14 @@ export function FeedbackAndComplaints() {
                         </span>
                       </div>
 
-                      <h4 style={{ fontSize: '1.05rem', color: '#FFFFFF', fontWeight: 700, margin: '2px 0' }}>
+                      <h4 style={{ fontSize: '1.05rem', color: '#11322A', fontWeight: 700, margin: '2px 0' }}>
                         {c.complaint_type}
                       </h4>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
                         Against: <b>{c.facility_name}</b>
                       </div>
 
-                      <p style={{ fontSize: '0.86rem', color: '#CBD5E1', lineHeight: 1.4, background: 'var(--color-bg-primary)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '0.75rem' }}>
+                      <p style={{ fontSize: '0.86rem', color: '#374151', lineHeight: 1.4, background: 'var(--color-bg-primary)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '0.75rem' }}>
                         "{c.description}"
                       </p>
 
@@ -296,7 +296,7 @@ export function FeedbackAndComplaints() {
                               }}>
                                 {i <= statusIndex ? '✓' : i + 1}
                               </div>
-                              <span style={{ fontSize: '0.7rem', color: i <= statusIndex ? '#FFFFFF' : 'var(--text-muted)', marginTop: '2px' }}>
+                              <span style={{ fontSize: '0.7rem', color: i <= statusIndex ? '#11322A' : 'var(--text-muted)', marginTop: '2px', fontWeight: i <= statusIndex ? 600 : 400 }}>
                                 {st}
                               </span>
                             </div>
@@ -333,7 +333,7 @@ export function FeedbackAndComplaints() {
       {activeTab === 'feedback' && (
         <div style={{ maxWidth: '640px', margin: '0 auto' }}>
           <div className="card" style={{ padding: '2rem' }}>
-            <h2 style={{ fontSize: '1.4rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '0.35rem' }}>
+            <h2 style={{ fontSize: '1.4rem', color: '#11322A', fontWeight: 700, marginBottom: '0.35rem' }}>
               Rate a Healthcare Facility
             </h2>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>

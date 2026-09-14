@@ -78,7 +78,7 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
       {/* Page Title & View Toggle */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', color: '#FFFFFF', fontWeight: 800 }}>
+          <h1 style={{ fontSize: '2rem', color: '#11322A', fontWeight: 800 }}>
             {t('tile_find_healthcare')}
           </h1>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
@@ -346,7 +346,7 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
                     {/* Facility Name & Address */}
                     <h3 
                       onClick={() => handleSelectFacility(f)} 
-                      style={{ fontSize: '1.25rem', color: '#FFFFFF', marginBottom: '0.25rem', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ fontSize: '1.25rem', color: '#11322A', marginBottom: '0.25rem', fontWeight: 700, cursor: 'pointer' }}
                       title="Click to locate on map"
                     >
                       {f.facility_name}
@@ -403,7 +403,7 @@ export function FacilityFinder({ setActiveTab, setSelectedFacilityForBooking }) 
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                           <Star size={13} color="#FBBF24" /> Rating
                         </div>
-                        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#FFFFFF' }}>
+                        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#11322A' }}>
                           ⭐ {f.average_rating} ({f.total_reviews_count || 4})
                         </div>
                       </div>
