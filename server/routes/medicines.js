@@ -427,6 +427,13 @@ router.get('/transactions', authenticateToken, requireRoles('admin', 'doctor', '
       params.push(parseInt(facility_id));
     }
     query += ` ORDER BY it.created_at DESC LIMIT 50`;
+    const transactions = db.all(query, params);
+    return res.json({ transactions });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * POST /api/medicines/dispense
  * ASHA Worker / Doctor: Record giving medicine to a patient

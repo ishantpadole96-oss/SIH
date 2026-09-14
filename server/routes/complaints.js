@@ -10,7 +10,7 @@ const router = express.Router();
  */
 router.post('/', authenticateToken, (req, res) => {
   try {
-    const { facility_id, complaint_type, description } = req.body;
+    const { facility_id, complaint_type, description, patient_id } = req.body;
 
     if (!facility_id || !complaint_type || !description) {
       return res.status(400).json({ error: 'facility_id, complaint_type, and description are required.' });
@@ -30,8 +30,6 @@ router.post('/', authenticateToken, (req, res) => {
     if (!validTypes.includes(complaint_type)) {
       return res.status(400).json({ error: `Invalid complaint type. Valid types: ${validTypes.join(', ')}` });
     }
-
-    const { facility_id, complaint_type, description, patient_id } = req.body;
 
     // Resolve patient_id: either explicitly supplied by ASHA worker or from citizen user account
     let targetPatientId = patient_id ? parseInt(patient_id) : null;
