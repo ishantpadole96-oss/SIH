@@ -31,7 +31,7 @@ export function DownloadAppModal({ isOpen, onClose }) {
     en: {
       title: 'RuralCare for Android',
       subtitle: 'Official Android WebView App for Citizens, ASHAs, and Doctors across Maharashtra.',
-      btn_download: 'Download APK (v3.0.0)',
+      btn_download: 'Download APK (v4.2.37.48)',
       btn_downloading: 'Downloading APK...',
       direct_hint: 'Download not starting? Click here',
       features_heading: 'Key Mobile Features',
@@ -52,7 +52,7 @@ export function DownloadAppModal({ isOpen, onClose }) {
     hi: {
       title: 'रूरलकेयर एंड्रॉइड ऐप',
       subtitle: 'महाराष्ट्र भर के नागरिकों, आशा कार्यकर्ताओं और डॉक्टरों के लिए आधिकारिक ऐप।',
-      btn_download: 'APK डाउनलोड करें (v3.0.0)',
+      btn_download: 'APK डाउनलोड करें (v4.2.37.48)',
       btn_downloading: 'डाउनलोड हो रहा है...',
       direct_hint: 'डाउनलोड शुरू नहीं हुआ? यहाँ क्लिक करें',
       features_heading: 'मुख्य मोबाइल सुविधाएँ',
@@ -73,7 +73,7 @@ export function DownloadAppModal({ isOpen, onClose }) {
     mr: {
       title: 'रुरलकेअर अँड्रॉइड ॲप',
       subtitle: 'महाराष्ट्रातील नागरिक, आशा सेविका आणि डॉक्टरांसाठी अधिकृत मोबाईल ॲप.',
-      btn_download: 'APK डाऊनलोड करा (v3.0.0)',
+      btn_download: 'APK डाऊनलोड करा (v4.2.37.48)',
       btn_downloading: 'डाऊनलोड सुरू आहे...',
       direct_hint: 'डाऊनलोड सुरू झाले नाही? येथे क्लिक करा',
       features_heading: 'प्रमुख मोबाईल वैशिष्ट्ये',
@@ -263,7 +263,7 @@ export function DownloadAppModal({ isOpen, onClose }) {
                 {text.direct_hint}
               </a>
               <span style={{ margin: '0 0.5rem', opacity: 0.5 }}>•</span>
-              <span>Android 7.0+ (Nougat to 15) • 4.8 MB (v3.0.0)</span>
+              <span>Android 7.0+ (Nougat to 15) • 4.8 MB (v4.2.37.48)</span>
             </div>
           </div>
 

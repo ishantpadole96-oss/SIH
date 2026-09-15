@@ -1,6 +1,6 @@
 {
   "name": "ruralcare-platform",
-  "version": "3.0.0",
+  "version": "4.2.37.48",
   "description": "RuralCare - Smart India Hackathon Full-Stack Healthcare Platform",
   "scripts": {
     "server": "node server/index.js",

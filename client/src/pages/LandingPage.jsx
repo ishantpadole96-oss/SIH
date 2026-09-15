@@ -300,7 +300,7 @@ export function LandingPage({
               }}
             >
               <Smartphone size={18} color="#2DD4BF" />
-              <span>{lang === 'mr' ? 'अँड्रॉइड ॲप डाऊनलोड (v3.0)' : lang === 'hi' ? 'एंड्रॉइड ऐप डाउनलोड (v3.0)' : 'Download Android App (v3.0)'}</span>
+              <span>{lang === 'mr' ? 'अँड्रॉइड ॲप डाऊनलोड (v4.2.37.48)' : lang === 'hi' ? 'एंड्रॉइड ऐप डाउनलोड (v4.2.37.48)' : 'Download Android App (v4.2.37.48)'}</span>
             </button>
           </div>
         </div>
