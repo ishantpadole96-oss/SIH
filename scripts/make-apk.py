@@ -39,11 +39,11 @@ def create_apk():
         config_json = (
             '{\n'
             '  "app_name": "RuralCare",\n'
-            '  "version": "2.0.0",\n'
+            '  "version": "3.0.0",\n'
             '  "platform": "android",\n'
             '  "splash_screen": true,\n'
             '  "author": "Smart India Hackathon Team",\n'
-            '  "default_url": "https://ishantpadole96-oss.github.io/SIH/"\n'
+            '  "default_url": "https://ruralcaremaharashtra.vercel.app/"\n'
             '}\n'
         )
         z.writestr('assets/app_config.json', config_json.encode('utf-8'))

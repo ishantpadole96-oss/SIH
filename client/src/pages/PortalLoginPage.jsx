@@ -108,6 +108,19 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
     setError(null);
   };
 
+  const handleInstantDemoLogin = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await demoLogin(portalRole);
+      if (onLoginSuccess) onLoginSuccess();
+    } catch (err) {
+      setError(err.message || 'Instant login failed. Please verify credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -332,8 +345,32 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '0.78rem', color: '#4B5563', marginBottom: '0.5rem', fontWeight: 600 }}>
-                Demo Credentials (Required Password Verification)
+                Demo Credentials &amp; Quick Access
               </div>
+              <button
+                type="button"
+                onClick={handleInstantDemoLogin}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  background: config.color,
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.9rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  boxShadow: `0 4px 12px ${config.color}33`,
+                  marginBottom: '0.65rem'
+                }}
+              >
+                <Sparkles size={16} color="#FFFFFF" /> ⚡ 1-Click Instant Demo Login (as {config.badge})
+              </button>
               <button
                 type="button"
                 onClick={handleFillDemo}
@@ -342,9 +379,9 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
                   background: '#F1F5F9',
                   color: '#0F172A',
                   border: '1.5px dashed #94A3B8',
-                  padding: '0.65rem 1rem',
+                  padding: '0.6rem 1rem',
                   borderRadius: '8px',
-                  fontSize: '0.86rem',
+                  fontSize: '0.84rem',
                   fontWeight: 700,
                   display: 'flex',
                   alignItems: 'center',
@@ -353,10 +390,10 @@ export function PortalLoginPage({ portalRole = 'citizen', onLoginSuccess, onBack
                   cursor: 'pointer'
                 }}
               >
-                <Sparkles size={16} color="#0D9488" /> Auto-Fill Demo Credentials (demo_user / demo_password)
+                Auto-Fill Demo Credentials (demo_user / demo_password)
               </button>
               <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '0.4rem' }}>
-                Fills <b>demo_user</b> &amp; <b>demo_password</b> into the form fields. Click "Sign In with Password" to verify.
+                Use <b>1-Click Demo Login</b> or enter credentials below.
               </div>
             </div>
 

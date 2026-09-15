@@ -1,6 +1,6 @@
 {
-  "name": "ruralcare-sih-root",
-  "version": "2.0.0",
+  "name": "ruralcare-platform",
+  "version": "3.0.0",
   "description": "RuralCare - Smart India Hackathon Full-Stack Healthcare Platform",
   "scripts": {
     "server": "node server/index.js",

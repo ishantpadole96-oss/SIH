@@ -225,7 +225,7 @@ export function AdminDashboard() {
           email: '',
           phone: '',
           specialization: 'General Medicine',
-          facility_id: districtStaff.facilities[0]?.facility_id || 1,
+          facility_id: districtStaff?.facilities?.[0]?.facility_id || 1,
           assigned_villages: [],
           custom_village_input: '',
           working_days: 'Mon-Sat',
@@ -371,14 +371,14 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* 6 Essential, Purposeful District KPIs (Cleaned up from previous cluttered view) */}
+      {/* 6 Essential, Purposeful District KPIs */}
       {overview && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
           
           <div className="card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Public Facilities Monitored</div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0D9488', margin: '3px 0' }}>
-              {overview.facilities.total}
+              {overview.total_facilities ?? overview.facilities?.total ?? 0}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Hospitals, PHCs &amp; Sub-Centres</div>
           </div>
@@ -386,15 +386,15 @@ export function AdminDashboard() {
           <div className="card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Bed Availability &amp; Occupancy</div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#10B981', margin: '3px 0' }}>
-              {overview.beds.available} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/ {overview.beds.total} Vacant</span>
+              {overview.beds?.available ?? 0} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/ {overview.beds?.total ?? 0} Vacant</span>
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{overview.beds.occupancy_rate}% Occupancy Rate</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{overview.beds?.occupancy_rate ?? 0}% Occupancy Rate</div>
           </div>
 
           <div className="card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Appointed Doctors</div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0284C7', margin: '3px 0' }}>
-              {districtStaff.doctors?.length || overview.doctors.total}
+              {districtStaff.doctors?.length ?? overview.doctors?.total ?? 0}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Stationed in {selectedDistrict}</div>
           </div>
@@ -407,10 +407,10 @@ export function AdminDashboard() {
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Active in village jurisdictions</div>
           </div>
 
-          <div className="card" style={{ padding: '1.25rem', border: (districtInventory.kpis.low_stock_count > 0 || districtInventory.kpis.out_of_stock_count > 0) ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-subtle)' }}>
+          <div className="card" style={{ padding: '1.25rem', border: ((districtInventory.kpis?.low_stock_count || 0) > 0 || (districtInventory.kpis?.out_of_stock_count || 0) > 0) ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '0.75rem', color: '#EF4444', fontWeight: 700 }}>Medicine Shortage Alerts</div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#EF4444', margin: '3px 0' }}>
-              {districtInventory.kpis.out_of_stock_count || 0} <span style={{ fontSize: '0.85rem', color: '#F59E0B' }}>+ {districtInventory.kpis.low_stock_count || 0} Low</span>
+              {districtInventory.kpis?.out_of_stock_count || 0} <span style={{ fontSize: '0.85rem', color: '#F59E0B' }}>+ {districtInventory.kpis?.low_stock_count || 0} Low</span>
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Across PHCs &amp; Sub-Centres</div>
           </div>
@@ -418,7 +418,7 @@ export function AdminDashboard() {
           <div className="card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Active Citizen Grievances</div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#F59E0B', margin: '3px 0' }}>
-              {complaints.filter(c => c.status !== 'Resolved').length}
+              {(complaints || []).filter(c => c.status !== 'Resolved').length}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Pending administrative resolution</div>
           </div>
@@ -540,7 +540,7 @@ export function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {gisData.facilities.map((f, idx) => (
+                      {(gisData?.facilities || []).map((f, idx) => (
                         <tr key={f.facility_id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                           <td style={{ padding: '0.65rem 0.5rem', fontWeight: 700, color: '#11322A' }}>{f.facility_name}</td>
                           <td style={{ padding: '0.65rem 0.5rem' }}>
@@ -611,14 +611,14 @@ export function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {districtStaff.doctors.length === 0 ? (
+                      {(!districtStaff?.doctors || districtStaff.doctors.length === 0) ? (
                         <tr>
                           <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                             No doctors currently assigned to {selectedDistrict}. Use the button above to appoint a doctor.
                           </td>
                         </tr>
                       ) : (
-                        districtStaff.doctors.map((doc, idx) => (
+                        (districtStaff.doctors || []).map((doc, idx) => (
                           <tr key={doc.staff_id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                             <td style={{ padding: '0.65rem 0.5rem', fontWeight: 700, color: '#11322A' }}>
                               Dr. {doc.name}
@@ -707,14 +707,14 @@ export function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {districtStaff.asha_workers.length === 0 ? (
+                      {(!districtStaff?.asha_workers || districtStaff.asha_workers.length === 0) ? (
                         <tr>
                           <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                             No ASHA workers currently registered in {selectedDistrict}.
                           </td>
                         </tr>
                       ) : (
-                        districtStaff.asha_workers.map((w, idx) => (
+                        (districtStaff.asha_workers || []).map((w, idx) => (
                           <tr key={w.user_id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                             <td style={{ padding: '0.65rem 0.5rem', fontWeight: 700, color: '#11322A' }}>
                               {w.name}
@@ -834,7 +834,7 @@ export function AdminDashboard() {
                     style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem', width: 'auto' }}
                   >
                     <option value="">All Facilities in {selectedDistrict}</option>
-                    {districtStaff.facilities.map(f => (
+                    {(districtStaff?.facilities || []).map(f => (
                       <option key={f.facility_id} value={f.facility_id}>{f.facility_name}</option>
                     ))}
                   </select>

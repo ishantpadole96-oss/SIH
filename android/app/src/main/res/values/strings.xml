@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">RuralCare</string>
     <!-- Default URL to load in WebView -->
-    <string name="site_url">https://ishantpadole96-oss.github.io/SIH/</string>
+    <string name="site_url">https://ruralcaremaharashtra.vercel.app/</string>
     <string name="offline_message">No internet connection. RuralCare offline mode is ready.</string>
     <string name="retry">Retry</string>
 </resources>

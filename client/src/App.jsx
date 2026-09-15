@@ -78,16 +78,6 @@ function AppContent() {
   }, []);
 
   const navigatePortal = (targetRole, defaultTab = null) => {
-    // If navigating to landing, clear session so re-entering any portal strictly asks for password
-    if (targetRole === 'landing') {
-      logout();
-    } else if (['citizen', 'doctor', 'asha', 'admin'].includes(targetRole)) {
-      const isCitizenRole = user && (user.role === 'citizen' || user.role === 'patient');
-      const isMatching = user && (targetRole === 'citizen' ? isCitizenRole : user.role === targetRole);
-      if (user && !isMatching) {
-        logout();
-      }
-    }
     window.location.hash = `#/${targetRole}`;
     setCurrentPortal(targetRole);
     if (targetRole === 'citizen' && defaultTab) {
@@ -304,13 +294,11 @@ function AppContent() {
 
         <LandingNavbar
           onSelectPortal={(roleToOpen, targetTab) => {
-            logout();
             navigatePortal(roleToOpen, targetTab);
           }}
           onOpenEmergency={() => setShowEmergencyModal(true)}
           onOpenDownloadApp={() => setShowDownloadAppModal(true)}
           onOpenAuth={() => {
-            logout();
             setLoginPortalRole('citizen');
             setCurrentPortal('login');
           }}
@@ -319,7 +307,6 @@ function AppContent() {
         <main style={{ flex: 1 }}>
           <LandingPage
             onSelectPortal={(roleToOpen, targetTab) => {
-              logout();
               navigatePortal(roleToOpen, targetTab);
             }}
             onOpenEmergency={() => setShowEmergencyModal(true)}
