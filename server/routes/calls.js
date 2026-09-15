@@ -179,6 +179,72 @@ router.get('/incoming', (req, res) => {
 });
 
 /**
+ * In-memory signaling store for WebRTC P2P and cross-tab/device video & audio sync
+ */
+const callSignals = new Map();
+let signalCounter = 0;
+
+/**
+ * POST /api/calls/signal
+ * Send a WebRTC SDP offer/answer, ICE candidate, or in-call event
+ */
+router.post('/signal', (req, res) => {
+  try {
+    const { call_id, sender, sender_role, type, data } = req.body;
+    if (!call_id || !type) {
+      return res.status(400).json({ error: 'call_id and type are required' });
+    }
+
+    if (!callSignals.has(call_id)) {
+      callSignals.set(call_id, []);
+    }
+
+    const signalList = callSignals.get(call_id);
+    const signal = {
+      id: ++signalCounter,
+      call_id,
+      sender: sender || sender_role || 'guest',
+      sender_role: sender_role || sender || 'guest',
+      type,
+      data,
+      timestamp: Date.now()
+    };
+
+    signalList.push(signal);
+    if (signalList.length > 100) {
+      signalList.splice(0, signalList.length - 100);
+    }
+
+    return res.json({ status: 'ok', success: true, signal_id: signal.id });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/calls/signals/:callId
+ * Poll signals for a given call since a timestamp or signal ID
+ */
+router.get('/signals/:callId', (req, res) => {
+  try {
+    const { callId } = req.params;
+    const since = parseInt(req.query.since) || 0;
+    const excludeSender = req.query.exclude_sender;
+    const list = callSignals.get(callId) || [];
+    const newSignals = list.filter(s => {
+      const isNew = since > 1000000000 ? s.timestamp > since : s.id > since;
+      if (!isNew) return false;
+      if (excludeSender && (s.sender === excludeSender || s.sender_role === excludeSender)) return false;
+      return true;
+    });
+    const latestId = list.length > 0 ? list[list.length - 1].id : since;
+    return res.json({ signals: newSignals, latest_id: latestId, server_time: Date.now() });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * GET /api/calls/active
  * List currently active calls
  */
@@ -197,10 +263,10 @@ router.get('/history', (req, res) => {
 });
 
 /**
- * POST /api/calls/ai-response
+ * POST /api/calls/ai-response or /api/calls/triage
  * Real-time Clinical AI Voice Doctor response during call
  */
-router.post('/ai-response', (req, res) => {
+router.post(['/ai-response', '/triage'], (req, res) => {
   try {
     const { query = '', symptoms = '', language = 'en', doctorName = 'Dr. Aarav (AI Medical Officer)' } = req.body;
     const text = `${query} ${symptoms}`.toLowerCase();
@@ -282,7 +348,7 @@ router.post('/ai-response', (req, res) => {
       diagnosis,
       voice_text: voiceText,
       recommendation,
-      prescribed_actions: prescribedActions,
+      prescribedActions: prescribedActions,
       timestamp: new Date().toISOString()
     });
   } catch (err) {

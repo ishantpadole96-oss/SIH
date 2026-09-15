@@ -153,6 +153,26 @@ function AppContent() {
     setShowCallModal(true);
   };
 
+  const handleIncomingCallAccepted = (call) => {
+    if (call.call_type === 'video') {
+      handleOpenTelemed({
+        doctorName: user?.role === 'doctor' ? (user?.name || 'Dr. Rajesh Deshmukh') : (call.callee_name || 'Dr. Rajesh Deshmukh'),
+        patientName: user?.role === 'doctor' ? (call.caller_name || 'RuralCare Patient') : (user?.name || 'RuralCare Citizen'),
+        facility: call.callee_facility || 'Govt PHC Khedgaon',
+        callId: call.call_id,
+        vitals: call.vitals,
+        skipInitiate: true
+      });
+    } else {
+      handleOpenCall({ 
+        name: call.caller_name || 'RuralCare Patient', 
+        phone: call.callee_phone, 
+        facility: call.callee_facility,
+        role: call.caller_role 
+      });
+    }
+  };
+
   // Citizen Navigation Tabs (Complaints / Grievances moved to ASHA portal per requirement)
   const citizenNavItems = [
     { id: 'home', label: t('nav_overview'), icon: <Home size={16} /> },
@@ -283,14 +303,7 @@ function AppContent() {
   if (currentPortal === 'landing') {
     return (
       <div style={{ minHeight: '100vh', background: '#F8FAF9', display: 'flex', flexDirection: 'column' }}>
-        <IncomingCallBanner onAcceptCall={(call) => {
-          handleOpenCall({ 
-            name: call.caller_name || 'RuralCare Patient', 
-            phone: call.callee_phone, 
-            facility: call.callee_facility,
-            role: call.caller_role 
-          });
-        }} />
+        <IncomingCallBanner onAcceptCall={handleIncomingCallAccepted} />
 
         <LandingNavbar
           onSelectPortal={(roleToOpen, targetTab) => {
@@ -366,25 +379,7 @@ function AppContent() {
 
     return (
       <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
-        <IncomingCallBanner onAcceptCall={(call) => {
-          if (call.call_type === 'video') {
-            handleOpenTelemed({
-              doctorName: user?.name || call.callee_name || 'Dr. Rajesh Deshmukh',
-              patientName: call.caller_name || 'RuralCare Patient',
-              facility: call.callee_facility || 'Govt PHC Khedgaon',
-              callId: call.call_id,
-              vitals: call.vitals,
-              skipInitiate: true
-            });
-          } else {
-            handleOpenCall({ 
-              name: call.caller_name || 'RuralCare Patient', 
-              phone: call.callee_phone, 
-              facility: call.callee_facility,
-              role: call.caller_role 
-            });
-          }
-        }} />
+        <IncomingCallBanner onAcceptCall={handleIncomingCallAccepted} />
 
         {/* Dedicated Doctor Top Header */}
         <header style={{
@@ -494,14 +489,7 @@ function AppContent() {
 
     return (
       <div style={{ minHeight: '100vh', background: '#FFF1F2', display: 'flex', flexDirection: 'column' }}>
-        <IncomingCallBanner onAcceptCall={(call) => {
-          handleOpenCall({ 
-            name: call.caller_name || 'RuralCare Patient', 
-            phone: call.callee_phone, 
-            facility: call.callee_facility,
-            role: call.caller_role 
-          });
-        }} />
+        <IncomingCallBanner onAcceptCall={handleIncomingCallAccepted} />
 
         {/* Dedicated ASHA Top Header */}
         <header style={{
@@ -599,14 +587,7 @@ function AppContent() {
 
     return (
       <div style={{ minHeight: '100vh', background: '#FEF3C7', display: 'flex', flexDirection: 'column' }}>
-        <IncomingCallBanner onAcceptCall={(call) => {
-          handleOpenCall({ 
-            name: call.caller_name || 'RuralCare Patient', 
-            phone: call.callee_phone, 
-            facility: call.callee_facility,
-            role: call.caller_role 
-          });
-        }} />
+        <IncomingCallBanner onAcceptCall={handleIncomingCallAccepted} />
 
         {/* Dedicated Admin Top Header */}
         <header style={{
@@ -697,14 +678,7 @@ function AppContent() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#F4F7F5', display: 'flex', flexDirection: 'column' }}>
-      <IncomingCallBanner onAcceptCall={(call) => {
-        handleOpenCall({ 
-          name: call.caller_name || 'RuralCare Patient', 
-          phone: call.callee_phone, 
-          facility: call.callee_facility,
-          role: call.caller_role 
-        });
-      }} />
+      <IncomingCallBanner onAcceptCall={handleIncomingCallAccepted} />
 
       {/* Dedicated Citizen Portal Header */}
       <TopHeader
@@ -854,11 +828,7 @@ function AppContent() {
       
       {showTelemedModal && (
         <TelemedicineRoom
-          doctorName={telemedParams.doctorName}
-          specialty={telemedParams.specialty}
-          facility={telemedParams.facility}
-          patientName={telemedParams.patientName}
-          initialMode={telemedParams.initialMode || 'video'}
+          {...telemedParams}
           onClose={() => setShowTelemedModal(false)}
         />
       )}
