@@ -348,8 +348,12 @@ function AppContent() {
             <img src="/ruralcare-mark.png" alt="RuralCare" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
             <span style={{ fontWeight: 700, color: '#11322A' }}>{t('footer_gov_notice')}</span>
           </div>
-          <div>
+          <div style={{ textAlign: 'right' }}>
             <span>Smart India Hackathon (SIH) • Government of Maharashtra Health Portal</span>
+            <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#DC2626', fontWeight: 600 }}>
+              Disclaimer: This is NOT an official government website. It is just a college project. <br/>
+              Developed by <a href="https://www.instagram.com/ishant_padole/" target="_blank" rel="noopener noreferrer" style={{ color: '#0D9488', textDecoration: 'underline' }}>ISHANT VISHNU PADOLE</a>
+            </div>
           </div>
         </footer>
 
@@ -817,8 +821,12 @@ function AppContent() {
           <img src="/ruralcare-mark.png" alt="RuralCare" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
           <span>{t('footer_gov_platform')}</span>
         </div>
-        <div>
+        <div style={{ textAlign: 'right' }}>
           <span>National Digital Health Mission (NDHM) • Government of Maharashtra</span>
+          <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#DC2626', fontWeight: 600 }}>
+            Disclaimer: This is NOT an official government website. It is just a college project. <br/>
+            Developed by <a href="https://www.instagram.com/ishant_padole/" target="_blank" rel="noopener noreferrer" style={{ color: '#0D9488', textDecoration: 'underline' }}>ISHANT VISHNU PADOLE</a>
+          </div>
         </div>
       </footer>
 
